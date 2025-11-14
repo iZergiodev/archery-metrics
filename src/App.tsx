@@ -444,6 +444,28 @@ function App() {
           ? 'text-emerald-400'
           : 'text-slate-400'
 
+  // Function to calculate position of match index on visual bar
+  const getMatchIndexPosition = (matchIndex: number): number => {
+    // Map match index range to percentage position
+    // Weak zone: 0.6-0.85 (0-30%)
+    // Good zone: 0.85-1.15 (30-70%) 
+    // Stiff zone: 1.15-1.4 (70-100%)
+
+    if (matchIndex <= 0.6) return 2 // Minimum position
+    if (matchIndex >= 1.4) return 98 // Maximum position
+
+    if (matchIndex <= 0.85) {
+      // Weak zone: map 0.6-0.85 to 2-30%
+      return 2 + ((matchIndex - 0.6) / 0.25) * 28
+    } else if (matchIndex <= 1.15) {
+      // Good zone: map 0.85-1.15 to 30-70%
+      return 30 + ((matchIndex - 0.85) / 0.3) * 40
+    } else {
+      // Stiff zone: map 1.15-1.4 to 70-98%
+      return 70 + ((matchIndex - 1.15) / 0.25) * 28
+    }
+  }
+
   return (
     <div className="min-h-screen flex justify-center py-10 px-4">
       <div className="w-full max-w-5xl">
@@ -517,6 +539,54 @@ function App() {
             </div>
           </div>
         </div>
+
+        {/* Spine Match Visual Bar */}
+        {spineMatch.matchIndex != null && (
+          <div className="mb-4 rounded-lg border border-slate-600 bg-slate-800/80 px-4 py-3">
+            <div className="text-xs uppercase text-slate-400 mb-2">
+              {t('summary.match')} - Indicador Visual
+            </div>
+            <div className="relative">
+              {/* Background bar with three zones */}
+              <div className="h-6 rounded-full overflow-hidden flex">
+                {/* Weak zone (red) */}
+                <div className="w-[30%] bg-red-600"></div>
+                {/* Good zone (green) */}
+                <div className="w-[40%] bg-emerald-600"></div>
+                {/* Stiff zone (red) */}
+                <div className="w-[30%] bg-red-600"></div>
+              </div>
+
+              {/* Zone labels */}
+              <div className="flex justify-between text-xs text-slate-400 mt-1 px-1">
+                <span>{t('match.weak')}</span>
+                <span className="font-medium text-emerald-400">{t('match.good')}</span>
+                <span>{t('match.stiff')}</span>
+              </div>
+
+              {/* Indicator needle */}
+              <div
+                className="absolute top-0 h-6 w-0.5 bg-white shadow-lg transition-all duration-300"
+                style={{
+                  left: `${Math.max(2, Math.min(98, getMatchIndexPosition(spineMatch.matchIndex)))}%`
+                }}
+              >
+                {/* Triangle pointer at top */}
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+              </div>
+
+              {/* Current value display */}
+              <div className="text-center mt-2">
+                <span className="text-sm font-mono">
+                  Match Index: {spineMatch.matchIndex.toFixed(3)}
+                </span>
+                <span className={`ml-2 text-sm font-medium ${matchColor}`}>
+                  ({matchLabel})
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recommendations and Warnings */}
         {(spineMatch.recommendations.length > 0 || spineMatch.warnings.length > 0) && (
