@@ -426,6 +426,57 @@ function App() {
     [bowSpecs, arrowSpecs, stringWeights],
   )
 
+  // Configuration save/load functions
+  const saveConfiguration = (slot: number) => {
+    const config = {
+      bowSpecs,
+      arrowSpecs,
+      stringWeights,
+    }
+    localStorage.setItem(`archery-config-${slot}`, JSON.stringify(config))
+  }
+
+  const loadConfiguration = (slot: number) => {
+    const saved = localStorage.getItem(`archery-config-${slot}`)
+    if (saved) {
+      const config = JSON.parse(saved)
+      setBowSpecs(config.bowSpecs)
+      setArrowSpecs(config.arrowSpecs)
+      setStringWeights(config.stringWeights)
+    }
+  }
+
+  const clearInputs = () => {
+    setBowSpecs({
+      iboVelocity: '',
+      drawLength: '',
+      drawWeight: '',
+      braceHeight: '',
+      axleToAxle: '',
+      percentLetoff: '',
+    })
+    setArrowSpecs({
+      pointWeight: '',
+      insertWeight: '',
+      shaftLength: '',
+      shaftGpi: '',
+      fletchQuantity: '',
+      weightEach: '',
+      wrapWeight: '',
+      nockWeight: '',
+      bushingPin: '',
+      staticSpine: '',
+    })
+    setStringWeights({
+      peep: '',
+      dLoop: '',
+      nockPoint: '',
+      silencers: '',
+      silencerDfc: '',
+      releaseType: 'Post Gate Release',
+    })
+  }
+
   const matchLabel =
     spineMatch.status === 'weak'
       ? t('match.weak')
@@ -489,6 +540,64 @@ function App() {
             >
               <span>🇬🇧</span>
               <span>EN</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Configuration Save/Load Buttons */}
+        <div className="mb-4 rounded-lg border border-slate-600 bg-slate-800/80 px-4 py-3">
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm font-medium text-slate-300 mr-2">Configuraciones:</span>
+            <button
+              type="button"
+              onClick={() => saveConfiguration(1)}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-emerald-600 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+            >
+              Guardar 1
+            </button>
+            <button
+              type="button"
+              onClick={() => saveConfiguration(2)}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-emerald-600 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+            >
+              Guardar 2
+            </button>
+            <button
+              type="button"
+              onClick={() => saveConfiguration(3)}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-emerald-600 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+            >
+              Guardar 3
+            </button>
+            <div className="w-px h-6 bg-slate-600 mx-1"></div>
+            <button
+              type="button"
+              onClick={() => loadConfiguration(1)}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-sky-600 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors"
+            >
+              Cargar 1
+            </button>
+            <button
+              type="button"
+              onClick={() => loadConfiguration(2)}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-sky-600 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors"
+            >
+              Cargar 2
+            </button>
+            <button
+              type="button"
+              onClick={() => loadConfiguration(3)}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-sky-600 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors"
+            >
+              Cargar 3
+            </button>
+            <div className="w-px h-6 bg-slate-600 mx-1"></div>
+            <button
+              type="button"
+              onClick={clearInputs}
+              className="rounded px-3 py-1.5 text-xs font-medium border border-red-600 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+            >
+              Limpiar Todo
             </button>
           </div>
         </div>

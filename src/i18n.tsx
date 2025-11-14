@@ -34,11 +34,11 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.bushingPin': 'Peso del casquillo/perno',
         'field.staticSpine': 'Rigidez estática (spine)',
 
-        'field.peep': 'Peep (visor en cuerda)',
-        'field.dLoop': 'Lazo en cuerda (D-loop)',
-        'field.nockPoint': 'Punto de enganche (nock point)',
+        'field.peep': 'Peep',
+        'field.dLoop': 'D-loop',
+        'field.nockPoint': 'Nock Point',
         'field.silencers': 'Silenciadores',
-        'field.silencerDfc': 'Silenciador DFC (fibra de carbono)',
+        'field.silencerDfc': 'Silenciador DFC',
         'field.release': 'Tipo de liberación',
 
         'summary.spineRequired': 'Rigidez requerida (spine)',
