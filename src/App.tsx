@@ -42,8 +42,32 @@ function calculateSpineMatch(
     silencers: string
     silencerDfc: string
     releaseType: string
+    stringMaterial: 'dacron' | 'fastflight' | 'unknown'
   },
 ): SpineMatchResult {
+  // ============================================================================
+  // GUÍA DE CALIBRACIÓN DEL MODELO
+  // ============================================================================
+  // Este modelo utiliza dos constantes de calibración empíricas que pueden
+  // ajustarse basándose en datos del mundo real:
+  //
+  // 1. K_SPINE_CALIBRATION (línea 226)
+  //    - Controla el spine requerido calculado
+  //    - Valor actual: 0.5
+  //    - Calibrar contra: Tablas de fabricantes (Easton, Gold Tip, etc.)
+  //
+  // 2. K_DYNAMIC_FLEX_CALIBRATION (línea 181)
+  //    - Controla cuánto difiere el spine dinámico del estático
+  //    - Valor actual: 10000
+  //    - Calibrar contra: Resultados de tiro reales y ajuste fino
+  //
+  // Para calibrar el modelo:
+  // a) Recopilar datos de configuraciones conocidas que funcionan bien
+  // b) Comparar predicciones del modelo vs. realidad
+  // c) Ajustar constantes iterativamente
+  // d) Validar con nuevos casos de prueba
+  // ============================================================================
+
   const toNumber = (value: string) =>
     value.trim() === '' ? 0 : Number(value.replace(',', '.'))
 
@@ -51,6 +75,11 @@ function calculateSpineMatch(
   const warnings: string[] = []
 
   // --- 1. PARSEO DE DATOS ---
+
+  console.log('=== DEBUG INPUTS ===')
+  console.log('Bow inputs:', bow)
+  console.log('Arrow inputs:', arrow)
+  console.log('String weights:', stringWeights)
 
   // Especificaciones del Arco
   const drawWeight = toNumber(bow.drawWeight)
@@ -112,6 +141,26 @@ function calculateSpineMatch(
   // Peso total en la cuerda (Total String Weight - TSW)
   const totalStringWeight = peepWeight + dLoopWeight + nockPointWeight + silencersWeight + silencerDfcWeight
 
+  // Validación adicional: Prevenir división por cero
+  const powerStroke = drawLength - braceHeight
+  console.log('Debug - arrowTotalWeight:', arrowTotalWeight, 'powerStroke:', powerStroke)
+  console.log('Debug - drawLength:', drawLength, 'braceHeight:', braceHeight)
+  console.log('Debug - shaftGpi:', shaftGpi, 'shaftLength:', shaftLength)
+
+  if (arrowTotalWeight === 0 || powerStroke === 0) {
+    console.log('Validation triggered - returning null values')
+    return {
+      spineRequired: null,
+      spineDynamic: null,
+      matchIndex: null,
+      status: null,
+      arrowTotalWeight: arrowTotalWeight,
+      calculatedFPS: null,
+      recommendations,
+      warnings,
+    }
+  }
+
   // --- 3. MODELOS FÍSICOS MEJORADOS ---
 
   // Función para calcular energía almacenada basada en curva fuerza-apertura
@@ -120,8 +169,8 @@ function calculateSpineMatch(
     // La energía es el área bajo la curva: ~0.85 × drawWeight × drawLength para compuestos
     const powerStroke = drawLength - braceHeight
     const forceDrawRatio = 0.85 // Ratio típico para arcos compuestos
-    const storedEnergy = drawWeight * powerStroke * forceDrawRatio
-    return storedEnergy // en foot-pounds
+    const storedEnergyInInchLbs = drawWeight * powerStroke * forceDrawRatio
+    return storedEnergyInInchLbs / 12 // Convertir a foot-pounds
   }
 
   // Función para calcular eficiencia del arco
@@ -139,26 +188,72 @@ function calculateSpineMatch(
   }
 
   // Función para calcular factor de flexión dinámica
-  function calculateDynamicFlexFactor(availableEnergy: number, arrowMass: number, staticSpine: number): number {
-    // Fuerza de aceleración basada en energía disponible
-    const accelerationForce = (availableEnergy * 2) / arrowMass // Simplificación de F = ma
+  function calculateDynamicFlexFactor(availableEnergy: number, arrowMass: number, staticSpine: number, effectiveDrawLength: number): number {
+    // === CONSTANTE DE CALIBRACIÓN EMPÍRICA ===
+    // Este factor ajusta la magnitud del efecto de flexión dinámica.
+    // Valor base: 10000
+    // - Aumentar este valor (ej: 12000, 15000) = REDUCE el efecto de flexión dinámica
+    //   -> Resultará en spine dinámico más cercano al estático
+    //   -> Usar si el modelo predice flechas demasiado flexibles
+    // - Disminuir este valor (ej: 8000, 6000) = AUMENTA el efecto de flexión dinámica
+    //   -> Resultará en spine dinámico más alejado del estático
+    //   -> Usar si el modelo predice flechas demasiado rígidas
+    //
+    // Para calibrar: comparar predicciones del modelo con resultados de tiro reales
+    // y ajustar iterativamente hasta que coincidan.
+    const K_DYNAMIC_FLEX_CALIBRATION = 10000
 
-    // La flexión dinámica aumenta con la fuerza de aceleración
+    // Convertir unidades a un sistema consistente:
+    // availableEnergy está en ft-lbs
+    // effectiveDrawLength está en pulgadas -> convertir a pies
+    // arrowMass está en grains
+
+    const drawLengthFt = effectiveDrawLength / 12 // Convertir pulgadas a pies
+
+    // Fuerza promedio: F = E/d (Energía / distancia)
+    // Resultado en lbs (libras-fuerza)
+    const averageForce = availableEnergy / drawLengthFt
+
+    // Aceleración: a = F/m
+    // Para unidades consistentes: convertir masa de grains a lbs
+    // 1 lb = 7000 grains
+    const arrowMassLbs = arrowMass / 7000
+
+    // Aceleración en ft/s² (pie por segundo al cuadrado)
+    // a = F/m, donde F está en lbs y m en lbs (masa)
+    // Necesitamos ajustar por gravedad: 1 lbf = 32.174 lb·ft/s²
+    const acceleration = (averageForce * 32.174) / arrowMassLbs
+
+    // La flexión dinámica aumenta con la aceleración
     // Flechas más ligeras experimentan más flexión dinámica
-    const dynamicFactor = 1 + (accelerationForce / 1000) * (1 / Math.sqrt(staticSpine))
+    // Normalizamos por el factor de calibración empírico
+    const dynamicFactor = 1 + (acceleration / K_DYNAMIC_FLEX_CALIBRATION) * (1 / Math.sqrt(staticSpine))
 
     return dynamicFactor
   }
 
   // Función para calcular spine requerido basado en paradoja del arquero
   function calculateRequiredSpine(peakForce: number, arrowLength: number): number {
+    // === CONSTANTE DE CALIBRACIÓN EMPÍRICA ===
+    // Este factor ajusta el spine requerido basado en la paradoja del arquero.
+    // Valor base: 0.5
+    // - Aumentar este valor (ej: 0.6, 0.7) = Predice spine MÁS FLEXIBLE necesario
+    //   -> Resultará en números de spine más altos (ej: 0.400 → 0.500)
+    //   -> Usar si las flechas recomendadas son demasiado rígidas en la práctica
+    // - Disminuir este valor (ej: 0.4, 0.3) = Predice spine MÁS RÍGIDO necesario
+    //   -> Resultará en números de spine más bajos (ej: 0.400 → 0.300)
+    //   -> Usar si las flechas recomendadas son demasiado flexibles en la práctica
+    //
+    // Para calibrar: comparar con tablas de fabricantes (Easton, Gold Tip, etc.)
+    // y ajustar hasta que las recomendaciones coincidan.
+    const K_SPINE_CALIBRATION = 0.5
+
     // El spine debe permitir la flexión necesaria alrededor del riser
     // Fórmula basada en la física de vigas: deflexión ∝ Force × Length³ / (3 × E × I)
-    const K_SPINE = 0.5 // Constante calibrada para arcos compuestos
 
     // Mayor fuerza pico = spine más rígido (número más bajo)
     // Mayor longitud = spine más flexible (número más alto)
-    const spineRequired = K_SPINE * Math.sqrt(arrowLength / 28) * (70 / peakForce)
+    const spineRequired = K_SPINE_CALIBRATION * Math.sqrt(arrowLength / 28) * (70 / peakForce)
 
     return spineRequired
   }
@@ -204,16 +299,21 @@ function calculateSpineMatch(
   }
 
   // Función para calcular factor de material de cuerda
-  function calculateStringMaterialFactor(stringWeights: { silencers: string, silencerDfc: string }): number {
+  function calculateStringMaterialFactor(stringWeights: { silencers: string, silencerDfc: string, stringMaterial: 'dacron' | 'fastflight' | 'unknown' }): number {
     // Dacrón = menos eficiente = -3 a -5 lbs equivalentes
     // FastFlight = más eficiente = base
-    // Usamos silencerDfc como indicador de material (Dacron通常需要silenciadores)
-    const silencerDfcWeight = toNumber(stringWeights.silencerDfc)
 
-    if (silencerDfcWeight > 0) {
-      return 0.92 // -8% eficiencia para Dacrón (equivalente a -4 lbs)
+    switch (stringWeights.stringMaterial) {
+      case 'dacron':
+        return 0.92 // -8% eficiencia para Dacrón (equivalente a -4 lbs)
+      case 'fastflight':
+        return 1.0 // Base para FastFlight
+      case 'unknown':
+      default:
+        // Mantener compatibilidad con versiones anteriores: usar silenciador como indicador
+        const silencerDfcWeight = toNumber(stringWeights.silencerDfc)
+        return silencerDfcWeight > 0 ? 0.92 : 1.0
     }
-    return 1.0 // Base para FastFlight
   }
 
   // Función para ajuste de peso de punta según tablas Easton
@@ -289,14 +389,19 @@ function calculateSpineMatch(
   const kineticEnergy = availableEnergy * transferEfficiency * stringMaterialFactor
 
   // Convertir energía cinética a velocidad: E = 0.5 × m × v²
-  const calculatedFPS = Math.sqrt((kineticEnergy * 2 * 32.174) / arrowTotalWeight) // 32.174 = g (ft/s²)
+  // K_FPS_CONVERSION = 7000 (grains/lb) * 32.174 (ft/s²) * 2 = 450436
+  const K_FPS_CONVERSION = 450436
+  const calculatedFPS = Math.sqrt((kineticEnergy * K_FPS_CONVERSION) / arrowTotalWeight)
 
   // Ajustes finos por factores adicionales
   let finalFPS = calculatedFPS
-  finalFPS += (axleToAxle - 35) * 0.5 // Arcos más largos ligeramente más eficientes
-  finalFPS -= totalStringWeight / 6 // Peso en cuerda
-  if (releaseType.includes('Pre')) {
-    finalFPS += 2 // Liberaciones pre-gate más consistentes
+  // Solo aplicar ajustes si calculatedFPS es válido
+  if (isFinite(calculatedFPS)) {
+    finalFPS += (axleToAxle - 35) * 0.5 // Arcos más largos ligeramente más eficientes
+    finalFPS -= totalStringWeight / 6 // Peso en cuerda
+    if (releaseType.includes('Pre')) {
+      finalFPS += 2 // Liberaciones pre-gate más consistentes
+    }
   }
 
   // === PARTE C: SPINE DINÁMICO REQUERIDO (SDR) ===
@@ -306,7 +411,7 @@ function calculateSpineMatch(
 
   // === PARTE D: SPINE DINÁMICO EFECTIVO (SDE) ===
   const frontMass = pointWeight + insertWeight
-  const dynamicFlexFactor = calculateDynamicFlexFactor(availableEnergy, arrowTotalWeight, staticSpine)
+  const dynamicFlexFactor = calculateDynamicFlexFactor(availableEnergy, arrowTotalWeight, staticSpine, effectiveDrawLength)
 
   // Nuevos factores adicionales
   const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
@@ -323,7 +428,8 @@ function calculateSpineMatch(
   const matchIndex = spineDynamic / spineRequired
 
   let status: SpineMatchStatus | null = null
-  if (matchIndex != null) {
+  // Validar que matchIndex sea un número válido (no NaN, no Infinity)
+  if (matchIndex != null && isFinite(matchIndex)) {
     if (matchIndex > 1.15) {
       status = 'weak'
       recommendations.push('Considera una flecha con spine más rígido (número más bajo)')
@@ -337,37 +443,47 @@ function calculateSpineMatch(
 
   // === PARTE F: ADVERTENCIAS DE SEGURIDAD MEJORADAS ===
 
-  // Advertencias críticas de seguridad para GPP
-  if (massRatio < 4) {
-    warnings.push('¡PELIGRO! Flecha muy ligera - puede dañar el arco o romperse durante el disparo')
-  } else if (massRatio < 5) {
-    warnings.push('Flecha ligera - considere aumentar el peso para mayor seguridad del arco')
+  // Advertencias críticas de seguridad para GPP (solo si massRatio es válido)
+  if (isFinite(massRatio)) {
+    if (massRatio < 4) {
+      warnings.push('¡PELIGRO! Flecha muy ligera - puede dañar el arco o romperse durante el disparo')
+    } else if (massRatio < 5) {
+      warnings.push('Flecha ligera - considere aumentar el peso para mayor seguridad del arco')
+    }
   }
 
-  // Advertencias de spine extremo
-  if (matchIndex > 1.3) {
-    warnings.push('¡PELIGRO! Flecha demasiado flexible - riesgo de fractura y daño al arco')
-  } else if (matchIndex < 0.7) {
-    warnings.push('Flecha excesivamente rígida - puede causar vuelo errático y golpes en el arco')
+  // Advertencias de spine extremo (solo si matchIndex es válido)
+  if (isFinite(matchIndex)) {
+    if (matchIndex > 1.3) {
+      warnings.push('¡PELIGRO! Flecha demasiado flexible - riesgo de fractura y daño al arco')
+    } else if (matchIndex < 0.7) {
+      warnings.push('Flecha excesivamente rígida - puede causar vuelo errático y golpes en el arco')
+    }
   }
 
-  // Advertencias de velocidad extrema
-  if (finalFPS > 340) {
-    warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
+  // Advertencias de velocidad extrema (solo si finalFPS es válido)
+  if (isFinite(finalFPS)) {
+    if (finalFPS > 340) {
+      warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
+    }
   }
 
-  // Recomendaciones adicionales basadas en física
-  if (finalFPS < 280) {
-    recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
-  } else if (finalFPS > 320) {
-    recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
+  // Recomendaciones adicionales basadas en física (solo si finalFPS es válido)
+  if (isFinite(finalFPS)) {
+    if (finalFPS < 280) {
+      recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
+    } else if (finalFPS > 320) {
+      recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
+    }
   }
 
-  // Recomendaciones de eficiencia
-  if (massRatio < 5) {
-    recommendations.push('La flecha es muy ligera para la potencia. Considera aumentar el peso para mejor eficiencia.')
-  } else if (massRatio > 8) {
-    recommendations.push('La flecha es muy pesada para la potencia. Considera reducir el peso para mejor velocidad.')
+  // Recomendaciones de eficiencia (solo si massRatio es válido)
+  if (isFinite(massRatio)) {
+    if (massRatio < 5) {
+      recommendations.push('La flecha es muy ligera para la potencia. Considera aumentar el peso para mejor eficiencia.')
+    } else if (massRatio > 8) {
+      recommendations.push('La flecha es muy pesada para la potencia. Considera reducir el peso para mejor velocidad.')
+    }
   }
 
   // Recomendaciones de casos límite (Hattila)
@@ -377,12 +493,12 @@ function calculateSpineMatch(
   }
 
   return {
-    spineRequired,
-    spineDynamic,
-    matchIndex,
+    spineRequired: isFinite(spineRequired) ? spineRequired : null,
+    spineDynamic: isFinite(spineDynamic) ? spineDynamic : null,
+    matchIndex: isFinite(matchIndex) ? matchIndex : null,
     status,
     arrowTotalWeight,
-    calculatedFPS: finalFPS,
+    calculatedFPS: isFinite(finalFPS) ? finalFPS : null,
     recommendations,
     warnings,
   }
@@ -419,6 +535,7 @@ function App() {
     silencers: '',
     silencerDfc: '',
     releaseType: 'Post Gate Release',
+    stringMaterial: 'unknown' as 'dacron' | 'fastflight' | 'unknown',
   })
 
   const spineMatch = useMemo(
@@ -474,6 +591,7 @@ function App() {
       silencers: '',
       silencerDfc: '',
       releaseType: 'Post Gate Release',
+      stringMaterial: 'unknown',
     })
   }
 
@@ -732,7 +850,7 @@ function App() {
 
             <div className="flex items-center justify-between gap-3 mb-2 text-sm">
               <label htmlFor="iboVelocity" className="whitespace-nowrap">
-                {t('field.iboVelocity')}
+                {t('field.iboVelocity')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -748,7 +866,7 @@ function App() {
 
             <div className="flex items-center justify-between gap-3 mb-2 text-sm">
               <label htmlFor="drawLength" className="whitespace-nowrap">
-                {t('field.drawLength')}
+                {t('field.drawLength')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -764,7 +882,7 @@ function App() {
 
             <div className="flex items-center justify-between gap-3 mb-2 text-sm">
               <label htmlFor="drawWeight" className="whitespace-nowrap">
-                {t('field.drawWeight')}
+                {t('field.drawWeight')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -780,7 +898,7 @@ function App() {
 
             <div className="flex items-center justify-between gap-3 mb-2 text-sm">
               <label htmlFor="braceHeight" className="whitespace-nowrap">
-                {t('field.braceHeight')}
+                {t('field.braceHeight')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -867,7 +985,7 @@ function App() {
 
             <div className="flex items-center justify-between gap-3 mb-2 text-sm">
               <label htmlFor="shaftLength" className="whitespace-nowrap">
-                {t('field.shaftLength')}
+                {t('field.shaftLength')} <span className="text-red-400">*</span>
               </label>
               <input
                 className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -977,8 +1095,16 @@ function App() {
             </div>
 
             <div className="flex items-center justify-between gap-3 mb-2 text-sm">
-              <label htmlFor="staticSpine" className="whitespace-nowrap">
-                {t('field.staticSpine')}
+              <label htmlFor="staticSpine" className="whitespace-nowrap flex items-center gap-1">
+                <span>{t('field.staticSpine')} <span className="text-red-400">*</span></span>
+                <div className="relative inline-block group">
+                  <span className="cursor-help inline-flex items-center justify-center w-4 h-4 text-xs rounded-full border border-slate-500 text-slate-400 hover:border-sky-400 hover:text-sky-400 transition-colors">
+                    ?
+                  </span>
+                  <div className="absolute left-0 top-6 z-50 invisible group-hover:visible w-80 max-w-sm p-3 text-xs leading-relaxed text-slate-200 bg-slate-800 border border-slate-600 rounded-lg shadow-xl whitespace-normal">
+                    {t('field.staticSpine.tooltip')}
+                  </div>
+                </div>
               </label>
               <input
                 className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -1100,6 +1226,27 @@ function App() {
               >
                 <option value="Post Gate Release">{t('option.release.post')}</option>
                 <option value="Pre Gate Release">{t('option.release.pre')}</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mb-1 text-sm">
+              <label htmlFor="stringMaterial" className="whitespace-nowrap">
+                {t('field.stringMaterial')}
+              </label>
+              <select
+                className="w-32 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+                id="stringMaterial"
+                value={stringWeights.stringMaterial}
+                onChange={(e) =>
+                  setStringWeights({
+                    ...stringWeights,
+                    stringMaterial: e.target.value as 'dacron' | 'fastflight' | 'unknown',
+                  })
+                }
+              >
+                <option value="unknown">{t('option.stringMaterial.unknown')}</option>
+                <option value="fastflight">{t('option.stringMaterial.fastflight')}</option>
+                <option value="dacron">{t('option.stringMaterial.dacron')}</option>
               </select>
             </div>
           </section>
