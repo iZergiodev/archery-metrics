@@ -150,14 +150,8 @@ function calculateSpineMatch(
     return dynamicFactor
   }
 
-  // Función para calcular offset de center-shot
-  function getCenterShotOffset(): number {
-    // Valor típico para arcos compuestos modernos: 0.75"
-    return 0.75 // en pulgadas
-  }
-
   // Función para calcular spine requerido basado en paradoja del arquero
-  function calculateRequiredSpine(peakForce: number, requiredFlex: number, arrowLength: number): number {
+  function calculateRequiredSpine(peakForce: number, arrowLength: number): number {
     // El spine debe permitir la flexión necesaria alrededor del riser
     // Fórmula basada en la física de vigas: deflexión ∝ Force × Length³ / (3 × E × I)
     const K_SPINE = 0.5 // Constante calibrada para arcos compuestos
@@ -167,6 +161,95 @@ function calculateSpineMatch(
     const spineRequired = K_SPINE * Math.sqrt(arrowLength / 28) * (70 / peakForce)
 
     return spineRequired
+  }
+
+  // Función para calcular factor de emplumado
+  function calculateFletchingFactor(fletchQuantity: number, weightEach: number): number {
+    // Más plumas = más estabilidad = menos flexión necesaria
+    // Plumas más pesadas = más drag = más fuerza en punta = más flexión
+    const baseFactor = 1.0
+
+    // Factor por cantidad de plumas (3-4 es estándar)
+    const quantityFactor = (fletchQuantity - 3) * 0.02
+
+    // Factor por peso de plumas (más peso = más estabilización)
+    const weightFactor = (weightEach - 8) * 0.005
+
+    return baseFactor - quantityFactor - weightFactor
+  }
+
+  // Función para calcular factor de método de suelta
+  function calculateReleaseFactor(releaseType: string): number {
+    // Liberaciones manuales = más inconsistencia = más flexión necesaria
+    // Liberaciones mecánicas = más consistentes = menos flexión
+    if (releaseType.toLowerCase().includes('manual') || releaseType.toLowerCase().includes('fingers')) {
+      return 1.12 // 12% más flexión para sueltas manuales
+    } else if (releaseType.toLowerCase().includes('pre')) {
+      return 0.95 // Pre-gate son muy consistentes
+    }
+    return 1.0 // Base para liberaciones mecánicas estándar
+  }
+
+  // Función para aplicar márgenes de seguridad
+  function applySafetyMargin(spineRequired: number, massRatio: number): number {
+    // Flechas muy ligeras necesitan más margen de seguridad
+    if (massRatio < 4) {
+      return spineRequired * 0.85 // 15% más rígido para seguridad
+    } else if (massRatio < 5) {
+      return spineRequired * 0.90 // 10% más rígido
+    } else if (massRatio > 8) {
+      return spineRequired * 0.95 // 5% más rígido para flechas pesadas
+    }
+    return spineRequired // Sin margen para rango óptimo
+  }
+
+  // Función para calcular factor de material de cuerda
+  function calculateStringMaterialFactor(stringWeights: { silencers: string, silencerDfc: string }): number {
+    // Dacrón = menos eficiente = -3 a -5 lbs equivalentes
+    // FastFlight = más eficiente = base
+    // Usamos silencerDfc como indicador de material (Dacron通常需要silenciadores)
+    const silencerDfcWeight = toNumber(stringWeights.silencerDfc)
+
+    if (silencerDfcWeight > 0) {
+      return 0.92 // -8% eficiencia para Dacrón (equivalente a -4 lbs)
+    }
+    return 1.0 // Base para FastFlight
+  }
+
+  // Función para ajuste de peso de punta según tablas Easton
+  function calculatePointWeightAdjustment(pointWeight: number): number {
+    // Easton: +3 lbs por cada 25 grains sobre 100 grains
+    if (pointWeight > 100) {
+      const extraGrains = pointWeight - 100
+      const increments25 = Math.floor(extraGrains / 25)
+      return increments25 * 3 // +3 lbs equivalentes por cada 25 grains
+    }
+    return 0 // Sin ajuste para puntas ≤ 100 grains
+  }
+
+  // Función para calcular factor de wrap (vinilo decorativo)
+  function calculateWrapFactor(wrapWeight: number): number {
+    // Wrap añade peso y rigidez local
+    // Más peso = más estabilización = menos flexión necesaria
+    if (wrapWeight > 0) {
+      return 0.98 // -2% flexión para wraps
+    }
+    return 1.0
+  }
+
+  // Función para calcular apertura efectiva según Hattila
+  function calculateEffectiveDrawLength(drawLength: number): number {
+    // Hattila: redondear hacia abajo para evitar tubo demasiado rígido
+    return Math.floor(drawLength)
+  }
+
+  // Función para obtener recomendaciones de casos límite
+  function getEdgeCaseRecommendation(drawWeight: number): string {
+    // Si potencia está entre rangos (ej: 34.5 lbs entre 30/34 y 35/39)
+    if (drawWeight % 10 > 4 && drawWeight % 10 < 6) {
+      return "Considerar spine más rígido si planea aumentar potencia en el futuro"
+    }
+    return "Spine recomendado para configuración actual"
   }
 
   // Función para calcular eficiencia de transferencia de masa
@@ -190,13 +273,20 @@ function calculateSpineMatch(
   // --- 4. NUESTRO MOTOR DE CÁLCULO FÍSICO MEJORADO ---
 
   // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
-  const storedEnergy = calculateStoredEnergy(drawWeight, drawLength, braceHeight)
+  const effectiveDrawLength = calculateEffectiveDrawLength(drawLength)
+  const storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight)
   const bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity)
   const availableEnergy = storedEnergy * bowEfficiency
 
   // === PARTE B: CÁLCULO DE VELOCIDAD BASADO EN ENERGÍA ===
   const transferEfficiency = calculateTransferEfficiency(arrowTotalWeight, drawWeight)
-  const kineticEnergy = availableEnergy * transferEfficiency
+  const stringMaterialFactor = calculateStringMaterialFactor(stringWeights)
+  const pointWeightAdjustment = calculatePointWeightAdjustment(pointWeight)
+
+  // Ajustar drawWeight efectivo según tablas Easton
+  const effectiveDrawWeight = drawWeight + pointWeightAdjustment
+
+  const kineticEnergy = availableEnergy * transferEfficiency * stringMaterialFactor
 
   // Convertir energía cinética a velocidad: E = 0.5 × m × v²
   const calculatedFPS = Math.sqrt((kineticEnergy * 2 * 32.174) / arrowTotalWeight) // 32.174 = g (ft/s²)
@@ -210,18 +300,24 @@ function calculateSpineMatch(
   }
 
   // === PARTE C: SPINE DINÁMICO REQUERIDO (SDR) ===
-  const centerShotOffset = getCenterShotOffset()
-  const spineRequired = calculateRequiredSpine(drawWeight, centerShotOffset, shaftLength)
+  const massRatio = arrowTotalWeight / effectiveDrawWeight
+  const spineRequiredBase = calculateRequiredSpine(effectiveDrawWeight, shaftLength)
+  const spineRequired = applySafetyMargin(spineRequiredBase, massRatio)
 
   // === PARTE D: SPINE DINÁMICO EFECTIVO (SDE) ===
   const frontMass = pointWeight + insertWeight
   const dynamicFlexFactor = calculateDynamicFlexFactor(availableEnergy, arrowTotalWeight, staticSpine)
 
+  // Nuevos factores adicionales
+  const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
+  const releaseFactor = calculateReleaseFactor(releaseType)
+  const wrapFactor = calculateWrapFactor(wrapWeight)
+
   // Factores geométricos
   const lengthFactor = Math.pow(shaftLength / 28, 2)
   const massFactor = 1 + (frontMass - 100) * 0.002
 
-  const spineDynamic = staticSpine * lengthFactor * massFactor * dynamicFlexFactor
+  const spineDynamic = staticSpine * lengthFactor * massFactor * dynamicFlexFactor * fletchingFactor * releaseFactor * wrapFactor
 
   // === PARTE E: COMPARACIÓN Y RESULTADO ===
   const matchIndex = spineDynamic / spineRequired
@@ -239,7 +335,28 @@ function calculateSpineMatch(
     }
   }
 
-  // Generar recomendaciones adicionales basadas en física
+  // === PARTE F: ADVERTENCIAS DE SEGURIDAD MEJORADAS ===
+
+  // Advertencias críticas de seguridad para GPP
+  if (massRatio < 4) {
+    warnings.push('¡PELIGRO! Flecha muy ligera - puede dañar el arco o romperse durante el disparo')
+  } else if (massRatio < 5) {
+    warnings.push('Flecha ligera - considere aumentar el peso para mayor seguridad del arco')
+  }
+
+  // Advertencias de spine extremo
+  if (matchIndex > 1.3) {
+    warnings.push('¡PELIGRO! Flecha demasiado flexible - riesgo de fractura y daño al arco')
+  } else if (matchIndex < 0.7) {
+    warnings.push('Flecha excesivamente rígida - puede causar vuelo errático y golpes en el arco')
+  }
+
+  // Advertencias de velocidad extrema
+  if (finalFPS > 340) {
+    warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
+  }
+
+  // Recomendaciones adicionales basadas en física
   if (finalFPS < 280) {
     recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
   } else if (finalFPS > 320) {
@@ -247,11 +364,16 @@ function calculateSpineMatch(
   }
 
   // Recomendaciones de eficiencia
-  const massRatio = arrowTotalWeight / drawWeight
-  if (massRatio < 4) {
+  if (massRatio < 5) {
     recommendations.push('La flecha es muy ligera para la potencia. Considera aumentar el peso para mejor eficiencia.')
   } else if (massRatio > 8) {
     recommendations.push('La flecha es muy pesada para la potencia. Considera reducir el peso para mejor velocidad.')
+  }
+
+  // Recomendaciones de casos límite (Hattila)
+  const edgeCaseRecommendation = getEdgeCaseRecommendation(drawWeight)
+  if (edgeCaseRecommendation !== "Spine recomendado para configuración actual") {
+    recommendations.push(edgeCaseRecommendation)
   }
 
   return {
