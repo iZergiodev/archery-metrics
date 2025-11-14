@@ -112,63 +112,118 @@ function calculateSpineMatch(
   // Peso total en la cuerda (Total String Weight - TSW)
   const totalStringWeight = peepWeight + dLoopWeight + nockPointWeight + silencersWeight + silencerDfcWeight
 
-  // --- 3. NUESTRO MOTOR DE CÁLCULO MEJORADO ---
+  // --- 3. MODELOS FÍSICOS MEJORADOS ---
 
-  // === PARTE A: CALCULAR VELOCIDAD DE SALIDA REAL (calculatedFPS) ===
-  let calculatedFPS = iboVelocity
-
-  // Ajuste por Potencia (Draw Weight): +/- 1.5 FPS por cada libra
-  calculatedFPS += (drawWeight - 70) * 1.5
-
-  // Ajuste por Apertura (Draw Length): +/- 10 FPS por cada pulgada
-  calculatedFPS += (drawLength - 30) * 10
-
-  // Ajuste por Brace Height: +/- 10 FPS por cada pulgada (7" es la base)
-  calculatedFPS += (7 - braceHeight) * 10
-
-  // Ajuste por Axle to Axle: Arcos más largos son ligeramente más eficientes
-  // 35" es la base, cada pulgada extra añade ~0.5 FPS
-  if (axleToAxle > 0) {
-    calculatedFPS += (axleToAxle - 35) * 0.5
+  // Función para calcular energía almacenada basada en curva fuerza-apertura
+  function calculateStoredEnergy(drawWeight: number, drawLength: number, braceHeight: number): number {
+    // Modelo simplificado de curva fuerza-apertura para arco compuesto
+    // La energía es el área bajo la curva: ~0.85 × drawWeight × drawLength para compuestos
+    const powerStroke = drawLength - braceHeight
+    const forceDrawRatio = 0.85 // Ratio típico para arcos compuestos
+    const storedEnergy = drawWeight * powerStroke * forceDrawRatio
+    return storedEnergy // en foot-pounds
   }
 
-  // Ajuste por Peso en Cuerda (TSW): -1 FPS por cada 6 grains
-  calculatedFPS -= totalStringWeight / 6
+  // Función para calcular eficiencia del arco
+  function calculateBowEfficiency(braceHeight: number, iboVelocity: number): number {
+    // Eficiencia base: 0.75-0.85 para arcos compuestos modernos
+    let efficiency = 0.80
 
-  // Ajuste por Peso de Flecha (TAW):
-  const gppBase = drawWeight * 5
-  const weightDiff = arrowTotalWeight - gppBase
-  calculatedFPS -= weightDiff / 3
+    // Brace height más largo = mayor eficiencia
+    efficiency += (braceHeight - 7) * 0.01
 
-  // Factor de corrección por tipo de liberación
+    // IBO más alto = mejor diseño de levas = mayor eficiencia
+    efficiency += (iboVelocity - 330) * 0.0001
+
+    return Math.max(0.70, Math.min(0.90, efficiency))
+  }
+
+  // Función para calcular factor de flexión dinámica
+  function calculateDynamicFlexFactor(availableEnergy: number, arrowMass: number, staticSpine: number): number {
+    // Fuerza de aceleración basada en energía disponible
+    const accelerationForce = (availableEnergy * 2) / arrowMass // Simplificación de F = ma
+
+    // La flexión dinámica aumenta con la fuerza de aceleración
+    // Flechas más ligeras experimentan más flexión dinámica
+    const dynamicFactor = 1 + (accelerationForce / 1000) * (1 / Math.sqrt(staticSpine))
+
+    return dynamicFactor
+  }
+
+  // Función para calcular offset de center-shot
+  function getCenterShotOffset(): number {
+    // Valor típico para arcos compuestos modernos: 0.75"
+    return 0.75 // en pulgadas
+  }
+
+  // Función para calcular spine requerido basado en paradoja del arquero
+  function calculateRequiredSpine(peakForce: number, requiredFlex: number, arrowLength: number): number {
+    // El spine debe permitir la flexión necesaria alrededor del riser
+    // Fórmula basada en la física de vigas: deflexión ∝ Force × Length³ / (3 × E × I)
+    const K_SPINE = 0.5 // Constante calibrada para arcos compuestos
+
+    // Mayor fuerza pico = spine más rígido (número más bajo)
+    // Mayor longitud = spine más flexible (número más alto)
+    const spineRequired = K_SPINE * Math.sqrt(arrowLength / 28) * (70 / peakForce)
+
+    return spineRequired
+  }
+
+  // Función para calcular eficiencia de transferencia de masa
+  function calculateTransferEfficiency(arrowMass: number, drawWeight: number): number {
+    // Relación masa/potencia óptima: 5-8 grains por libra
+    const massRatio = arrowMass / drawWeight
+
+    let efficiency = 1.0
+
+    if (massRatio < 4) {
+      efficiency = 0.85 // Flecha muy ligera = menor eficiencia
+    } else if (massRatio > 8) {
+      efficiency = 0.90 // Flecha muy pesada = menor eficiencia
+    } else {
+      efficiency = 0.95 // Rango óptimo
+    }
+
+    return efficiency
+  }
+
+  // --- 4. NUESTRO MOTOR DE CÁLCULO FÍSICO MEJORADO ---
+
+  // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
+  const storedEnergy = calculateStoredEnergy(drawWeight, drawLength, braceHeight)
+  const bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity)
+  const availableEnergy = storedEnergy * bowEfficiency
+
+  // === PARTE B: CÁLCULO DE VELOCIDAD BASADO EN ENERGÍA ===
+  const transferEfficiency = calculateTransferEfficiency(arrowTotalWeight, drawWeight)
+  const kineticEnergy = availableEnergy * transferEfficiency
+
+  // Convertir energía cinética a velocidad: E = 0.5 × m × v²
+  const calculatedFPS = Math.sqrt((kineticEnergy * 2 * 32.174) / arrowTotalWeight) // 32.174 = g (ft/s²)
+
+  // Ajustes finos por factores adicionales
+  let finalFPS = calculatedFPS
+  finalFPS += (axleToAxle - 35) * 0.5 // Arcos más largos ligeramente más eficientes
+  finalFPS -= totalStringWeight / 6 // Peso en cuerda
   if (releaseType.includes('Pre')) {
-    calculatedFPS += 2 // Las liberaciones pre-gate suelen ser ligeramente más consistentes
+    finalFPS += 2 // Liberaciones pre-gate más consistentes
   }
 
-  // === PARTE B: CALCULAR SPINE DINÁMICO REQUERIDO (SDR) ===
-  // El spine requerido depende de la potencia pico que la flecha debe soportar
-  const effectiveWeight = drawWeight
-  const BPI = effectiveWeight * (calculatedFPS / 250)
+  // === PARTE C: SPINE DINÁMICO REQUERIDO (SDR) ===
+  const centerShotOffset = getCenterShotOffset()
+  const spineRequired = calculateRequiredSpine(drawWeight, centerShotOffset, shaftLength)
 
-  // K_REQ ajustado para mayor precisión
-  const K_REQ = 25
-  const spineRequired = K_REQ / BPI
-
-  // === PARTE C: CALCULAR SPINE DINÁMICO EFECTIVO (SDE) ===
+  // === PARTE D: SPINE DINÁMICO EFECTIVO (SDE) ===
   const frontMass = pointWeight + insertWeight
+  const dynamicFlexFactor = calculateDynamicFlexFactor(availableEnergy, arrowTotalWeight, staticSpine)
 
-  // Factor de Longitud mejorado (cuadrático)
-  const F_len = Math.pow(shaftLength / 28, 2)
+  // Factores geométricos
+  const lengthFactor = Math.pow(shaftLength / 28, 2)
+  const massFactor = 1 + (frontMass - 100) * 0.002
 
-  // Factor de Masa Frontal mejorado
-  const F_front = 1 + (frontMass - 100) * 0.002
+  const spineDynamic = staticSpine * lengthFactor * massFactor * dynamicFlexFactor
 
-  // Eliminado F_weight para evitar doble contabilización 
-  // (el peso ya se considera en el cálculo de velocidad)
-
-  const spineDynamic = staticSpine * F_len * F_front
-
-  // === PARTE D: COMPARACIÓN Y RESULTADO ===
+  // === PARTE E: COMPARACIÓN Y RESULTADO ===
   const matchIndex = spineDynamic / spineRequired
 
   let status: SpineMatchStatus | null = null
@@ -184,11 +239,19 @@ function calculateSpineMatch(
     }
   }
 
-  // Generar recomendaciones adicionales
-  if (calculatedFPS < 280) {
-    recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o aumentar la potencia.')
-  } else if (calculatedFPS > 320) {
-    recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejarla.')
+  // Generar recomendaciones adicionales basadas en física
+  if (finalFPS < 280) {
+    recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
+  } else if (finalFPS > 320) {
+    recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
+  }
+
+  // Recomendaciones de eficiencia
+  const massRatio = arrowTotalWeight / drawWeight
+  if (massRatio < 4) {
+    recommendations.push('La flecha es muy ligera para la potencia. Considera aumentar el peso para mejor eficiencia.')
+  } else if (massRatio > 8) {
+    recommendations.push('La flecha es muy pesada para la potencia. Considera reducir el peso para mejor velocidad.')
   }
 
   return {
@@ -197,7 +260,7 @@ function calculateSpineMatch(
     matchIndex,
     status,
     arrowTotalWeight,
-    calculatedFPS,
+    calculatedFPS: finalFPS,
     recommendations,
     warnings,
   }
