@@ -14,7 +14,7 @@ type SpineMatchResult = {
   warnings: string[]
 }
 
-function calculateSpineMatch(
+export function calculateSpineMatch(
   bow: {
     drawWeight: string
     drawLength: string
@@ -71,6 +71,8 @@ function calculateSpineMatch(
   const toNumber = (value: string) =>
     value.trim() === '' ? 0 : Number(value.replace(',', '.'))
 
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
   const recommendations: string[] = []
   const warnings: string[] = []
 
@@ -87,6 +89,7 @@ function calculateSpineMatch(
   const iboVelocity = toNumber(bow.iboVelocity)
   const braceHeight = toNumber(bow.braceHeight)
   const axleToAxle = toNumber(bow.axleToAxle)
+  const percentLetoff = toNumber(bow.percentLetoff)
 
   // Especificaciones de la Flecha
   const shaftLength = toNumber(arrow.shaftLength)
@@ -164,11 +167,15 @@ function calculateSpineMatch(
   // --- 3. MODELOS FÍSICOS MEJORADOS ---
 
   // Función para calcular energía almacenada basada en curva fuerza-apertura
-  function calculateStoredEnergy(drawWeight: number, drawLength: number, braceHeight: number): number {
+  function calculateStoredEnergy(drawWeight: number, drawLength: number, braceHeight: number, percentLetoff: number): number {
     // Modelo simplificado de curva fuerza-apertura para arco compuesto
     // La energía es el área bajo la curva: ~0.85 × drawWeight × drawLength para compuestos
+    // El let-off reduce el tramo final de la curva, por lo que lo modelamos como un
+    // factor que atenúa el área total (mayor let-off ⇒ menos energía almacenada).
     const powerStroke = drawLength - braceHeight
-    const forceDrawRatio = 0.85 // Ratio típico para arcos compuestos
+    const forceDrawRatioBase = 0.85
+    const letOffRatio = clamp(1 - (percentLetoff / 100) * 0.35, 0.7, 1.05)
+    const forceDrawRatio = forceDrawRatioBase * letOffRatio
     const storedEnergyInInchLbs = drawWeight * powerStroke * forceDrawRatio
     return storedEnergyInInchLbs / 12 // Convertir a foot-pounds
   }
@@ -190,18 +197,9 @@ function calculateSpineMatch(
   // Función para calcular factor de flexión dinámica
   function calculateDynamicFlexFactor(availableEnergy: number, arrowMass: number, staticSpine: number, effectiveDrawLength: number): number {
     // === CONSTANTE DE CALIBRACIÓN EMPÍRICA ===
-    // Este factor ajusta la magnitud del efecto de flexión dinámica.
-    // Valor base: 10000
-    // - Aumentar este valor (ej: 12000, 15000) = REDUCE el efecto de flexión dinámica
-    //   -> Resultará en spine dinámico más cercano al estático
-    //   -> Usar si el modelo predice flechas demasiado flexibles
-    // - Disminuir este valor (ej: 8000, 6000) = AUMENTA el efecto de flexión dinámica
-    //   -> Resultará en spine dinámico más alejado del estático
-    //   -> Usar si el modelo predice flechas demasiado rígidas
-    //
-    // Para calibrar: comparar predicciones del modelo con resultados de tiro reales
-    // y ajustar iterativamente hasta que coincidan.
-    const K_DYNAMIC_FLEX_CALIBRATION = 10000
+    // Mantener este valor alto reduce la agresividad del ajuste.
+    // Valor base recalibrado: 120000 (aprox. 6x mayor que aceleración media típica)
+    const K_DYNAMIC_FLEX_CALIBRATION = 120000
 
     // Convertir unidades a un sistema consistente:
     // availableEnergy está en ft-lbs
@@ -224,19 +222,20 @@ function calculateSpineMatch(
     // Necesitamos ajustar por gravedad: 1 lbf = 32.174 lb·ft/s²
     const acceleration = (averageForce * 32.174) / arrowMassLbs
 
-    // La flexión dinámica aumenta con la aceleración
-    // Flechas más ligeras experimentan más flexión dinámica
-    // Normalizamos por el factor de calibración empírico
-    const dynamicFactor = 1 + (acceleration / K_DYNAMIC_FLEX_CALIBRATION) * (1 / Math.sqrt(staticSpine))
+    const normalizedAcceleration = acceleration / K_DYNAMIC_FLEX_CALIBRATION
+    const spineSensitivity = 1 / Math.max(0.001, Math.sqrt(staticSpine))
 
-    return dynamicFactor
+    // Limitar el resultado para evitar valores extremos cuando falten datos
+    const dynamicFactor = 1 + normalizedAcceleration * 0.6 * spineSensitivity
+
+    return clamp(dynamicFactor, 0.9, 1.35)
   }
 
   // Función para calcular spine requerido basado en paradoja del arquero
   function calculateRequiredSpine(peakForce: number, arrowLength: number): number {
     // === CONSTANTE DE CALIBRACIÓN EMPÍRICA ===
     // Este factor ajusta el spine requerido basado en la paradoja del arquero.
-    // Valor base: 0.5
+    // Valor base recalibrado: 0.34 (alineado con tablas de fabricantes para 70# @ 28")
     // - Aumentar este valor (ej: 0.6, 0.7) = Predice spine MÁS FLEXIBLE necesario
     //   -> Resultará en números de spine más altos (ej: 0.400 → 0.500)
     //   -> Usar si las flechas recomendadas son demasiado rígidas en la práctica
@@ -246,7 +245,7 @@ function calculateSpineMatch(
     //
     // Para calibrar: comparar con tablas de fabricantes (Easton, Gold Tip, etc.)
     // y ajustar hasta que las recomendaciones coincidan.
-    const K_SPINE_CALIBRATION = 0.5
+    const K_SPINE_CALIBRATION = 0.34
 
     // El spine debe permitir la flexión necesaria alrededor del riser
     // Fórmula basada en la física de vigas: deflexión ∝ Force × Length³ / (3 × E × I)
@@ -289,11 +288,11 @@ function calculateSpineMatch(
   function applySafetyMargin(spineRequired: number, massRatio: number): number {
     // Flechas muy ligeras necesitan más margen de seguridad
     if (massRatio < 4) {
-      return spineRequired * 0.85 // 15% más rígido para seguridad
+      return spineRequired * 0.94 // 6% más rígido para seguridad
     } else if (massRatio < 5) {
-      return spineRequired * 0.90 // 10% más rígido
+      return spineRequired * 0.97 // 3% más rígido
     } else if (massRatio > 8) {
-      return spineRequired * 0.95 // 5% más rígido para flechas pesadas
+      return spineRequired * 1.02 // Permitir ligera flexión en configuraciones muy pesadas
     }
     return spineRequired // Sin margen para rango óptimo
   }
@@ -374,7 +373,7 @@ function calculateSpineMatch(
 
   // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
   const effectiveDrawLength = calculateEffectiveDrawLength(drawLength)
-  const storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight)
+  const storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight, percentLetoff)
   const bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity)
   const availableEnergy = storedEnergy * bowEfficiency
 
@@ -419,8 +418,10 @@ function calculateSpineMatch(
   const wrapFactor = calculateWrapFactor(wrapWeight)
 
   // Factores geométricos
-  const lengthFactor = Math.pow(shaftLength / 28, 2)
-  const massFactor = 1 + (frontMass - 100) * 0.002
+  const lengthRatio = shaftLength / 28
+  const lengthFactor = clamp(lengthRatio * lengthRatio, 0.9, 1.15)
+  const frontMassDelta = frontMass - 100
+  const massFactor = 1 + clamp((frontMassDelta / 50) * 0.03, -0.08, 0.08)
 
   const spineDynamic = staticSpine * lengthFactor * massFactor * dynamicFlexFactor * fletchingFactor * releaseFactor * wrapFactor
 
