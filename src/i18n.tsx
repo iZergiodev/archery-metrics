@@ -22,6 +22,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.braceHeight': 'Altura del brazo',
         'field.axleToAxle': 'Eje a eje',
         'field.percentLetoff': 'Porcentaje de liberación',
+        'field.camAggressiveness': 'Agresividad de poleas',
 
         'field.pointWeight': 'Peso de la punta',
         'field.insertWeight': 'Peso del inserto',
@@ -47,6 +48,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'summary.spineDynamic': 'Rigidez dinámica (spine)',
         'summary.match': 'Emparejamiento',
         'summary.arrowWeight': 'Peso de la flecha',
+        'summary.foc': 'FOC (Front of Center)',
 
         'match.weak': 'Débil (flecha blanda)',
         'match.good': 'Bueno',
@@ -58,6 +60,10 @@ const translations: Record<Lang, Record<string, string>> = {
         'option.stringMaterial.dacron': 'Dacrón',
         'option.stringMaterial.fastflight': 'FastFlight',
         'option.stringMaterial.unknown': 'Desconocido',
+
+        'option.cam.soft': 'Suave (Round)',
+        'option.cam.medium': 'Media (Hybrid/Single)',
+        'option.cam.hard': 'Dura (Turbo/Speed)',
     },
     en: {
         'app.title': 'Archery Setup',
@@ -72,6 +78,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.braceHeight': 'Brace Height',
         'field.axleToAxle': 'Axle To Axle',
         'field.percentLetoff': 'Percent Letoff',
+        'field.camAggressiveness': 'Cam Aggressiveness',
 
         'field.pointWeight': 'Point Weight',
         'field.insertWeight': 'Insert Weight',
@@ -97,6 +104,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'summary.spineDynamic': 'Dynamic spine',
         'summary.match': 'Match',
         'summary.arrowWeight': 'Arrow weight',
+        'summary.foc': 'FOC (Front of Center)',
 
         'match.weak': 'Weak (soft arrow)',
         'match.good': 'Good',
@@ -108,6 +116,10 @@ const translations: Record<Lang, Record<string, string>> = {
         'option.stringMaterial.dacron': 'Dacron',
         'option.stringMaterial.fastflight': 'FastFlight',
         'option.stringMaterial.unknown': 'Unknown',
+
+        'option.cam.soft': 'Soft (Round)',
+        'option.cam.medium': 'Medium (Hybrid/Single)',
+        'option.cam.hard': 'Hard (Turbo/Speed)',
     },
 }
 
