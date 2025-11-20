@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateSpineMatch } from './App'
+import { calculateSpineMatch } from './utils/archeryCalculator'
 
 const baseBow = {
     iboVelocity: '335',
