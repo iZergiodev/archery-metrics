@@ -1,6 +1,5 @@
 import {
     K_SPINE_CALIBRATION,
-    K_DYNAMIC_FLEX_CALIBRATION,
     K_FPS_CONVERSION,
     CAM_EFFICIENCY
 } from '../constants'
@@ -78,7 +77,7 @@ function calculateStoredEnergy(
 }
 
 // Función para calcular eficiencia del arco
-function calculateBowEfficiency(braceHeight: number, iboVelocity: number): number {
+function calculateBowEfficiency(braceHeight: number, iboVelocity: number, drawLength: number): number {
     // Eficiencia base: 0.75-0.85 para arcos compuestos modernos
     let efficiency = 0.80
 
@@ -88,32 +87,15 @@ function calculateBowEfficiency(braceHeight: number, iboVelocity: number): numbe
     // IBO más alto = mejor diseño de levas = mayor eficiencia
     efficiency += (iboVelocity - 330) * 0.0001
 
+    // Draw length largo (>30") = mayor tiempo de aceleración = mayor eficiencia
+    if (drawLength > 30) {
+        efficiency += (drawLength - 30) * 0.02
+    }
+
     return Math.max(0.70, Math.min(0.90, efficiency))
 }
 
-// Función para calcular factor de flexión dinámica
-function calculateDynamicFlexFactor(availableEnergy: number, arrowMass: number, staticSpine: number, effectiveDrawLength: number): number {
-    const drawLengthFt = effectiveDrawLength / 12 // Convertir pulgadas a pies
 
-    // Fuerza promedio: F = E/d (Energía / distancia)
-    const averageForce = availableEnergy / drawLengthFt
-
-    // Aceleración: a = F/m
-    // 1 lb = 7000 grains
-    const arrowMassLbs = arrowMass / 7000
-
-    // Aceleración en ft/s²
-    // 1 lbf = 32.174 lb·ft/s²
-    const acceleration = (averageForce * 32.174) / arrowMassLbs
-
-    const normalizedAcceleration = acceleration / K_DYNAMIC_FLEX_CALIBRATION
-    const spineSensitivity = 1 / Math.max(0.001, Math.sqrt(staticSpine))
-
-    // Limitar el resultado para evitar valores extremos cuando falten datos
-    const dynamicFactor = 1 + normalizedAcceleration * 0.6 * spineSensitivity
-
-    return clamp(dynamicFactor, 0.9, 1.35)
-}
 
 // Función para calcular spine requerido basado en paradoja del arquero
 function calculateRequiredSpine(peakForce: number, arrowLength: number): number {
@@ -142,17 +124,7 @@ function calculateReleaseFactor(releaseType: string): number {
     return 1.0 // Base para liberaciones mecánicas estándar
 }
 
-// Función para aplicar márgenes de seguridad
-function applySafetyMargin(spineRequired: number, massRatio: number): number {
-    if (massRatio < 4) {
-        return spineRequired * 0.94 // 6% más rígido para seguridad
-    } else if (massRatio < 5) {
-        return spineRequired * 0.97 // 3% más rígido
-    } else if (massRatio > 8) {
-        return spineRequired * 1.02 // Permitir ligera flexión en configuraciones muy pesadas
-    }
-    return spineRequired // Sin margen para rango óptimo
-}
+
 
 // Función para calcular factor de material de cuerda
 function calculateStringMaterialFactor(stringWeights: { silencers: string, silencerDfc: string, stringMaterial: 'dacron' | 'fastflight' | 'unknown' }): number {
@@ -174,7 +146,7 @@ function calculatePointWeightAdjustment(pointWeight: number): number {
     if (pointWeight > 100) {
         const extraGrains = pointWeight - 100
         const increments25 = Math.floor(extraGrains / 25)
-        return increments25 * 3 // +3 lbs equivalentes por cada 25 grains
+        return increments25 * 2 // +2 lbs equivalentes por cada 25 grains
     }
     return 0 // Sin ajuste para puntas ≤ 100 grains
 }
@@ -211,9 +183,13 @@ function calculateTransferEfficiency(arrowMass: number, drawWeight: number): num
         efficiency = 0.90 // Flecha muy pesada = menor eficiencia
     } else {
         efficiency = 0.95 // Rango óptimo
+        // Slight boost for heavier arrows (momentum efficiency)
+        if (massRatio > 5.5) {
+            efficiency += (massRatio - 5.5) * 0.015
+        }
     }
 
-    return efficiency
+    return Math.min(efficiency, 0.98)
 }
 
 // Función para calcular FOC (Front of Center)
@@ -347,13 +323,10 @@ export function calculateSpineMatch(
             warnings,
         }
     }
-
-    // --- 3. MODELOS FÍSICOS MEJORADOS ---
-
     // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
     const effectiveDrawLength = calculateEffectiveDrawLength(drawLength)
     const storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight, percentLetoff, camAggressiveness)
-    const bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity)
+    const bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity, drawLength)
     const availableEnergy = storedEnergy * bowEfficiency
 
     // === PARTE B: CÁLCULO DE VELOCIDAD BASADO EN ENERGÍA ===
@@ -379,36 +352,46 @@ export function calculateSpineMatch(
 
     // === PARTE C: SPINE DINÁMICO REQUERIDO (SDR) ===
     const massRatio = arrowTotalWeight / effectiveDrawWeight
+    // Base requirement based on Draw Weight and Arrow Length
     const spineRequiredBase = calculateRequiredSpine(effectiveDrawWeight, shaftLength)
-    const spineRequired = applySafetyMargin(spineRequiredBase, massRatio)
 
-    // === PARTE D: SPINE DINÁMICO EFECTIVO (SDE) ===
-    const frontMass = pointWeight + insertWeight
-    const dynamicFlexFactor = calculateDynamicFlexFactor(availableEnergy, arrowTotalWeight, staticSpine, effectiveDrawLength)
+    // === PARTE D: SPINE DINÁMICO (TARGET) ===
+    // This is the spine the arrow SHOULD have to match the setup perfectly.
+    // Factors adjust this requirement.
+
+    // Point Weight Factor: Heavier point = Arrow acts weaker = Need Stiffer Spine (Lower Number)
+    // 100gr is standard. 150gr is +50gr.
+    // If arrow acts weaker, we need to compensate with a stiffer spine.
+    // So factor should be < 1.0 for heavy points.
+    const pointWeightFactor = 1.0
+
+    // Dynamic Flex Factor (Calibration)
+    const calibrationFactor = 1.0
 
     const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
     const releaseFactor = calculateReleaseFactor(releaseType)
     const wrapFactor = calculateWrapFactor(wrapWeight)
 
-    const lengthRatio = shaftLength / 28
-    const lengthFactor = clamp(lengthRatio * lengthRatio, 0.9, 1.15)
-    const frontMassDelta = frontMass - 100
-    const massFactor = 1 + clamp((frontMassDelta / 50) * 0.03, -0.08, 0.08)
-
-    const spineDynamic = staticSpine * lengthFactor * massFactor * dynamicFlexFactor * fletchingFactor * releaseFactor * wrapFactor
+    // Calculate Dynamic Spine Requirement
+    // We start with the static requirement and apply factors that shift the NEED.
+    // Note: This is different from "Effective Spine" of the arrow.
+    const spineDynamic = spineRequiredBase * pointWeightFactor * fletchingFactor * releaseFactor * wrapFactor * calibrationFactor
 
     // === PARTE E: FOC ===
     const foc = calculateFOC(shaftLength, pointWeight, insertWeight, shaftWeight, fletchWeight, nockWeight, wrapWeight, bushingPin)
 
     // === PARTE F: COMPARACIÓN Y RESULTADO ===
-    const matchIndex = spineDynamic / spineRequired
+    // Match Index = Static Spine / Dynamic Requirement
+    // If Static (0.400) > Dynamic (0.382) -> Index > 1 -> WEAK (Arrow is too flexible for the need)
+    // If Static (0.400) < Dynamic (0.406) -> Index < 1 -> STIFF (Arrow is too stiff for the need)
+    const matchIndex = staticSpine / spineDynamic
 
     let status: SpineMatchStatus | null = null
     if (matchIndex != null && isFinite(matchIndex)) {
-        if (matchIndex > 1.15) {
+        if (matchIndex > 1.03) { // Tolerance window
             status = 'weak'
             recommendations.push('Considera una flecha con spine más rígido (número más bajo)')
-        } else if (matchIndex < 0.85) {
+        } else if (matchIndex < 0.97) {
             status = 'stiff'
             recommendations.push('Considera una flecha con spine más flexible (número más alto)')
         } else {
@@ -426,9 +409,9 @@ export function calculateSpineMatch(
     }
 
     if (isFinite(matchIndex)) {
-        if (matchIndex > 1.3) {
+        if (matchIndex > 1.25) {
             warnings.push('¡PELIGRO! Flecha demasiado flexible - riesgo de fractura y daño al arco')
-        } else if (matchIndex < 0.7) {
+        } else if (matchIndex < 0.75) {
             warnings.push('Flecha excesivamente rígida - puede causar vuelo errático y golpes en el arco')
         }
     }
@@ -440,7 +423,7 @@ export function calculateSpineMatch(
     }
 
     if (isFinite(finalFPS)) {
-        if (finalFPS < 280) {
+        if (finalFPS < 260) {
             recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
         } else if (finalFPS > 320) {
             recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
@@ -465,12 +448,12 @@ export function calculateSpineMatch(
     }
 
     const edgeCaseRecommendation = getEdgeCaseRecommendation(drawWeight)
-    if (edgeCaseRecommendation !== "Spine recomendado para configuración actual") {
+    if (edgeCaseRecommendation !== "Spine recomendado para configuración actual" && status !== 'weak') {
         recommendations.push(edgeCaseRecommendation)
     }
 
     return {
-        spineRequired: isFinite(spineRequired) ? spineRequired : null,
+        spineRequired: isFinite(spineRequiredBase) ? spineRequiredBase : null,
         spineDynamic: isFinite(spineDynamic) ? spineDynamic : null,
         matchIndex: isFinite(matchIndex) ? matchIndex : null,
         status,
