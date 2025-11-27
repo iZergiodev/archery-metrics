@@ -141,7 +141,7 @@ function calculateStringMaterialFactor(stringWeights: { silencers: string, silen
     }
 }
 
-// Función para ajuste de peso de punta según tablas Easton
+// Función para ajuste de peso de punta según tablas Easton (para velocidad)
 function calculatePointWeightAdjustment(pointWeight: number): number {
     if (pointWeight > 100) {
         const extraGrains = pointWeight - 100
@@ -149,6 +149,23 @@ function calculatePointWeightAdjustment(pointWeight: number): number {
         return increments25 * 2 // +2 lbs equivalentes por cada 25 grains
     }
     return 0 // Sin ajuste para puntas ≤ 100 grains
+}
+
+// Función para calcular el spine EFECTIVO de la flecha
+// Basado en tablas Easton: el peso frontal afecta cómo "actúa" la flecha
+// Punta pesada = flecha actúa más débil (spine efectivo MAYOR que estático)
+// Punta ligera = flecha actúa más rígida (spine efectivo MENOR que estático)
+function calculateEffectiveSpineFactor(pointWeight: number, insertWeight: number): number {
+    const totalFrontWeight = pointWeight + insertWeight
+    const standardFrontWeight = 100 + 20 // 100gr point + 20gr insert estándar
+    const deviation = totalFrontWeight - standardFrontWeight
+
+    // Por cada 25gr de diferencia, el spine efectivo cambia ~5%
+    // factor > 1 = flecha actúa más débil (spine efectivo sube)
+    // factor < 1 = flecha actúa más rígida (spine efectivo baja)
+    const factor = 1 + (deviation / 25) * 0.05
+
+    return clamp(factor, 0.70, 1.30)
 }
 
 // Función para calcular factor de wrap (vinilo decorativo)
@@ -350,41 +367,46 @@ export function calculateSpineMatch(
         }
     }
 
-    // === PARTE C: SPINE DINÁMICO REQUERIDO (SDR) ===
+    // === PARTE C: FOC (necesario para cálculos posteriores) ===
+    const foc = calculateFOC(shaftLength, pointWeight, insertWeight, shaftWeight, fletchWeight, nockWeight, wrapWeight, bushingPin)
+
+    // === PARTE D: SPINE DINÁMICO REQUERIDO (SDR) ===
     const massRatio = arrowTotalWeight / effectiveDrawWeight
     // Base requirement based on Draw Weight and Arrow Length
     const spineRequiredBase = calculateRequiredSpine(effectiveDrawWeight, shaftLength)
 
-    // === PARTE D: SPINE DINÁMICO (TARGET) ===
-    // This is the spine the arrow SHOULD have to match the setup perfectly.
-    // Factors adjust this requirement.
+    // === PARTE E: SPINE EFECTIVO DE LA FLECHA ===
+    // Calculamos cómo "actúa" realmente la flecha basado en sus características
 
-    // Point Weight Factor: Heavier point = Arrow acts weaker = Need Stiffer Spine (Lower Number)
-    // 100gr is standard. 150gr is +50gr.
-    // If arrow acts weaker, we need to compensate with a stiffer spine.
-    // So factor should be < 1.0 for heavy points.
-    const pointWeightFactor = 1.0
+    // Factor de peso frontal: afecta cómo se comporta la flecha
+    // Punta pesada = flecha actúa más débil (factor > 1, spine efectivo sube)
+    // Punta ligera = flecha actúa más rígida (factor < 1, spine efectivo baja)
+    const frontWeightFactor = calculateEffectiveSpineFactor(pointWeight, insertWeight)
 
-    // Dynamic Flex Factor (Calibration)
-    const calibrationFactor = 1.0
+    // FOC Factor: Alto FOC hace que la flecha actúe más débil
+    let focFactor = 1.0
+    if (foc > 10) {
+        focFactor = 1 + ((foc - 10) / 2) * 0.015  // Aumenta spine efectivo
+    } else if (foc < 8 && foc > 0) {
+        focFactor = 1 - ((8 - foc) / 2) * 0.015  // Reduce spine efectivo
+    }
+    focFactor = clamp(focFactor, 0.85, 1.15)
 
     const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
     const releaseFactor = calculateReleaseFactor(releaseType)
     const wrapFactor = calculateWrapFactor(wrapWeight)
 
-    // Calculate Dynamic Spine Requirement
-    // We start with the static requirement and apply factors that shift the NEED.
-    // Note: This is different from "Effective Spine" of the arrow.
-    const spineDynamic = spineRequiredBase * pointWeightFactor * fletchingFactor * releaseFactor * wrapFactor * calibrationFactor
-
-    // === PARTE E: FOC ===
-    const foc = calculateFOC(shaftLength, pointWeight, insertWeight, shaftWeight, fletchWeight, nockWeight, wrapWeight, bushingPin)
+    // Spine Dinámico (Efectivo) = Cómo actúa realmente la flecha
+    // spineDynamic > staticSpine = flecha actúa más débil
+    // spineDynamic < staticSpine = flecha actúa más rígida
+    const spineDynamic = staticSpine * frontWeightFactor * focFactor * fletchingFactor * releaseFactor * wrapFactor
 
     // === PARTE F: COMPARACIÓN Y RESULTADO ===
-    // Match Index = Static Spine / Dynamic Requirement
-    // If Static (0.400) > Dynamic (0.382) -> Index > 1 -> WEAK (Arrow is too flexible for the need)
-    // If Static (0.400) < Dynamic (0.406) -> Index < 1 -> STIFF (Arrow is too stiff for the need)
-    const matchIndex = staticSpine / spineDynamic
+    // Match Index = Spine Efectivo / Spine Requerido
+    // matchIndex > 1 = flecha actúa más débil que lo necesario -> WEAK
+    // matchIndex < 1 = flecha actúa más rígida que lo necesario -> STIFF
+    // matchIndex ~ 1 = buen emparejamiento -> GOOD
+    const matchIndex = spineDynamic / spineRequiredBase
 
     let status: SpineMatchStatus | null = null
     if (matchIndex != null && isFinite(matchIndex)) {

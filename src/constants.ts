@@ -8,8 +8,8 @@
 // Controls the required spine calculation (Static Spine)
 // Higher value = Weaker spine required (higher spine number)
 // Lower value = Stiffer spine required (lower spine number)
-// Base value aligned with Easton charts for 70# @ 28"
-export const K_SPINE_CALIBRATION = 0.315
+// Calibrado para 70# @ 28" con punta 125gr = matchIndex ~1.0 con spine 0.340
+export const K_SPINE_CALIBRATION = 0.365
 
 // Controls the dynamic spine flex calculation
 // Higher value = Less aggressive adjustment (closer to static spine)
