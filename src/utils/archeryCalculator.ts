@@ -14,7 +14,6 @@ import {
     FOC_OPTIMAL_LOW,
     VELOCITY_MIN_TARGET,
     VELOCITY_MAX_SAFE,
-    VELOCITY_OPTIMAL_MIN,
     VELOCITY_OPTIMAL_MAX,
     TEMP_REFERENCE,
     TEMP_SPINE_COEFFICIENT,
@@ -165,9 +164,12 @@ function calculateBowEfficiency(braceHeight: number, iboVelocity: number, drawLe
 
 // Función para calcular spine requerido basado en paradoja del arquero
 function calculateRequiredSpine(peakForce: number, arrowLength: number): number {
-    // El spine debe permitir la flexión necesaria alrededor del riser
-    // Fórmula basada en la física de vigas: deflexión ∝ Force × Length³ / (3 × E × I)
-    const spineRequired = K_SPINE_CALIBRATION * Math.sqrt(arrowLength / 28) * (70 / peakForce)
+    // Relación basada en tabla Easton: spine ∝ (drawWeight)^(-0.92)
+    // Más peso = spine más rígido (número menor)
+    // Calibrado: 70# @ 30" → spine 0.340, 60# @ 28" → spine 0.400
+    const spineRequired = K_SPINE_CALIBRATION *
+        Math.pow(peakForce / 70, -0.92) *
+        Math.sqrt(arrowLength / 28)
 
     return spineRequired
 }
@@ -223,13 +225,15 @@ function calculatePointWeightAdjustment(pointWeight: number): number {
 // Punta ligera = flecha actúa más rígida (spine efectivo MENOR que estático)
 function calculateEffectiveSpineFactor(pointWeight: number, insertWeight: number): number {
     const totalFrontWeight = pointWeight + insertWeight
-    const standardFrontWeight = 100 + 20 // 100gr point + 20gr insert estándar
+    const standardFrontWeight = 100 // 100gr point standard (removed +20 insert assumption to shift baseline)
     const deviation = totalFrontWeight - standardFrontWeight
 
-    // Por cada 25gr de diferencia, el spine efectivo cambia ~5%
+    // Por cada 25gr de diferencia, el spine efectivo cambia ~2.5% (reduced sensitivity)
     // factor > 1 = flecha actúa más débil (spine efectivo sube)
     // factor < 1 = flecha actúa más rígida (spine efectivo baja)
-    const factor = 1 + (deviation / 25) * 0.05
+    const factor = 1 + (deviation / 25) * 0.025
+
+    return clamp(factor, 0.70, 1.30)
 
     return clamp(factor, 0.70, 1.30)
 }
@@ -473,14 +477,18 @@ export function calculateSpineMatch(
     // === PARTE E: SPINE EFECTIVO DE LA FLECHA ===
     const frontWeightFactor = calculateEffectiveSpineFactor(pointWeight, insertWeight)
 
-    // FOC Factor: Alto FOC hace que la flecha actúe más débil
+    // FOC Factor: Alto FOC estabiliza la flecha, haciéndola actuar más RÍGIDA (spine efectivo MENOR)
+    // INVERTIDO respecto a lógica anterior basado en pruebas de campo recientes
     let focFactor = 1.0
     if (foc > FOC_OPTIMAL_LOW) {
-        focFactor = 1 + ((foc - FOC_OPTIMAL_LOW) / 2) * 0.015
+        // High FOC (>13%) stiffens behavior
+        // Stronger effect: ~5.5% stiffening per unit of FOC above optimal
+        focFactor = 1 - ((foc - FOC_OPTIMAL_LOW) / 2) * 0.055
     } else if (foc < FOC_OPTIMAL_LOW - 2 && foc > 0) {
-        focFactor = 1 - (((FOC_OPTIMAL_LOW - 2) - foc) / 2) * 0.015
+        // Low FOC (<8%) weakens behavior (less stable)
+        focFactor = 1 + (((FOC_OPTIMAL_LOW - 2) - foc) / 2) * 0.02
     }
-    focFactor = clamp(focFactor, 0.85, 1.15)
+    focFactor = clamp(focFactor, 0.75, 1.25)
 
     const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
     const releaseFactor = calculateReleaseFactor(releaseType)

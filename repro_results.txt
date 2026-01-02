@@ -1,11 +1,11 @@
 --- Reproduction Results (Base Case) ---
-Calculated FPS: 278.13 (Expected: ~276.36)
+Calculated FPS: 276.34 (Expected: ~276.36)
 Total Arrow Weight: 341.90 (Expected: ~341.90)
-Dynamic Spine: 0.404 (Expected: ~0.406)
-Match Index: 0.862
-Status: stiff
+Dynamic Spine: 0.408 (Expected: ~0.406)
+Match Index: 0.901
+Status: good
 
 --- Point Weight Sensitivity Test ---
-Base Point Weight: 110gr -> Dynamic Spine: 0.404
-Heavy Point Weight: 150gr -> Dynamic Spine: 0.450
-VERDICT: Increasing point weight INCREASED dynamic spine value (Weaker behavior). [CORRECT direction for deflection]
+Base Point Weight: 110gr -> Dynamic Spine: 0.408
+Heavy Point Weight: 150gr -> Dynamic Spine: 0.382
+VERDICT: Increasing point weight DECREASED dynamic spine value (Stiffer behavior). [INCORRECT direction]

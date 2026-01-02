@@ -11,13 +11,11 @@ interface ToolbarProps {
   }
 }
 
-export function Toolbar({ onSave, onLoad, onClear, lang, onSetLang, t }: ToolbarProps) {
+export function Toolbar({ onSave, onLoad, onClear, lang, onSetLang }: ToolbarProps) {
   const [showMenu, setShowMenu] = useState(false)
-  const [activeSection, setActiveSection] = useState<'save' | 'load' | null>(null)
 
   const toggleMenu = () => {
     setShowMenu(!showMenu)
-    setActiveSection(null)
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from './i18n.tsx'
-import { calculateSpineMatch, type SpineMatchStatus } from './utils/archeryCalculator'
+import { calculateSpineMatch } from './utils/archeryCalculator'
 import { Toolbar } from './components/Toolbar'
 import { TabNavigation } from './components/TabNavigation'
 import { ResultsSummary } from './components/ResultsSummary'

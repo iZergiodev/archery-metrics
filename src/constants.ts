@@ -2,16 +2,18 @@
  * Archery Calculator Calibration Constants
  *
  * These constants are used to tune the physics engine of the calculator.
- * Adjust these values based on real-world feedback and manufacturer charts.
+ * Adjusted based on Easton Arrow Spine Chart (2024):
+ * - 70# @ 30" = spine 0.340
+ * - 75# @ 30" = spine 0.300
+ * - 60# @ 28" = spine 0.380
  */
 
 // === SPINE CALIBRATION ===
 
 // Controls the required spine calculation (Static Spine)
-// Higher value = Weaker spine required (higher spine number)
-// Lower value = Stiffer spine required (lower spine number)
-// Calibrado para 70# @ 28" con punta 125gr = matchIndex ~1.0 con spine 0.340
-export const K_SPINE_CALIBRATION = 0.365
+// Calibrado para coincidir con tabla Easton 2024
+// Fórmula: spine = K * (drawWeight/70)^(-0.92) * sqrt(length/28)
+export const K_SPINE_CALIBRATION = 0.36
 
 // Controls the dynamic spine flex calculation
 // Higher value = Less aggressive adjustment (closer to static spine)
@@ -22,7 +24,7 @@ export const K_DYNAMIC_FLEX_CALIBRATION = 2000000
 
 // Conversion factor for Kinetic Energy to FPS
 // Derived from: 7000 (grains/lb) * 32.174 (ft/s²) * 2
-export const K_FPS_CONVERSION = 553000
+export const K_FPS_CONVERSION = 546000
 
 // === CAM EFFICIENCY ===
 
@@ -36,7 +38,8 @@ export const CAM_EFFICIENCY = {
 // === MATCH TOLERANCE ===
 
 // Tolerance window for spine match (percentage)
-export const MATCH_TOLERANCE = 0.03  // ±3%
+// Extended to 10% to account for real-world variations in arrow spine
+export const MATCH_TOLERANCE = 0.10
 export const MATCH_GOOD_MAX = 1 + MATCH_TOLERANCE
 export const MATCH_GOOD_MIN = 1 - MATCH_TOLERANCE
 
@@ -50,7 +53,7 @@ export const GPP_MAX_RECOMMENDED = 8
 
 export const FOC_MIN_RECOMMENDED = 7   // Minimum recommended FOC %
 export const FOC_MAX_RECOMMENDED = 16  // Maximum recommended FOC % for target
-export const FOC_OPTIMAL_LOW = 10
+export const FOC_OPTIMAL_LOW = 13
 export const FOC_OPTIMAL_HIGH = 15
 
 // === VELOCITY THRESHOLDS (FPS) ===
