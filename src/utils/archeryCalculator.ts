@@ -1,12 +1,41 @@
 import {
     K_SPINE_CALIBRATION,
     K_FPS_CONVERSION,
-    CAM_EFFICIENCY
+    CAM_EFFICIENCY,
+    MATCH_GOOD_MAX,
+    MATCH_GOOD_MIN,
+    MATCH_EXTREME_WEAK,
+    MATCH_EXTREME_STIFF,
+    GPP_MIN_SAFE,
+    GPP_MIN_RECOMMENDED,
+    GPP_MAX_RECOMMENDED,
+    FOC_MIN_RECOMMENDED,
+    FOC_MAX_RECOMMENDED,
+    FOC_OPTIMAL_LOW,
+    VELOCITY_MIN_TARGET,
+    VELOCITY_MAX_SAFE,
+    VELOCITY_OPTIMAL_MIN,
+    VELOCITY_OPTIMAL_MAX,
+    TEMP_REFERENCE,
+    TEMP_SPINE_COEFFICIENT,
+    COMPONENT_POSITIONS,
+    ARCHERY_TYPE,
+    type ArcheryType,
 } from '../constants'
 
-export type SpineMatchStatus = 'weak' | 'good' | 'stiff'
+export type SpineMatchStatus = 'weak' | 'good' | 'stiff' | 'unknown'
+
+export type ConfidenceLevel = 'high' | 'medium' | 'low'
+
+export type ConfidenceInterval = {
+    value: number
+    lower: number
+    upper: number
+    confidence: ConfidenceLevel
+}
 
 export type SpineMatchResult = {
+    // Core results
     spineRequired: number | null
     spineDynamic: number | null
     matchIndex: number | null
@@ -14,6 +43,15 @@ export type SpineMatchResult = {
     arrowTotalWeight: number
     foc: number | null
     calculatedFPS: number | null
+
+    // Confidence intervals
+    spineRequiredCI: ConfidenceInterval | null
+    spineDynamicCI: ConfidenceInterval | null
+    matchIndexCI: ConfidenceInterval | null
+
+    // Metadata
+    temperature?: number
+    archeryType: ArcheryType
     recommendations: string[]
     warnings: string[]
 }
@@ -26,6 +64,7 @@ export type BowSpecs = {
     axleToAxle: string
     percentLetoff: string
     camAggressiveness?: string // 'soft' | 'medium' | 'hard'
+    archeryType?: ArcheryType
 }
 
 export type ArrowSpecs = {
@@ -39,6 +78,7 @@ export type ArrowSpecs = {
     nockWeight: string
     bushingPin: string
     staticSpine: string
+    shaftMaterial?: 'carbon' | 'aluminum' | 'wood' | 'fiberglass'
 }
 
 export type StringWeights = {
@@ -55,6 +95,32 @@ const toNumber = (value: string) =>
     value.trim() === '' ? 0 : Number(value.replace(',', '.'))
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
+// Helper to create confidence interval
+function createConfidenceInterval(
+    value: number,
+    uncertaintyPercent: number,
+    confidence: ConfidenceLevel
+): ConfidenceInterval {
+    const uncertainty = value * uncertaintyPercent
+    return {
+        value,
+        lower: value - uncertainty,
+        upper: value + uncertainty,
+        confidence,
+    }
+}
+
+// Confidence based on data completeness
+function calculateConfidenceLevel(
+    hasAllInputs: boolean,
+    hasTemperature: boolean,
+    hasPreciseMeasurements: boolean
+): ConfidenceLevel {
+    if (hasAllInputs && hasTemperature && hasPreciseMeasurements) return 'high'
+    if (hasAllInputs) return 'medium'
+    return 'low'
+}
 
 // Función para calcular energía almacenada basada en curva fuerza-apertura
 function calculateStoredEnergy(
@@ -209,7 +275,7 @@ function calculateTransferEfficiency(arrowMass: number, drawWeight: number): num
     return Math.min(efficiency, 0.98)
 }
 
-// Función para calcular FOC (Front of Center)
+// Función para calcular FOC (Front of Center) con posiciones configurables
 function calculateFOC(
     shaftLength: number,
     pointWeight: number,
@@ -218,33 +284,18 @@ function calculateFOC(
     fletchWeight: number,
     nockWeight: number,
     wrapWeight: number,
-    bushingPin: number
+    bushingPin: number,
+    positions: typeof COMPONENT_POSITIONS = COMPONENT_POSITIONS
 ): number {
-    // Longitud total aproximada (shaft + nock + point insert length)
-    // Simplificación: Usamos shaftLength como base, asumiendo que el FOC se mide sobre la longitud del tubo
-    // Fórmula estándar AMO: FOC(%) = [ (L/2 + (M_p*L + M_i*L - M_n*L - M_f*L) / M_total) / L ] * 100 ??
-    // Fórmula simplificada de momentos:
-    // Centro de gravedad (CG) desde el nock:
-    // CG = Sum(Momentos) / PesoTotal
-
     const totalWeight = shaftWeight + pointWeight + insertWeight + fletchWeight + nockWeight + wrapWeight + bushingPin
     if (totalWeight === 0 || shaftLength === 0) return 0
 
-    // Momentos respecto al nock (posición 0)
-    // Asumimos:
-    // - Nock: en 0
-    // - Fletching: cerca del nock (aprox 1-2 pulgadas) -> Usamos 1.5"
-    // - Wrap: cerca del nock (aprox 2-3 pulgadas) -> Usamos 2.5"
-    // - Shaft: centro en L/2
-    // - Bushing: en 0
-    // - Insert: en L
-    // - Point: en L (simplificación, realmente sobresale)
-
+    // Momentos respecto al nock usando posiciones configurables
     const mNock = nockWeight * 0
     const mBushing = bushingPin * 0
-    const mFletch = fletchWeight * 1.5
-    const mWrap = wrapWeight * 2.5
-    const mShaft = shaftWeight * (shaftLength / 2)
+    const mFletch = fletchWeight * positions.fletchCenter
+    const mWrap = wrapWeight * positions.wrapCenter
+    const mShaft = shaftWeight * (shaftLength * positions.shaftCenterRatio)
     const mInsert = insertWeight * shaftLength
     const mPoint = pointWeight * shaftLength
 
@@ -258,10 +309,52 @@ function calculateFOC(
     return foc
 }
 
+// Función para corregir spine por temperatura
+function temperatureCorrection(
+    spine: number,
+    temperatureF: number,
+    shaftMaterial: string = 'carbon'
+): number {
+    // Solo afecta significativamente a flechas de carbono
+    if (shaftMaterial !== 'carbon') return spine
+
+    const tempDiff = temperatureF - TEMP_REFERENCE
+    const spineChange = tempDiff * TEMP_SPINE_COEFFICIENT
+
+    return spine * (1 + spineChange)
+}
+
+// Función para calcular spine requerido para recurvo/tradicional
+function calculateRecurveSpine(drawWeight: number, drawLength: number): number {
+    // Para recurvo, el spine requerido es diferente
+    // Basado en tablas tradicionales: spine ~ 0.001 * drawWeight * drawLength
+    const spineRequired = 0.001 * drawWeight * drawLength
+
+    return clamp(spineRequired, 0.200, 0.900)
+}
+
+// Función para calcular energía almacenada en recurvo (curva lineal)
+function calculateRecurveStoredEnergy(
+    drawWeight: number,
+    drawLength: number,
+    braceHeight: number
+): number {
+    // Para recurvo, la curva fuerza-apertura es aproximadamente lineal
+    const powerStroke = drawLength - braceHeight
+    const avgForce = drawWeight * 0.5 // Fuerza promedio ~50% del pico
+    return (avgForce * powerStroke) / 12 // foot-pounds
+}
+
+// Función para obtener el tipo de arco efectivo
+function getEffectiveArcheryType(type: ArcheryType | undefined): ArcheryType {
+    return type || ARCHERY_TYPE.COMPOUND
+}
+
 export function calculateSpineMatch(
     bow: BowSpecs,
     arrow: ArrowSpecs,
     stringWeights: StringWeights,
+    temperatureF?: number,
 ): SpineMatchResult {
     const recommendations: string[] = []
     const warnings: string[] = []
@@ -274,6 +367,7 @@ export function calculateSpineMatch(
     const axleToAxle = toNumber(bow.axleToAxle)
     const percentLetoff = toNumber(bow.percentLetoff)
     const camAggressiveness = bow.camAggressiveness || 'medium'
+    const archeryType = getEffectiveArcheryType(bow.archeryType)
 
     const shaftLength = toNumber(arrow.shaftLength)
     const pointWeight = toNumber(arrow.pointWeight)
@@ -285,6 +379,7 @@ export function calculateSpineMatch(
     const nockWeight = toNumber(arrow.nockWeight)
     const bushingPin = toNumber(arrow.bushingPin)
     const staticSpine = toNumber(arrow.staticSpine)
+    const shaftMaterial = arrow.shaftMaterial || 'carbon'
 
     const peepWeight = toNumber(stringWeights.peep)
     const dLoopWeight = toNumber(stringWeights.dLoop)
@@ -296,18 +391,11 @@ export function calculateSpineMatch(
     // --- 2. CÁLCULOS INTERMEDIOS ---
 
     // Guard Clause
-    if (!drawWeight || !shaftLength || !staticSpine || !iboVelocity || !drawLength || !braceHeight) {
-        return {
-            spineRequired: null,
-            spineDynamic: null,
-            matchIndex: null,
-            status: null,
-            arrowTotalWeight: 0,
-            foc: null,
-            calculatedFPS: null,
-            recommendations,
-            warnings,
-        }
+    const hasAllInputs = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 &&
+        drawLength > 0 && braceHeight > 0
+
+    if (!hasAllInputs) {
+        return createEmptyResult(archeryType, recommendations, warnings)
     }
 
     // Peso total de la flecha
@@ -328,34 +416,36 @@ export function calculateSpineMatch(
     // Validación
     const powerStroke = drawLength - braceHeight
     if (arrowTotalWeight === 0 || powerStroke === 0) {
-        return {
-            spineRequired: null,
-            spineDynamic: null,
-            matchIndex: null,
-            status: null,
-            arrowTotalWeight: arrowTotalWeight,
-            foc: null,
-            calculatedFPS: null,
-            recommendations,
-            warnings,
-        }
+        return createEmptyResult(archeryType, recommendations, warnings)
     }
+
     // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
-    const effectiveDrawLength = calculateEffectiveDrawLength(drawLength)
-    const storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight, percentLetoff, camAggressiveness)
-    const bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity, drawLength)
+    let storedEnergy: number
+    let bowEfficiency: number
+    let effectiveDrawWeight: number
+
+    if (archeryType === ARCHERY_TYPE.COMPOUND) {
+        const effectiveDrawLength = calculateEffectiveDrawLength(drawLength)
+        storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight, percentLetoff, camAggressiveness)
+        bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity, drawLength)
+        const pointWeightAdjustment = calculatePointWeightAdjustment(pointWeight)
+        effectiveDrawWeight = drawWeight + pointWeightAdjustment
+    } else {
+        // Recurvo/Traditional - different physics
+        storedEnergy = calculateRecurveStoredEnergy(drawWeight, drawLength, braceHeight)
+        bowEfficiency = 0.75 // Fixed efficiency for recurvo
+        effectiveDrawWeight = drawWeight
+    }
+
     const availableEnergy = storedEnergy * bowEfficiency
 
     // === PARTE B: CÁLCULO DE VELOCIDAD BASADO EN ENERGÍA ===
     const transferEfficiency = calculateTransferEfficiency(arrowTotalWeight, drawWeight)
     const stringMaterialFactor = calculateStringMaterialFactor(stringWeights)
-    const pointWeightAdjustment = calculatePointWeightAdjustment(pointWeight)
-
-    const effectiveDrawWeight = drawWeight + pointWeightAdjustment
 
     const kineticEnergy = availableEnergy * transferEfficiency * stringMaterialFactor
 
-    const calculatedFPS = Math.sqrt((kineticEnergy * K_FPS_CONVERSION) / arrowTotalWeight)
+    let calculatedFPS = Math.sqrt((kineticEnergy * K_FPS_CONVERSION) / arrowTotalWeight)
 
     // Ajustes finos
     let finalFPS = calculatedFPS
@@ -372,23 +462,23 @@ export function calculateSpineMatch(
 
     // === PARTE D: SPINE DINÁMICO REQUERIDO (SDR) ===
     const massRatio = arrowTotalWeight / effectiveDrawWeight
-    // Base requirement based on Draw Weight and Arrow Length
-    const spineRequiredBase = calculateRequiredSpine(effectiveDrawWeight, shaftLength)
+    let spineRequiredBase: number
+
+    if (archeryType === ARCHERY_TYPE.COMPOUND) {
+        spineRequiredBase = calculateRequiredSpine(effectiveDrawWeight, shaftLength)
+    } else {
+        spineRequiredBase = calculateRecurveSpine(drawWeight, drawLength)
+    }
 
     // === PARTE E: SPINE EFECTIVO DE LA FLECHA ===
-    // Calculamos cómo "actúa" realmente la flecha basado en sus características
-
-    // Factor de peso frontal: afecta cómo se comporta la flecha
-    // Punta pesada = flecha actúa más débil (factor > 1, spine efectivo sube)
-    // Punta ligera = flecha actúa más rígida (factor < 1, spine efectivo baja)
     const frontWeightFactor = calculateEffectiveSpineFactor(pointWeight, insertWeight)
 
     // FOC Factor: Alto FOC hace que la flecha actúe más débil
     let focFactor = 1.0
-    if (foc > 10) {
-        focFactor = 1 + ((foc - 10) / 2) * 0.015  // Aumenta spine efectivo
-    } else if (foc < 8 && foc > 0) {
-        focFactor = 1 - ((8 - foc) / 2) * 0.015  // Reduce spine efectivo
+    if (foc > FOC_OPTIMAL_LOW) {
+        focFactor = 1 + ((foc - FOC_OPTIMAL_LOW) / 2) * 0.015
+    } else if (foc < FOC_OPTIMAL_LOW - 2 && foc > 0) {
+        focFactor = 1 - (((FOC_OPTIMAL_LOW - 2) - foc) / 2) * 0.015
     }
     focFactor = clamp(focFactor, 0.85, 1.15)
 
@@ -396,24 +486,23 @@ export function calculateSpineMatch(
     const releaseFactor = calculateReleaseFactor(releaseType)
     const wrapFactor = calculateWrapFactor(wrapWeight)
 
-    // Spine Dinámico (Efectivo) = Cómo actúa realmente la flecha
-    // spineDynamic > staticSpine = flecha actúa más débil
-    // spineDynamic < staticSpine = flecha actúa más rígida
-    const spineDynamic = staticSpine * frontWeightFactor * focFactor * fletchingFactor * releaseFactor * wrapFactor
+    // Spine Dinámico (Efectivo)
+    let spineDynamic = staticSpine * frontWeightFactor * focFactor * fletchingFactor * releaseFactor * wrapFactor
+
+    // Aplicar corrección por temperatura si está disponible
+    if (temperatureF !== undefined) {
+        spineDynamic = temperatureCorrection(spineDynamic, temperatureF, shaftMaterial)
+    }
 
     // === PARTE F: COMPARACIÓN Y RESULTADO ===
-    // Match Index = Spine Efectivo / Spine Requerido
-    // matchIndex > 1 = flecha actúa más débil que lo necesario -> WEAK
-    // matchIndex < 1 = flecha actúa más rígida que lo necesario -> STIFF
-    // matchIndex ~ 1 = buen emparejamiento -> GOOD
     const matchIndex = spineDynamic / spineRequiredBase
 
     let status: SpineMatchStatus | null = null
     if (matchIndex != null && isFinite(matchIndex)) {
-        if (matchIndex > 1.03) { // Tolerance window
+        if (matchIndex > MATCH_GOOD_MAX) {
             status = 'weak'
             recommendations.push('Considera una flecha con spine más rígido (número más bajo)')
-        } else if (matchIndex < 0.97) {
+        } else if (matchIndex < MATCH_GOOD_MIN) {
             status = 'stiff'
             recommendations.push('Considera una flecha con spine más flexible (número más alto)')
         } else {
@@ -423,56 +512,66 @@ export function calculateSpineMatch(
 
     // === PARTE G: ADVERTENCIAS Y RECOMENDACIONES ===
     if (isFinite(massRatio)) {
-        if (massRatio < 4) {
+        if (massRatio < GPP_MIN_SAFE) {
             warnings.push('¡PELIGRO! Flecha muy ligera - puede dañar el arco o romperse durante el disparo')
-        } else if (massRatio < 5) {
+        } else if (massRatio < GPP_MIN_RECOMMENDED) {
             warnings.push('Flecha ligera - considere aumentar el peso para mayor seguridad del arco')
         }
     }
 
     if (isFinite(matchIndex)) {
-        if (matchIndex > 1.25) {
+        if (matchIndex > MATCH_EXTREME_WEAK) {
             warnings.push('¡PELIGRO! Flecha demasiado flexible - riesgo de fractura y daño al arco')
-        } else if (matchIndex < 0.75) {
+        } else if (matchIndex < MATCH_EXTREME_STIFF) {
             warnings.push('Flecha excesivamente rígida - puede causar vuelo errático y golpes en el arco')
         }
     }
 
     if (isFinite(finalFPS)) {
-        if (finalFPS > 340) {
+        if (finalFPS > VELOCITY_MAX_SAFE) {
             warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
         }
     }
 
     if (isFinite(finalFPS)) {
-        if (finalFPS < 260) {
+        if (finalFPS < VELOCITY_MIN_TARGET) {
             recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
-        } else if (finalFPS > 320) {
+        } else if (finalFPS > VELOCITY_OPTIMAL_MAX) {
             recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
         }
     }
 
     if (isFinite(massRatio)) {
-        if (massRatio < 5) {
+        if (massRatio < GPP_MIN_RECOMMENDED) {
             recommendations.push('La flecha es muy ligera para la potencia. Considera aumentar el peso para mejor eficiencia.')
-        } else if (massRatio > 8) {
+        } else if (massRatio > GPP_MAX_RECOMMENDED) {
             recommendations.push('La flecha es muy pesada para la potencia. Considera reducir el peso para mejor velocidad.')
         }
     }
 
     // FOC Recommendations
     if (foc > 0) {
-        if (foc < 7) {
-            recommendations.push('FOC bajo (<7%). La flecha puede ser inestable a largas distancias. Aumenta el peso en punta.')
-        } else if (foc > 16) {
-            recommendations.push('FOC alto (>16%). Bueno para caza/penetración, pero la flecha caerá más rápido.')
+        if (foc < FOC_MIN_RECOMMENDED) {
+            recommendations.push(`FOC bajo (<${FOC_MIN_RECOMMENDED}%). La flecha puede ser inestable a largas distancias. Aumenta el peso en punta.`)
+        } else if (foc > FOC_MAX_RECOMMENDED) {
+            recommendations.push(`FOC alto (>${FOC_MAX_RECOMMENDED}%). Bueno para caza/penetración, pero la flecha caerá más rápido.`)
         }
+    }
+
+    // Temperature recommendation
+    if (temperatureF !== undefined && Math.abs(temperatureF - TEMP_REFERENCE) > 20) {
+        const direction = temperatureF > TEMP_REFERENCE ? 'más' : 'menos'
+        recommendations.push(`Temperatura ${direction} flexible. Considera ajustar el spine ${temperatureF > TEMP_REFERENCE ? 'más rígido' : 'más flexible'}.`)
     }
 
     const edgeCaseRecommendation = getEdgeCaseRecommendation(drawWeight)
     if (edgeCaseRecommendation !== "Spine recomendado para configuración actual" && status !== 'weak') {
         recommendations.push(edgeCaseRecommendation)
     }
+
+    // Calcular niveles de confianza
+    const hasPreciseMeasurements = shaftGpi > 0 && pointWeight > 0 && insertWeight > 0
+    const confidence = calculateConfidenceLevel(hasAllInputs, temperatureF !== undefined, hasPreciseMeasurements)
 
     return {
         spineRequired: isFinite(spineRequiredBase) ? spineRequiredBase : null,
@@ -482,6 +581,34 @@ export function calculateSpineMatch(
         arrowTotalWeight,
         foc: isFinite(foc) ? foc : null,
         calculatedFPS: isFinite(finalFPS) ? finalFPS : null,
+        spineRequiredCI: isFinite(spineRequiredBase) ? createConfidenceInterval(spineRequiredBase, 0.05, confidence) : null,
+        spineDynamicCI: isFinite(spineDynamic) ? createConfidenceInterval(spineDynamic, 0.08, confidence) : null,
+        matchIndexCI: isFinite(matchIndex) ? createConfidenceInterval(matchIndex, 0.10, confidence) : null,
+        temperature: temperatureF,
+        archeryType,
+        recommendations,
+        warnings,
+    }
+}
+
+// Helper function for empty results
+function createEmptyResult(
+    archeryType: ArcheryType,
+    recommendations: string[],
+    warnings: string[]
+): SpineMatchResult {
+    return {
+        spineRequired: null,
+        spineDynamic: null,
+        matchIndex: null,
+        status: null,
+        arrowTotalWeight: 0,
+        foc: null,
+        calculatedFPS: null,
+        spineRequiredCI: null,
+        spineDynamicCI: null,
+        matchIndexCI: null,
+        archeryType,
         recommendations,
         warnings,
     }
