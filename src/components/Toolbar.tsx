@@ -29,7 +29,7 @@ export function Toolbar({
 
   return (
     <div className="relative flex w-full items-center gap-2">
-      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_40px] gap-2">
+      <div className="grid min-w-0 flex-1 items-start grid-cols-[minmax(0,1fr)_minmax(0,1fr)_40px] gap-2">
         <ToggleGroup
           label={t('toolbar.language')}
           options={[
@@ -46,13 +46,16 @@ export function Toolbar({
           ]}
         />
 
-        <button
-          onClick={() => setShowMenu((current) => !current)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[#151515] text-[#d8d8d8] transition-colors hover:border-[rgba(255,255,255,0.22)] hover:bg-[#191919] hover:text-[#f7f7f7]"
-          aria-label={t('toolbar.actions')}
-        >
-          <MoreHorizontal size={18} />
-        </button>
+        <div className="flex flex-col">
+          <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-transparent select-none">.</div>
+          <button
+            onClick={() => setShowMenu((current) => !current)}
+            className="inline-flex h-10 w-10 items-center justify-center self-end rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[#151515] text-[#d8d8d8] transition-colors hover:border-[rgba(255,255,255,0.22)] hover:bg-[#191919] hover:text-[#f7f7f7]"
+            aria-label={t('toolbar.actions')}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
       </div>
 
       {showMenu && (
