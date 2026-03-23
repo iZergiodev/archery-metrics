@@ -25,6 +25,7 @@ export function ResultsSummary({
   t,
 }: ResultsSummaryProps) {
   const primarySignal = result.warnings[0] ?? result.recommendations[0] ?? t('summary.readyHint')
+  const fitPercent = result.matchIndex != null ? getIdealFitPercent(result.matchIndex) : null
   const confidenceLabel =
     result.matchIndexCI?.confidence === 'high'
       ? t('confidence.high')
@@ -41,6 +42,14 @@ export function ResultsSummary({
       ? `${formatTemperatureDisplayValue(result.temperature, unitSystem)}${getTemperatureUnitLabel(unitSystem)}`
       : null,
   ].filter(Boolean)
+  const fitLabel =
+    result.matchIndex == null
+      ? null
+      : result.matchIndex >= 0.85 && result.matchIndex <= 1.15
+        ? t('summary.fitIdeal')
+        : result.matchIndex >= 0.75 && result.matchIndex <= 1.25
+          ? t('summary.fitNear')
+          : t('summary.fitOff')
 
   return (
     <section className="border-b border-[rgba(255,255,255,0.08)] pb-6">
@@ -60,20 +69,38 @@ export function ResultsSummary({
       </div>
 
       {result.matchIndex != null && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center justify-between text-[10px] uppercase tracking-[0.16em] text-[#636363]">
-            <span>{t('matchScale.stiff')}</span>
-            <span>{t('matchScale.optimal')}</span>
-            <span>{t('matchScale.weak')}</span>
+        <div className="mt-6 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[#121212] px-4 py-4">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.24em] text-[#7a7a7a]">{t('summary.spineFit')}</div>
+              <div className="mt-2 break-words text-[16px] font-medium text-[#f2f2f2]">{fitLabel}</div>
+            </div>
+
+            <div className="min-w-0 sm:text-right">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-[#7a7a7a]">{t('summary.fitScore')}</div>
+              <div className="mt-1 font-mono text-[24px] text-[#facc15]">{fitPercent}%</div>
+            </div>
           </div>
-          <div className="relative h-[4px] overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
-            <div className="absolute left-0 top-0 h-full w-[28%] bg-[rgba(96,165,250,0.6)]" />
-            <div className="absolute left-[28%] top-0 h-full w-[44%] bg-[rgba(250,204,21,0.72)]" />
-            <div className="absolute right-0 top-0 h-full w-[28%] bg-[rgba(239,68,68,0.65)]" />
-            <div
-              className="absolute -top-[5px] h-[14px] w-[3px] rounded-full bg-[#f5f5f5] transition-all duration-300"
-              style={{ left: `${Math.max(2, Math.min(98, getMatchIndexPosition(result.matchIndex)))}%` }}
-            />
+
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-[#727272]">
+              <span>{t('matchScale.stiff')}</span>
+              <span>{t('summary.idealZone')}</span>
+              <span>{t('matchScale.weak')}</span>
+            </div>
+            <div className="relative h-3 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
+              <div className="absolute inset-y-0 left-0 w-[28%] bg-[rgba(96,165,250,0.6)]" />
+              <div className="absolute inset-y-0 left-[28%] w-[44%] bg-[rgba(250,204,21,0.78)]" />
+              <div className="absolute inset-y-0 right-0 w-[28%] bg-[rgba(239,68,68,0.65)]" />
+              <div className="absolute inset-y-[1px] left-[30%] right-[30%] rounded-full border border-[rgba(255,255,255,0.55)]" />
+              <div
+                className="absolute -top-1 h-5 w-[3px] rounded-full bg-[#f5f5f5] shadow-[0_0_0_2px_rgba(12,12,12,0.9)] transition-all duration-300"
+                style={{ left: `${Math.max(2, Math.min(98, getMatchIndexPosition(result.matchIndex)))}%` }}
+              />
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-[#8c8c8c]">
+              {t('summary.idealZone')}: 0.85 - 1.15
+            </p>
           </div>
         </div>
       )}
@@ -126,4 +153,9 @@ function StatRow({
       </div>
     </div>
   )
+}
+
+function getIdealFitPercent(matchIndex: number): number {
+  const normalizedDistance = Math.min(Math.abs(matchIndex - 1) / 0.4, 1)
+  return Math.round((1 - normalizedDistance) * 100)
 }

@@ -24,10 +24,11 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            style={{ colorScheme: 'dark' }}
             className="w-full appearance-none bg-transparent px-0 py-3 pr-8 text-[16px] text-[#f8f8f8] focus:outline-none"
           >
             {options.map((option) => (
-              <option key={option.value} value={option.value}>
+              <option key={option.value} value={option.value} className="bg-[#151515] text-[#f8f8f8]">
                 {option.label}
               </option>
             ))}

@@ -32,6 +32,16 @@
     -moz-appearance: textfield;
   }
 
+  select {
+    color-scheme: dark;
+  }
+
+  option,
+  optgroup {
+    background-color: #151515;
+    color: #f8f8f8;
+  }
+
   /* Improve touch targets on mobile */
   @media (max-width: 640px) {
     input, select, button {

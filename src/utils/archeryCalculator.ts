@@ -401,6 +401,18 @@ export function calculateSpineMatch(
         drawLength > 0 && braceHeight > 0
 
     if (!hasAllInputs) {
+        const missingFields: string[] = []
+
+        if (drawWeight <= 0) missingFields.push('peso de tiro')
+        if (drawLength <= 0) missingFields.push('longitud de tiro')
+        if (braceHeight <= 0) missingFields.push('brace height')
+        if (shaftLength <= 0) missingFields.push('longitud del eje')
+        if (staticSpine <= 0) missingFields.push('spine estático')
+
+        if (missingFields.length > 0) {
+            recommendations.push(`Faltan datos clave para calcular el spine: ${missingFields.join(', ')}.`)
+        }
+
         return createEmptyResult(archeryType, recommendations, warnings)
     }
 
@@ -421,7 +433,13 @@ export function calculateSpineMatch(
 
     // Validación
     const powerStroke = drawLength - braceHeight
-    if (arrowTotalWeight === 0 || powerStroke <= 0) {
+    if (arrowTotalWeight === 0) {
+        recommendations.push('Falta peso de flecha para calcular el resultado. Añade al menos el GPI del eje y/o el peso de la punta.')
+        return createEmptyResult(archeryType, recommendations, warnings)
+    }
+
+    if (powerStroke <= 0) {
+        warnings.push('La longitud de tiro debe ser mayor que el brace height para poder calcular el disparo.')
         return createEmptyResult(archeryType, recommendations, warnings)
     }
 
