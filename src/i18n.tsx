@@ -11,10 +11,16 @@ type I18nContextValue = {
 const translations: Record<Lang, Record<string, string>> = {
     es: {
         'app.title': 'Configuración de arco',
+        'app.kicker': 'Tuning de spine',
+        'app.subtitle': 'Ajusta flecha y arco con una lectura clara del spine dinámico, la energía y el emparejamiento final.',
+        'app.progress': 'Campos clave',
 
         'section.bowSpecs': 'Especificaciones del arco',
         'section.arrowSpecs': 'Especificaciones de la flecha',
         'section.weightOnString': 'Peso en la cuerda',
+        'section.bowSpecs.description': 'Empieza por la energía real del arco. Estos campos cambian más el spine requerido.',
+        'section.arrowSpecs.description': 'Define el shaft y el peso frontal antes de afinar accesorios menores.',
+        'section.weightOnString.description': 'Cierra el ajuste con la interfaz de disparo y el peso añadido en la cuerda.',
 
         'field.iboVelocity': 'Velocidad IBO',
         'field.drawLength': 'Longitud de tiro',
@@ -35,6 +41,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.bushingPin': 'Casquillo/pasador',
         'field.staticSpine': 'Columna estática',
         'field.staticSpine.tooltip': 'Este es el valor de rigidez marcado en tu flecha por el fabricante (ej: 0.340, 0.400, 0.500). NO es lo que queremos calcular, sino el valor de la flecha que YA TIENES o estás probando. La app verificará si esa flecha es adecuada para tu arco.',
+        'field.staticSpine.hint': 'Valor impreso por el fabricante, por ejemplo 0.340 o 0.400.',
 
         'field.peep': 'Mirilla',
         'field.dLoop': 'D-loop',
@@ -48,12 +55,51 @@ const translations: Record<Lang, Record<string, string>> = {
         'summary.spineDynamic': 'Rigidez dinámica (spine)',
         'summary.match': 'Emparejamiento',
         'summary.arrowWeight': 'Peso de la flecha',
+        'summary.speed': 'Velocidad',
         'summary.foc': 'FOC (Front of Center)',
+        'summary.confidence': 'Confianza',
+        'summary.live': 'Lectura en vivo',
+        'summary.matchIndex': 'Match index',
+        'summary.primarySignal': 'Señal principal',
+        'summary.readyHint': 'Completa los campos clave para obtener una lectura de tuning más fiable.',
+
+        'toolbar.config': 'Config:',
+        'toolbar.save': 'Guardar',
+        'toolbar.load': 'Cargar',
+        'toolbar.clear': 'Limpiar',
+        'toolbar.clearAll': 'Limpiar Todo',
+        'toolbar.language': 'Idioma',
+        'toolbar.units': 'Unidades',
+        'toolbar.actions': 'Acciones',
+        'toolbar.slot': 'Slot',
 
         'match.weak': 'Débil (flecha blanda)',
         'match.good': 'Bueno',
         'match.stiff': 'Rígido (flecha rígida)',
         'match.na': 'N/D',
+        'matchScale.stiff': 'Rígido',
+        'matchScale.optimal': 'Óptimo',
+        'matchScale.weak': 'Flexible',
+
+        'confidence.high': 'Alta',
+        'confidence.medium': 'Media',
+        'confidence.low': 'Baja',
+
+        'group.core': 'Base de cálculo',
+        'group.advanced': 'Ajuste fino',
+        'group.build': 'Construcción de la flecha',
+        'group.release': 'Interfaz de disparo',
+        'group.accessories': 'Accesorios y extras',
+
+        'alerts.warnings': 'Advertencias',
+        'alerts.recommendations': 'Recomendaciones',
+
+        'archeryType.compound': 'Compound',
+        'archeryType.recurve': 'Recurvo',
+        'archeryType.traditional': 'Tradicional',
+
+        'option.units.imperial.short': 'Imperial',
+        'option.units.metric.short': 'Métrico',
 
         'option.release.post': 'Liberación posterior',
         'option.release.pre': 'Liberación previa',
@@ -67,10 +113,16 @@ const translations: Record<Lang, Record<string, string>> = {
     },
     en: {
         'app.title': 'Archery Setup',
+        'app.kicker': 'Spine tuning',
+        'app.subtitle': 'Tune bow and arrow with a clearer read of dynamic spine, available energy, and final match quality.',
+        'app.progress': 'Core fields',
 
         'section.bowSpecs': 'Bow Specs',
         'section.arrowSpecs': 'Arrow Specs',
         'section.weightOnString': 'Weight On String',
+        'section.bowSpecs.description': 'Start with the bow energy inputs. These drive required spine the most.',
+        'section.arrowSpecs.description': 'Define shaft and front load first, then refine secondary accessories.',
+        'section.weightOnString.description': 'Finish the setup with release interface choices and mass added to the string.',
 
         'field.iboVelocity': 'IBO Velocity',
         'field.drawLength': 'Draw Length',
@@ -91,6 +143,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.bushingPin': 'Bushing/Pin',
         'field.staticSpine': 'Static Spine',
         'field.staticSpine.tooltip': 'This is the stiffness value marked on your arrow by the manufacturer (e.g., 0.340, 0.400, 0.500). This is NOT what we want to calculate, but the value of the arrow you ALREADY HAVE or are testing. The app will verify if that arrow is suitable for your bow.',
+        'field.staticSpine.hint': 'Manufacturer-marked stiffness value, for example 0.340 or 0.400.',
 
         'field.peep': 'Peep',
         'field.dLoop': 'D-loop',
@@ -104,12 +157,51 @@ const translations: Record<Lang, Record<string, string>> = {
         'summary.spineDynamic': 'Dynamic spine',
         'summary.match': 'Match',
         'summary.arrowWeight': 'Arrow weight',
+        'summary.speed': 'Speed',
         'summary.foc': 'FOC (Front of Center)',
+        'summary.confidence': 'Confidence',
+        'summary.live': 'Live readout',
+        'summary.matchIndex': 'Match index',
+        'summary.primarySignal': 'Primary signal',
+        'summary.readyHint': 'Fill the core fields to get a more reliable tuning readout.',
+
+        'toolbar.config': 'Config:',
+        'toolbar.save': 'Save',
+        'toolbar.load': 'Load',
+        'toolbar.clear': 'Clear',
+        'toolbar.clearAll': 'Clear All',
+        'toolbar.language': 'Language',
+        'toolbar.units': 'Units',
+        'toolbar.actions': 'Actions',
+        'toolbar.slot': 'Slot',
 
         'match.weak': 'Weak (soft arrow)',
         'match.good': 'Good',
         'match.stiff': 'Stiff (stiff arrow)',
         'match.na': 'N/A',
+        'matchScale.stiff': 'Stiff',
+        'matchScale.optimal': 'Optimal',
+        'matchScale.weak': 'Weak',
+
+        'confidence.high': 'High',
+        'confidence.medium': 'Medium',
+        'confidence.low': 'Low',
+
+        'group.core': 'Core setup',
+        'group.advanced': 'Fine tuning',
+        'group.build': 'Arrow build',
+        'group.release': 'Release interface',
+        'group.accessories': 'Accessories and extras',
+
+        'alerts.warnings': 'Warnings',
+        'alerts.recommendations': 'Recommendations',
+
+        'archeryType.compound': 'Compound',
+        'archeryType.recurve': 'Recurve',
+        'archeryType.traditional': 'Traditional',
+
+        'option.units.imperial.short': 'Imperial',
+        'option.units.metric.short': 'Metric',
 
         'option.release.post': 'Post Gate Release',
         'option.release.pre': 'Pre Gate Release',

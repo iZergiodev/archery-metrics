@@ -1,8 +1,9 @@
-
 interface Tab {
   id: string
   label: string
   icon: string
+  detail?: string
+  complete?: boolean
 }
 
 interface TabNavigationProps {
@@ -13,25 +14,29 @@ interface TabNavigationProps {
 
 export function TabNavigation({ tabs, activeTab, onChange }: TabNavigationProps) {
   return (
-    <div className="mb-4 -mx-3 px-3">
-      <div className="flex w-full bg-slate-800/80 rounded-lg p-1 gap-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onChange(tab.id)}
-            className={`
-              flex items-center justify-center gap-2 flex-1 py-3 px-2 rounded-md
-              text-sm font-medium whitespace-nowrap transition-all duration-200
-              ${activeTab === tab.id
-                ? 'bg-slate-700 text-sky-400 shadow-sm'
-                : 'bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
-              }
-            `}
-          >
-            <span className="text-base">{tab.icon}</span>
-            <span className="hidden xs:inline">{tab.label}</span>
-          </button>
-        ))}
+    <div className="mb-6">
+      <div className="grid grid-cols-3 gap-2">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              className={`min-w-0 rounded-[14px] border px-2.5 py-3 text-left transition-colors ${
+                isActive
+                  ? 'border-[#facc15]/45 bg-[#181818] text-[#f8f8f8]'
+                  : 'border-[rgba(255,255,255,0.08)] bg-[#111111] text-[#9a9a9a] hover:border-[rgba(255,255,255,0.16)] hover:text-[#dcdcdc]'
+              }`}
+            >
+              <div className={`font-mono text-[10px] ${isActive ? 'text-[#facc15]' : 'text-[#5d5d5d]'}`}>{tab.icon}</div>
+              <div className="mt-2 break-words text-[11px] uppercase leading-tight tracking-[0.08em]">{tab.label}</div>
+              {tab.detail && (
+                <div className={`mt-1 truncate text-[10px] ${isActive ? 'text-[#d9d9d9]' : 'text-[#666666]'}`}>{tab.detail}</div>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

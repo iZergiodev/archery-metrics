@@ -10,15 +10,40 @@
 
 // === SPINE CALIBRATION ===
 
-// Controls the required spine calculation (Static Spine)
+// Controls the required spine calculation (Static Spine) - Compound
 // Calibrado para coincidir con tabla Easton 2024
-// Fórmula: spine = K * (drawWeight/70)^(-0.92) * sqrt(length/28)
-export const K_SPINE_CALIBRATION = 0.36
+// Fórmula base: spine = K * weightFactor * sqrt(length/28)
+// K ajustada con el set interno de casos compound del proyecto.
+export const K_SPINE_CALIBRATION = 0.3675
 
-// Controls the dynamic spine flex calculation
-// Higher value = Less aggressive adjustment (closer to static spine)
-// Lower value = More aggressive adjustment
-export const K_DYNAMIC_FLEX_CALIBRATION = 2000000
+// Controls the required spine calculation - Recurve/Traditional
+// Calibrado: 40# @ 28" → spine 0.500, 30# → ~0.640, 50# → ~0.410
+// Fórmula: spine = K * (drawWeight/40)^(-0.85) * sqrt(arrowLength/28) / (drawLength/28)^0.3
+export const K_RECURVE_CALIBRATION = 0.50
+
+// === DYNAMIC SPINE CALIBRATION ===
+
+// Static spine is measured on a standardized span. In real use, a longer shaft
+// bends more and a shorter shaft bends less. The model uses an effective
+// exponent instead of the full beam-theory cubic term because the required
+// spine side already captures part of the length trend.
+export const STATIC_SPINE_REFERENCE_LENGTH = 28
+export const DYNAMIC_SPINE_LENGTH_EXPONENT = 1.5
+
+// Front mass weakens dynamic spine. We normalize around a common target setup:
+// 100gr point + 25gr insert = 125gr total in the front.
+export const FRONT_MASS_REFERENCE = 125
+export const FRONT_MASS_GRAINS_STEP = 25
+export const FRONT_MASS_SENSITIVITY = 0.035
+
+// === REQUIRED SPINE CALIBRATION (COMPOUND) ===
+
+// Compound required spine should respond not only to peak draw weight, but also
+// to the launch severity of the bow. This reference energy corresponds to a
+// representative modern setup around 70# / 29" / 6.5" / 335 IBO / medium cams.
+export const COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT = -0.825
+export const COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY = 55.5
+export const COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT = -0.125
 
 // === VELOCITY CONVERSION ===
 

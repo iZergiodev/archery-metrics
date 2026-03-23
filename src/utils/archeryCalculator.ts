@@ -1,5 +1,6 @@
 import {
     K_SPINE_CALIBRATION,
+    K_RECURVE_CALIBRATION,
     K_FPS_CONVERSION,
     CAM_EFFICIENCY,
     MATCH_GOOD_MAX,
@@ -11,7 +12,6 @@ import {
     GPP_MAX_RECOMMENDED,
     FOC_MIN_RECOMMENDED,
     FOC_MAX_RECOMMENDED,
-    FOC_OPTIMAL_LOW,
     VELOCITY_MIN_TARGET,
     VELOCITY_MAX_SAFE,
     VELOCITY_OPTIMAL_MAX,
@@ -19,6 +19,14 @@ import {
     TEMP_SPINE_COEFFICIENT,
     COMPONENT_POSITIONS,
     ARCHERY_TYPE,
+    STATIC_SPINE_REFERENCE_LENGTH,
+    DYNAMIC_SPINE_LENGTH_EXPONENT,
+    FRONT_MASS_REFERENCE,
+    FRONT_MASS_GRAINS_STEP,
+    FRONT_MASS_SENSITIVITY,
+    COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT,
+    COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY,
+    COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT,
     type ArcheryType,
 } from '../constants'
 
@@ -162,16 +170,20 @@ function calculateBowEfficiency(braceHeight: number, iboVelocity: number, drawLe
 
 
 
-// Función para calcular spine requerido basado en paradoja del arquero
-function calculateRequiredSpine(peakForce: number, arrowLength: number): number {
-    // Relación basada en tabla Easton: spine ∝ (drawWeight)^(-0.92)
-    // Más peso = spine más rígido (número menor)
-    // Calibrado: 70# @ 30" → spine 0.340, 60# @ 28" → spine 0.400
-    const spineRequired = K_SPINE_CALIBRATION *
-        Math.pow(peakForce / 70, -0.92) *
-        Math.sqrt(arrowLength / 28)
+function calculateCompoundRequiredSpine(
+    drawWeight: number,
+    arrowLength: number,
+    availableEnergy: number,
+): number {
+    const drawWeightFactor = Math.pow(drawWeight / 70, COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT)
+    const energyFactor = Math.pow(
+        availableEnergy / COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY,
+        COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT,
+    )
 
-    return spineRequired
+    // The base chart trend still anchors the model, but available energy adds
+    // explicit sensitivity to draw length, brace height, let-off, IBO and cams.
+    return K_SPINE_CALIBRATION * drawWeightFactor * Math.sqrt(arrowLength / 28) * energyFactor
 }
 
 // Función para calcular factor de emplumado
@@ -209,33 +221,22 @@ function calculateStringMaterialFactor(stringWeights: { silencers: string, silen
     }
 }
 
-// Función para ajuste de peso de punta según tablas Easton (para velocidad)
-function calculatePointWeightAdjustment(pointWeight: number): number {
-    if (pointWeight > 100) {
-        const extraGrains = pointWeight - 100
-        const increments25 = Math.floor(extraGrains / 25)
-        return increments25 * 2 // +2 lbs equivalentes por cada 25 grains
-    }
-    return 0 // Sin ajuste para puntas ≤ 100 grains
+// Un eje más largo actúa más débil. Usamos un exponente efectivo para
+// introducir la tendencia estructural sin duplicar toda la dependencia de
+// longitud que ya existe en el spine requerido.
+function calculateLengthAdjustedSpineFactor(shaftLength: number): number {
+    const factor = Math.pow(shaftLength / STATIC_SPINE_REFERENCE_LENGTH, DYNAMIC_SPINE_LENGTH_EXPONENT)
+    return clamp(factor, 0.75, 1.35)
 }
 
-// Función para calcular el spine EFECTIVO de la flecha
-// Basado en tablas Easton: el peso frontal afecta cómo "actúa" la flecha
-// Punta pesada = flecha actúa más débil (spine efectivo MAYOR que estático)
-// Punta ligera = flecha actúa más rígida (spine efectivo MENOR que estático)
-function calculateEffectiveSpineFactor(pointWeight: number, insertWeight: number): number {
+// Basado en guías prácticas de spine: aumentar el peso frontal debilita la
+// reacción dinámica; reducirlo la endurece.
+function calculateFrontMassFactor(pointWeight: number, insertWeight: number): number {
     const totalFrontWeight = pointWeight + insertWeight
-    const standardFrontWeight = 100 // 100gr point standard (removed +20 insert assumption to shift baseline)
-    const deviation = totalFrontWeight - standardFrontWeight
+    const deviation = totalFrontWeight - FRONT_MASS_REFERENCE
+    const factor = 1 + (deviation / FRONT_MASS_GRAINS_STEP) * FRONT_MASS_SENSITIVITY
 
-    // Por cada 25gr de diferencia, el spine efectivo cambia ~2.5% (reduced sensitivity)
-    // factor > 1 = flecha actúa más débil (spine efectivo sube)
-    // factor < 1 = flecha actúa más rígida (spine efectivo baja)
-    const factor = 1 + (deviation / 25) * 0.025
-
-    return clamp(factor, 0.70, 1.30)
-
-    return clamp(factor, 0.70, 1.30)
+    return clamp(factor, 0.75, 1.35)
 }
 
 // Función para calcular factor de wrap (vinilo decorativo)
@@ -244,11 +245,6 @@ function calculateWrapFactor(wrapWeight: number): number {
         return 0.98 // -2% flexión para wraps
     }
     return 1.0
-}
-
-// Función para calcular apertura efectiva según Hattila
-function calculateEffectiveDrawLength(drawLength: number): number {
-    return Math.floor(drawLength)
 }
 
 // Función para obtener recomendaciones de casos límite
@@ -329,12 +325,18 @@ function temperatureCorrection(
 }
 
 // Función para calcular spine requerido para recurvo/tradicional
-function calculateRecurveSpine(drawWeight: number, drawLength: number): number {
-    // Para recurvo, el spine requerido es diferente
-    // Basado en tablas tradicionales: spine ~ 0.001 * drawWeight * drawLength
-    const spineRequired = 0.001 * drawWeight * drawLength
+// Modelo de ley de potencias calibrado contra tablas de spine para recurvo
+// Referencia: 40# @ 28" con flecha de 28" → spine 0.500
+function calculateRecurveSpine(drawWeight: number, drawLength: number, arrowLength: number): number {
+    // Factor de apertura: mayor apertura = más energía = spine más rígido necesario
+    const drawLengthAdjust = Math.pow(drawLength / 28, 0.3)
 
-    return clamp(spineRequired, 0.200, 0.900)
+    const spineRequired = K_RECURVE_CALIBRATION *
+        Math.pow(drawWeight / 40, -0.85) *
+        Math.sqrt(arrowLength / 28) /
+        drawLengthAdjust
+
+    return clamp(spineRequired, 0.200, 1.200)
 }
 
 // Función para calcular energía almacenada en recurvo (curva lineal)
@@ -419,26 +421,21 @@ export function calculateSpineMatch(
 
     // Validación
     const powerStroke = drawLength - braceHeight
-    if (arrowTotalWeight === 0 || powerStroke === 0) {
+    if (arrowTotalWeight === 0 || powerStroke <= 0) {
         return createEmptyResult(archeryType, recommendations, warnings)
     }
 
     // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
     let storedEnergy: number
     let bowEfficiency: number
-    let effectiveDrawWeight: number
 
     if (archeryType === ARCHERY_TYPE.COMPOUND) {
-        const effectiveDrawLength = calculateEffectiveDrawLength(drawLength)
-        storedEnergy = calculateStoredEnergy(drawWeight, effectiveDrawLength, braceHeight, percentLetoff, camAggressiveness)
+        storedEnergy = calculateStoredEnergy(drawWeight, drawLength, braceHeight, percentLetoff, camAggressiveness)
         bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity, drawLength)
-        const pointWeightAdjustment = calculatePointWeightAdjustment(pointWeight)
-        effectiveDrawWeight = drawWeight + pointWeightAdjustment
     } else {
         // Recurvo/Traditional - different physics
         storedEnergy = calculateRecurveStoredEnergy(drawWeight, drawLength, braceHeight)
         bowEfficiency = 0.75 // Fixed efficiency for recurvo
-        effectiveDrawWeight = drawWeight
     }
 
     const availableEnergy = storedEnergy * bowEfficiency
@@ -454,7 +451,8 @@ export function calculateSpineMatch(
     // Ajustes finos
     let finalFPS = calculatedFPS
     if (isFinite(calculatedFPS)) {
-        finalFPS += (axleToAxle - 35) * 0.5
+        // ATA más corto = arco más rápido, ATA más largo = más lento
+        finalFPS -= (axleToAxle - 35) * 0.5
         finalFPS -= totalStringWeight / 6
         if (releaseType.includes('Pre')) {
             finalFPS += 2
@@ -465,37 +463,29 @@ export function calculateSpineMatch(
     const foc = calculateFOC(shaftLength, pointWeight, insertWeight, shaftWeight, fletchWeight, nockWeight, wrapWeight, bushingPin)
 
     // === PARTE D: SPINE DINÁMICO REQUERIDO (SDR) ===
-    const massRatio = arrowTotalWeight / effectiveDrawWeight
+    // GPP usa drawWeight real del arco (no ajustado por peso de punta)
+    const massRatio = arrowTotalWeight / drawWeight
     let spineRequiredBase: number
 
     if (archeryType === ARCHERY_TYPE.COMPOUND) {
-        spineRequiredBase = calculateRequiredSpine(effectiveDrawWeight, shaftLength)
+        // Spine requerido basado solo en specs del arco (drawWeight + longitud de flecha)
+        // El spine requerido responde a la severidad real del lanzamiento,
+        // no solo al pico de libras del arco.
+        spineRequiredBase = calculateCompoundRequiredSpine(drawWeight, shaftLength, availableEnergy)
     } else {
-        spineRequiredBase = calculateRecurveSpine(drawWeight, drawLength)
+        spineRequiredBase = calculateRecurveSpine(drawWeight, drawLength, shaftLength)
     }
 
     // === PARTE E: SPINE EFECTIVO DE LA FLECHA ===
-    const frontWeightFactor = calculateEffectiveSpineFactor(pointWeight, insertWeight)
-
-    // FOC Factor: Alto FOC estabiliza la flecha, haciéndola actuar más RÍGIDA (spine efectivo MENOR)
-    // INVERTIDO respecto a lógica anterior basado en pruebas de campo recientes
-    let focFactor = 1.0
-    if (foc > FOC_OPTIMAL_LOW) {
-        // High FOC (>13%) stiffens behavior
-        // Stronger effect: ~5.5% stiffening per unit of FOC above optimal
-        focFactor = 1 - ((foc - FOC_OPTIMAL_LOW) / 2) * 0.055
-    } else if (foc < FOC_OPTIMAL_LOW - 2 && foc > 0) {
-        // Low FOC (<8%) weakens behavior (less stable)
-        focFactor = 1 + (((FOC_OPTIMAL_LOW - 2) - foc) / 2) * 0.02
-    }
-    focFactor = clamp(focFactor, 0.75, 1.25)
+    const lengthAdjustedSpineFactor = calculateLengthAdjustedSpineFactor(shaftLength)
+    const frontMassFactor = calculateFrontMassFactor(pointWeight, insertWeight)
 
     const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
     const releaseFactor = calculateReleaseFactor(releaseType)
     const wrapFactor = calculateWrapFactor(wrapWeight)
 
     // Spine Dinámico (Efectivo)
-    let spineDynamic = staticSpine * frontWeightFactor * focFactor * fletchingFactor * releaseFactor * wrapFactor
+    let spineDynamic = staticSpine * lengthAdjustedSpineFactor * frontMassFactor * fletchingFactor * releaseFactor * wrapFactor
 
     // Aplicar corrección por temperatura si está disponible
     if (temperatureF !== undefined) {

@@ -182,6 +182,42 @@ describe('calculateSpineMatch', () => {
         expect(result.matchIndexCI).not.toBeNull()
     })
 
+    it('requiere un spine más rígido cuando aumenta la apertura del arco', () => {
+        const shortDraw = runScenario({
+            bow: {
+                drawLength: '27',
+            },
+        })
+
+        const longDraw = runScenario({
+            bow: {
+                drawLength: '31',
+            },
+        })
+
+        expect(shortDraw.spineRequired).not.toBeNull()
+        expect(longDraw.spineRequired).not.toBeNull()
+        expect(longDraw.spineRequired!).toBeLessThan(shortDraw.spineRequired!)
+    })
+
+    it('requiere un spine más rígido con levas más agresivas', () => {
+        const softCam = runScenario({
+            bow: {
+                camAggressiveness: 'soft',
+            },
+        })
+
+        const hardCam = runScenario({
+            bow: {
+                camAggressiveness: 'hard',
+            },
+        })
+
+        expect(softCam.spineRequired).not.toBeNull()
+        expect(hardCam.spineRequired).not.toBeNull()
+        expect(hardCam.spineRequired!).toBeLessThan(softCam.spineRequired!)
+    })
+
     it('detecta flecha demasiado rígida cuando usamos spine bajo y punta ligera', () => {
         // Spine 0.250 es muy rígido para 70#, combinado con punta ligera
         // la flecha actúa aún más rígida -> status: stiff
@@ -200,9 +236,9 @@ describe('calculateSpineMatch', () => {
         expect(result.matchIndex!).toBeLessThan(0.85)
     })
 
-    it('detecta efecto de FOC extremo: peso frontal muy alto estabiliza la flecha', () => {
-        // Con FOC muy alto (>15%), la flecha actúa más rígida (mejor estabilidad)
-        // Esto es opuesto a la lógica anterior - FOC estabiliza, no flexibiliza
+    it('detecta que el peso frontal extremo debilita el spine dinámico y eleva el FOC', () => {
+        // Mucho peso delante incrementa el momento de inercia frontal:
+        // la flecha debe comportarse más débil y además subir el FOC.
         const result = runScenario({
             arrow: {
                 pointWeight: '200',
@@ -213,15 +249,52 @@ describe('calculateSpineMatch', () => {
 
         console.log('Escenario FOC extremo', result)
 
-        // FOC alto = más estable/rígido = matchIndex menor
-        expect(result.status).toBe('good') // FOC alto estabiliza, no debilita
+        expect(result.status).toBe('weak')
         expect(result.matchIndex).not.toBeNull()
-        expect(result.matchIndex!).toBeLessThan(1.1)
-        // FOC de 19.77% debe generar recomendación
+        expect(result.matchIndex!).toBeGreaterThan(1.1)
         expect(result.recommendations.length).toBeGreaterThan(0)
-        // Verificar que hay recomendación sobre FOC alto
         const hasFocRecommendation = result.recommendations.some(r => r.includes('FOC alto'))
         expect(hasFocRecommendation).toBe(true)
+    })
+
+    it('hace que una flecha más larga actúe más débil que la misma flecha más corta', () => {
+        const shortArrow = runScenario({
+            arrow: {
+                shaftLength: '27',
+            },
+        })
+
+        const longArrow = runScenario({
+            arrow: {
+                shaftLength: '31',
+            },
+        })
+
+        expect(shortArrow.spineDynamic).not.toBeNull()
+        expect(longArrow.spineDynamic).not.toBeNull()
+        expect(longArrow.spineDynamic!).toBeGreaterThan(shortArrow.spineDynamic!)
+        expect(longArrow.matchIndex!).toBeGreaterThan(shortArrow.matchIndex!)
+    })
+
+    it('hace que más peso frontal debilite la misma flecha', () => {
+        const lightPoint = runScenario({
+            arrow: {
+                pointWeight: '100',
+                insertWeight: '25',
+            },
+        })
+
+        const heavyPoint = runScenario({
+            arrow: {
+                pointWeight: '150',
+                insertWeight: '25',
+            },
+        })
+
+        expect(lightPoint.spineDynamic).not.toBeNull()
+        expect(heavyPoint.spineDynamic).not.toBeNull()
+        expect(heavyPoint.spineDynamic!).toBeGreaterThan(lightPoint.spineDynamic!)
+        expect(heavyPoint.matchIndex!).toBeGreaterThan(lightPoint.matchIndex!)
     })
 
     it('retorna valores nulos cuando faltan datos críticos', () => {
@@ -287,6 +360,25 @@ describe('calculateSpineMatch', () => {
 // ============================================
 
 describe('Real World Data Validation', () => {
+    it('mantiene la calibración compound cerca del dataset real del proyecto', () => {
+        const mathews = calculateSpineMatch(MATHEWS_V3X_33, EASTON_XX75_300, baseString)
+        const hoyt = calculateSpineMatch(HOYT_REXON, EASTON_ACC_340, baseString)
+        const bowtech = calculateSpineMatch(BOWTECH_REALM, EASTON_XX78_400, baseString)
+        const youth = calculateSpineMatch(YOUTH_BOW, EASTON_FMJ_500, baseString)
+
+        expect(mathews.matchIndex!).toBeGreaterThan(0.93)
+        expect(mathews.matchIndex!).toBeLessThan(0.99)
+
+        expect(hoyt.matchIndex!).toBeGreaterThan(1.00)
+        expect(hoyt.matchIndex!).toBeLessThan(1.07)
+
+        expect(bowtech.matchIndex!).toBeGreaterThan(1.03)
+        expect(bowtech.matchIndex!).toBeLessThan(1.09)
+
+        expect(youth.matchIndex!).toBeGreaterThan(0.76)
+        expect(youth.matchIndex!).toBeLessThan(0.83)
+    })
+
     // Test: Mathews V3X 33 con Easton XX75 300
     // Según Easton: Spine 300 es para 66-80 lbs @ 30"
     // Mathews V3X 33: 75 lbs @ 30" - borderline (spine 300 es el límite inferior)

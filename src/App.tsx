@@ -1,57 +1,81 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { useI18n } from './i18n.tsx'
 import { calculateSpineMatch } from './utils/archeryCalculator'
 import { Toolbar } from './components/Toolbar'
 import { TabNavigation } from './components/TabNavigation'
 import { ResultsSummary } from './components/ResultsSummary'
 import { FormSection } from './components/FormSection'
+import { FieldGroup } from './components/FieldGroup'
 import { InputField } from './components/InputField'
 import { SelectField } from './components/SelectField'
+import {
+  formatInputDisplayValue,
+  getUnitLabel,
+  toCanonicalInputValue,
+  type ConvertibleField,
+  type UnitSystem,
+} from './utils/unitSystem'
 
 type ActiveTab = 'bow' | 'arrow' | 'string'
+
+const UNIT_SYSTEM_STORAGE_KEY = 'archery-unit-system'
+const BOW_CORE_FIELDS = ['drawWeight', 'drawLength', 'iboVelocity', 'braceHeight'] as const
+const ARROW_CORE_FIELDS = ['staticSpine', 'shaftLength', 'shaftGpi', 'pointWeight'] as const
+const STRING_CORE_FIELDS = ['releaseType', 'stringMaterial', 'dLoop', 'peep'] as const
+
+const initialBowSpecs = {
+  iboVelocity: '',
+  drawLength: '',
+  drawWeight: '',
+  braceHeight: '',
+  axleToAxle: '',
+  percentLetoff: '',
+}
+
+const initialArrowSpecs = {
+  pointWeight: '',
+  insertWeight: '',
+  shaftLength: '',
+  shaftGpi: '',
+  fletchQuantity: '',
+  weightEach: '',
+  wrapWeight: '',
+  nockWeight: '',
+  bushingPin: '',
+  staticSpine: '',
+}
+
+const initialStringWeights = {
+  peep: '',
+  dLoop: '',
+  nockPoint: '',
+  silencers: '',
+  silencerDfc: '',
+  releaseType: 'Post Gate Release',
+  stringMaterial: 'unknown' as 'dacron' | 'fastflight' | 'unknown',
+}
+
+function countFilledFields<T extends Record<string, string>>(state: T, fields: readonly (keyof T)[]) {
+  return fields.filter((field) => state[field].trim() !== '').length
+}
 
 function App() {
   const { t, lang, setLang } = useI18n()
   const [activeTab, setActiveTab] = useState<ActiveTab>('bow')
-
-  const [bowSpecs, setBowSpecs] = useState({
-    iboVelocity: '',
-    drawLength: '',
-    drawWeight: '',
-    braceHeight: '',
-    axleToAxle: '',
-    percentLetoff: '',
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>(() => {
+    const saved = localStorage.getItem(UNIT_SYSTEM_STORAGE_KEY)
+    return saved === 'metric' ? 'metric' : 'imperial'
   })
 
-  const [arrowSpecs, setArrowSpecs] = useState({
-    pointWeight: '',
-    insertWeight: '',
-    shaftLength: '',
-    shaftGpi: '',
-    fletchQuantity: '',
-    weightEach: '',
-    wrapWeight: '',
-    nockWeight: '',
-    bushingPin: '',
-    staticSpine: '',
-  })
-
-  const [stringWeights, setStringWeights] = useState({
-    peep: '',
-    dLoop: '',
-    nockPoint: '',
-    silencers: '',
-    silencerDfc: '',
-    releaseType: 'Post Gate Release',
-    stringMaterial: 'unknown' as 'dacron' | 'fastflight' | 'unknown',
-  })
+  const [bowSpecs, setBowSpecs] = useState(initialBowSpecs)
+  const [arrowSpecs, setArrowSpecs] = useState(initialArrowSpecs)
+  const [stringWeights, setStringWeights] = useState(initialStringWeights)
 
   const spineMatch = useMemo(
     () => calculateSpineMatch(bowSpecs, arrowSpecs, stringWeights),
     [bowSpecs, arrowSpecs, stringWeights],
   )
 
-  // Configuration save/load functions
   const saveConfiguration = (slot: number) => {
     const config = { bowSpecs, arrowSpecs, stringWeights }
     localStorage.setItem(`archery-config-${slot}`, JSON.stringify(config))
@@ -68,26 +92,65 @@ function App() {
   }
 
   const clearInputs = () => {
-    setBowSpecs({ iboVelocity: '', drawLength: '', drawWeight: '', braceHeight: '', axleToAxle: '', percentLetoff: '' })
-    setArrowSpecs({ pointWeight: '', insertWeight: '', shaftLength: '', shaftGpi: '', fletchQuantity: '', weightEach: '', wrapWeight: '', nockWeight: '', bushingPin: '', staticSpine: '' })
-    setStringWeights({ peep: '', dLoop: '', nockPoint: '', silencers: '', silencerDfc: '', releaseType: 'Post Gate Release', stringMaterial: 'unknown' })
+    setBowSpecs(initialBowSpecs)
+    setArrowSpecs(initialArrowSpecs)
+    setStringWeights(initialStringWeights)
   }
+
+  const setGlobalUnitSystem = (nextUnitSystem: UnitSystem) => {
+    setUnitSystem(nextUnitSystem)
+    localStorage.setItem(UNIT_SYSTEM_STORAGE_KEY, nextUnitSystem)
+  }
+
+  const bindField = <T extends Record<string, string>>(
+    state: T,
+    setter: Dispatch<SetStateAction<T>>,
+    field: keyof T,
+    fieldType: ConvertibleField = 'none',
+  ) => ({
+    value: formatInputDisplayValue(state[field], fieldType, unitSystem),
+    onChange: (nextValue: string) => {
+      setter((current) => ({
+        ...current,
+        [field]: toCanonicalInputValue(nextValue, fieldType, unitSystem),
+      }))
+    },
+  })
+
+  const unitLabel = (fieldType: ConvertibleField) => getUnitLabel(fieldType, unitSystem)
+
+  const bowField = <K extends keyof typeof bowSpecs>(field: K, fieldType: ConvertibleField = 'none') =>
+    bindField(bowSpecs, setBowSpecs, field, fieldType)
+
+  const arrowField = <K extends keyof typeof arrowSpecs>(field: K, fieldType: ConvertibleField = 'none') =>
+    bindField(arrowSpecs, setArrowSpecs, field, fieldType)
+
+  const stringField = <K extends keyof typeof stringWeights>(field: K, fieldType: ConvertibleField = 'none') =>
+    bindField(stringWeights, setStringWeights, field, fieldType)
 
   const matchLabel: string = useMemo(() => {
     switch (spineMatch.status) {
-      case 'weak': return t('match.weak')
-      case 'stiff': return t('match.stiff')
-      case 'good': return t('match.good')
-      default: return t('match.na')
+      case 'weak':
+        return t('match.weak')
+      case 'stiff':
+        return t('match.stiff')
+      case 'good':
+        return t('match.good')
+      default:
+        return t('match.na')
     }
   }, [spineMatch.status, t])
 
   const matchColor: string = useMemo(() => {
     switch (spineMatch.status) {
-      case 'weak': return 'text-amber-400'
-      case 'stiff': return 'text-sky-400'
-      case 'good': return 'text-emerald-400'
-      default: return 'text-slate-400'
+      case 'weak':
+        return 'text-[#ef4444]'
+      case 'stiff':
+        return 'text-[#60a5fa]'
+      case 'good':
+        return 'text-[#facc15]'
+      default:
+        return 'text-[#8a8a8a]'
     }
   }, [spineMatch.status])
 
@@ -99,169 +162,358 @@ function App() {
     return 70 + ((matchIndex - 1.15) / 0.25) * 28
   }
 
+  const bowProgress = countFilledFields(bowSpecs, BOW_CORE_FIELDS)
+  const arrowProgress = countFilledFields(arrowSpecs, ARROW_CORE_FIELDS)
+  const stringProgress = countFilledFields(stringWeights, STRING_CORE_FIELDS)
+  const totalProgress = bowProgress + arrowProgress + stringProgress
+  const totalCoreFields = BOW_CORE_FIELDS.length + ARROW_CORE_FIELDS.length + STRING_CORE_FIELDS.length
+
   const tabs = [
-    { id: 'bow', label: t('section.bowSpecs'), icon: '🎯' },
-    { id: 'arrow', label: t('section.arrowSpecs'), icon: '➜' },
-    { id: 'string', label: t('section.weightOnString'), icon: '🎣' },
+    {
+      id: 'bow',
+      label: t('section.bowSpecs'),
+      icon: '01',
+      detail: `${bowProgress}/${BOW_CORE_FIELDS.length}`,
+      complete: bowProgress === BOW_CORE_FIELDS.length,
+    },
+    {
+      id: 'arrow',
+      label: t('section.arrowSpecs'),
+      icon: '02',
+      detail: `${arrowProgress}/${ARROW_CORE_FIELDS.length}`,
+      complete: arrowProgress === ARROW_CORE_FIELDS.length,
+    },
+    {
+      id: 'string',
+      label: t('section.weightOnString'),
+      icon: '03',
+      detail: `${stringProgress}/${STRING_CORE_FIELDS.length}`,
+      complete: stringProgress === STRING_CORE_FIELDS.length,
+    },
   ]
 
+  const renderBowSection = () => (
+    <FormSection
+      title={t('section.bowSpecs')}
+      icon="01"
+      eyebrow={`${bowProgress}/${BOW_CORE_FIELDS.length} ${t('app.progress')}`}
+      description={t('section.bowSpecs.description')}
+    >
+      <FieldGroup title={t('group.core')}>
+        <div className="space-y-5">
+          <InputField
+            {...bowField('drawWeight', 'drawWeight')}
+            label={t('field.drawWeight')}
+            placeholder={unitLabel('drawWeight')}
+            id="drawWeight"
+            required
+            unit={unitLabel('drawWeight')}
+          />
+          <InputField
+            {...bowField('drawLength', 'length')}
+            label={t('field.drawLength')}
+            placeholder={unitLabel('length')}
+            id="drawLength"
+            required
+            unit={unitLabel('length')}
+          />
+          <InputField
+            {...bowField('iboVelocity', 'speed')}
+            label={t('field.iboVelocity')}
+            placeholder={unitLabel('speed')}
+            id="iboVelocity"
+            required
+            unit={unitLabel('speed')}
+          />
+          <InputField
+            {...bowField('braceHeight', 'length')}
+            label={t('field.braceHeight')}
+            placeholder={unitLabel('length')}
+            id="braceHeight"
+            required
+            unit={unitLabel('length')}
+          />
+        </div>
+      </FieldGroup>
+
+      <FieldGroup title={t('group.advanced')}>
+        <div className="space-y-5">
+          <InputField
+            {...bowField('axleToAxle', 'length')}
+            label={t('field.axleToAxle')}
+            placeholder={unitLabel('length')}
+            id="axleToAxle"
+            unit={unitLabel('length')}
+          />
+          <InputField
+            {...bowField('percentLetoff')}
+            label={t('field.percentLetoff')}
+            placeholder="%"
+            id="percentLetoff"
+            unit="%"
+          />
+        </div>
+      </FieldGroup>
+    </FormSection>
+  )
+
+  const renderArrowSection = () => (
+    <FormSection
+      title={t('section.arrowSpecs')}
+      icon="02"
+      eyebrow={`${arrowProgress}/${ARROW_CORE_FIELDS.length} ${t('app.progress')}`}
+      description={t('section.arrowSpecs.description')}
+    >
+      <FieldGroup title={t('group.core')}>
+        <div className="space-y-5">
+          <InputField
+            {...arrowField('staticSpine')}
+            label={t('field.staticSpine')}
+            placeholder="0.400"
+            id="staticSpine"
+            required
+            step="0.001"
+            tooltip={t('field.staticSpine.tooltip')}
+            hint={t('field.staticSpine.hint')}
+          />
+          <InputField
+            {...arrowField('shaftLength', 'length')}
+            label={t('field.shaftLength')}
+            placeholder={unitLabel('length')}
+            id="shaftLength"
+            required
+            unit={unitLabel('length')}
+          />
+          <InputField
+            {...arrowField('shaftGpi', 'linearDensity')}
+            label={t('field.shaftGpi')}
+            placeholder={unitLabel('linearDensity')}
+            id="shaftGpi"
+            unit={unitLabel('linearDensity')}
+          />
+          <InputField
+            {...arrowField('pointWeight', 'componentWeight')}
+            label={t('field.pointWeight')}
+            placeholder={unitLabel('componentWeight')}
+            id="pointWeight"
+            unit={unitLabel('componentWeight')}
+          />
+        </div>
+      </FieldGroup>
+
+      <FieldGroup title={t('group.build')}>
+        <div className="space-y-5">
+          <InputField
+            {...arrowField('insertWeight', 'componentWeight')}
+            label={t('field.insertWeight')}
+            placeholder={unitLabel('componentWeight')}
+            id="insertWeight"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...arrowField('fletchQuantity')}
+            label={t('field.fletchQuantity')}
+            placeholder="#"
+            id="fletchQuantity"
+          />
+          <InputField
+            {...arrowField('weightEach', 'componentWeight')}
+            label={t('field.weightEach')}
+            placeholder={unitLabel('componentWeight')}
+            id="weightEach"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...arrowField('wrapWeight', 'componentWeight')}
+            label={t('field.wrapWeight')}
+            placeholder={unitLabel('componentWeight')}
+            id="wrapWeight"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...arrowField('nockWeight', 'componentWeight')}
+            label={t('field.nockWeight')}
+            placeholder={unitLabel('componentWeight')}
+            id="nockWeight"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...arrowField('bushingPin', 'componentWeight')}
+            label={t('field.bushingPin')}
+            placeholder={unitLabel('componentWeight')}
+            id="bushingPin"
+            unit={unitLabel('componentWeight')}
+          />
+        </div>
+      </FieldGroup>
+    </FormSection>
+  )
+
+  const renderStringSection = () => (
+    <FormSection
+      title={t('section.weightOnString')}
+      icon="03"
+      eyebrow={`${stringProgress}/${STRING_CORE_FIELDS.length} ${t('app.progress')}`}
+      description={t('section.weightOnString.description')}
+    >
+      <FieldGroup title={t('group.release')}>
+        <div className="space-y-5">
+          <SelectField
+            label={t('field.release')}
+            value={stringWeights.releaseType}
+            onChange={(value) => setStringWeights({ ...stringWeights, releaseType: value })}
+            options={[
+              { value: 'Post Gate Release', label: t('option.release.post') },
+              { value: 'Pre Gate Release', label: t('option.release.pre') },
+            ]}
+            id="releaseType"
+          />
+          <SelectField
+            label={t('field.stringMaterial')}
+            value={stringWeights.stringMaterial}
+            onChange={(value) =>
+              setStringWeights({
+                ...stringWeights,
+                stringMaterial: value as typeof stringWeights.stringMaterial,
+              })
+            }
+            options={[
+              { value: 'unknown', label: t('option.stringMaterial.unknown') },
+              { value: 'fastflight', label: t('option.stringMaterial.fastflight') },
+              { value: 'dacron', label: t('option.stringMaterial.dacron') },
+            ]}
+            id="stringMaterial"
+          />
+          <InputField
+            {...stringField('dLoop', 'componentWeight')}
+            label={t('field.dLoop')}
+            placeholder={unitLabel('componentWeight')}
+            id="dLoop"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...stringField('peep', 'componentWeight')}
+            label={t('field.peep')}
+            placeholder={unitLabel('componentWeight')}
+            id="peep"
+            unit={unitLabel('componentWeight')}
+          />
+        </div>
+      </FieldGroup>
+
+      <FieldGroup title={t('group.accessories')}>
+        <div className="space-y-5">
+          <InputField
+            {...stringField('nockPoint', 'componentWeight')}
+            label={t('field.nockPoint')}
+            placeholder={unitLabel('componentWeight')}
+            id="nockPoint"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...stringField('silencers', 'componentWeight')}
+            label={t('field.silencers')}
+            placeholder={unitLabel('componentWeight')}
+            id="silencers"
+            unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...stringField('silencerDfc', 'componentWeight')}
+            label={t('field.silencerDfc')}
+            placeholder={unitLabel('componentWeight')}
+            id="silencerDfc"
+            unit={unitLabel('componentWeight')}
+          />
+        </div>
+      </FieldGroup>
+    </FormSection>
+  )
+
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 safe-top">
-        <div className="max-w-4xl mx-auto px-3 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <h1 className="text-lg font-semibold text-slate-100 truncate">
-              {t('app.title')}
-            </h1>
+    <div className="min-h-screen bg-[#0c0c0c] text-[#f0f0f0]">
+      <header className="sticky top-0 z-40 border-b border-[rgba(255,255,255,0.08)] bg-[rgba(12,12,12,0.94)] safe-top">
+        <div className="mx-auto max-w-[560px] px-4 py-3">
+          <div className="flex flex-col gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[#facc15]">{t('app.kicker')}</p>
+              <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-[#f7f7f7]">{t('app.title')}</h1>
+              <p className="mt-1 break-words text-[12px] leading-relaxed text-[#747474]">{t('app.subtitle')}</p>
+              <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[#575757]">
+                {totalProgress}/{totalCoreFields} {t('app.progress')}
+              </p>
+            </div>
+
             <Toolbar
               onSave={saveConfiguration}
               onLoad={loadConfiguration}
               onClear={clearInputs}
               lang={lang}
               onSetLang={setLang}
+              unitSystem={unitSystem}
+              onSetUnitSystem={setGlobalUnitSystem}
               t={t}
             />
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 py-4 pb-24 safe-bottom">
-        {/* Results Summary - Always visible */}
-        <div className="mb-4">
-          <ResultsSummary
-            result={spineMatch}
-            matchColor={matchColor}
-            matchLabel={matchLabel}
-            getMatchIndexPosition={getMatchIndexPosition}
-          />
-        </div>
+      <main className="mx-auto max-w-[560px] px-4 py-4 pb-24 safe-bottom">
+        <ResultsSummary
+          result={spineMatch}
+          matchColor={matchColor}
+          matchLabel={matchLabel}
+          getMatchIndexPosition={getMatchIndexPosition}
+          unitSystem={unitSystem}
+          t={t}
+        />
 
-        {/* Alerts Section */}
         {(spineMatch.warnings.length > 0 || spineMatch.recommendations.length > 0) && (
-          <div className="mb-4 space-y-2">
+          <div className="mt-6 space-y-5">
             {spineMatch.warnings.length > 0 && (
-              <div className="rounded-lg border border-amber-600/30 bg-amber-900/20 p-3">
-                <h3 className="text-xs font-medium mb-1.5 text-amber-300 flex items-center gap-1.5">
-                  ⚠️ <span className="hidden xs:inline">Advertencias</span>
-                </h3>
-                <ul className="text-[10px] xs:text-xs space-y-0.5 text-amber-200">
-                  {spineMatch.warnings.map((w, i) => <li key={i}>• {w}</li>)}
-                </ul>
-              </div>
+              <AlertPanel title={t('alerts.warnings')} tone="warning" items={spineMatch.warnings} />
             )}
             {spineMatch.recommendations.length > 0 && (
-              <div className="rounded-lg border border-sky-600/30 bg-sky-900/20 p-3">
-                <h3 className="text-xs font-medium mb-1.5 text-sky-300 flex items-center gap-1.5">
-                  💡 <span className="hidden xs:inline">Recomendaciones</span>
-                </h3>
-                <ul className="text-[10px] xs:text-xs space-y-0.5 text-sky-200">
-                  {spineMatch.recommendations.map((r, i) => <li key={i}>• {r}</li>)}
-                </ul>
-              </div>
+              <AlertPanel title={t('alerts.recommendations')} tone="info" items={spineMatch.recommendations} />
             )}
           </div>
         )}
 
-        {/* Tab Navigation - Mobile */}
-        <div className="md:hidden mb-4">
+        <div className="mt-8">
           <TabNavigation tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as ActiveTab)} />
         </div>
 
-        {/* Form Sections */}
-        <div className="space-y-4">
-          {/* Desktop: All sections visible */}
-          <div className="hidden md:block space-y-4">
-            <FormSection title={t('section.bowSpecs')} icon="🎯">
-              <InputField label={t('field.iboVelocity')} value={bowSpecs.iboVelocity} onChange={(v) => setBowSpecs({ ...bowSpecs, iboVelocity: v })} placeholder="fps" id="iboVelocity" required unit="fps" />
-              <InputField label={t('field.drawLength')} value={bowSpecs.drawLength} onChange={(v) => setBowSpecs({ ...bowSpecs, drawLength: v })} placeholder="in" id="drawLength" required unit="in" />
-              <InputField label={t('field.drawWeight')} value={bowSpecs.drawWeight} onChange={(v) => setBowSpecs({ ...bowSpecs, drawWeight: v })} placeholder="lbs" id="drawWeight" required unit="lbs" />
-              <InputField label={t('field.braceHeight')} value={bowSpecs.braceHeight} onChange={(v) => setBowSpecs({ ...bowSpecs, braceHeight: v })} placeholder="in" id="braceHeight" required unit="in" />
-              <InputField label={t('field.axleToAxle')} value={bowSpecs.axleToAxle} onChange={(v) => setBowSpecs({ ...bowSpecs, axleToAxle: v })} placeholder="in" id="axleToAxle" unit="in" />
-              <InputField label={t('field.percentLetoff')} value={bowSpecs.percentLetoff} onChange={(v) => setBowSpecs({ ...bowSpecs, percentLetoff: v })} placeholder="%" id="percentLetoff" unit="%" />
-            </FormSection>
-
-            <FormSection title={t('section.arrowSpecs')} icon="➜">
-              <InputField label={t('field.pointWeight')} value={arrowSpecs.pointWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, pointWeight: v })} placeholder="gr" id="pointWeight" unit="gr" />
-              <InputField label={t('field.insertWeight')} value={arrowSpecs.insertWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, insertWeight: v })} placeholder="gr" id="insertWeight" unit="gr" />
-              <InputField label={t('field.shaftLength')} value={arrowSpecs.shaftLength} onChange={(v) => setArrowSpecs({ ...arrowSpecs, shaftLength: v })} placeholder="in" id="shaftLength" required unit="in" />
-              <InputField label={t('field.shaftGpi')} value={arrowSpecs.shaftGpi} onChange={(v) => setArrowSpecs({ ...arrowSpecs, shaftGpi: v })} placeholder="gr/in" id="shaftGpi" unit="gr/in" />
-              <InputField label={t('field.fletchQuantity')} value={arrowSpecs.fletchQuantity} onChange={(v) => setArrowSpecs({ ...arrowSpecs, fletchQuantity: v })} placeholder="#" id="fletchQuantity" />
-              <InputField label={t('field.weightEach')} value={arrowSpecs.weightEach} onChange={(v) => setArrowSpecs({ ...arrowSpecs, weightEach: v })} placeholder="gr" id="weightEach" unit="gr" />
-              <InputField label={t('field.wrapWeight')} value={arrowSpecs.wrapWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, wrapWeight: v })} placeholder="gr" id="wrapWeight" unit="gr" />
-              <InputField label={t('field.nockWeight')} value={arrowSpecs.nockWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, nockWeight: v })} placeholder="gr" id="nockWeight" unit="gr" />
-              <InputField label={t('field.bushingPin')} value={arrowSpecs.bushingPin} onChange={(v) => setArrowSpecs({ ...arrowSpecs, bushingPin: v })} placeholder="gr" id="bushingPin" unit="gr" />
-              <InputField label={t('field.staticSpine')} value={arrowSpecs.staticSpine} onChange={(v) => setArrowSpecs({ ...arrowSpecs, staticSpine: v })} placeholder="0.400" id="staticSpine" required step="0.001" tooltip={t('field.staticSpine.tooltip')} />
-            </FormSection>
-
-            <FormSection title={t('section.weightOnString')} icon="🎣">
-              <InputField label={t('field.peep')} value={stringWeights.peep} onChange={(v) => setStringWeights({ ...stringWeights, peep: v })} placeholder="gr" id="peep" unit="gr" />
-              <InputField label={t('field.dLoop')} value={stringWeights.dLoop} onChange={(v) => setStringWeights({ ...stringWeights, dLoop: v })} placeholder="gr" id="dLoop" unit="gr" />
-              <InputField label={t('field.nockPoint')} value={stringWeights.nockPoint} onChange={(v) => setStringWeights({ ...stringWeights, nockPoint: v })} placeholder="gr" id="nockPoint" unit="gr" />
-              <InputField label={t('field.silencers')} value={stringWeights.silencers} onChange={(v) => setStringWeights({ ...stringWeights, silencers: v })} placeholder="gr" id="silencers" unit="gr" />
-              <InputField label={t('field.silencerDfc')} value={stringWeights.silencerDfc} onChange={(v) => setStringWeights({ ...stringWeights, silencerDfc: v })} placeholder="gr" id="silencerDfc" unit="gr" />
-              <SelectField label={t('field.release')} value={stringWeights.releaseType} onChange={(v) => setStringWeights({ ...stringWeights, releaseType: v })} options={[
-                { value: 'Post Gate Release', label: t('option.release.post') },
-                { value: 'Pre Gate Release', label: t('option.release.pre') },
-              ]} id="releaseType" />
-              <SelectField label={t('field.stringMaterial')} value={stringWeights.stringMaterial} onChange={(v) => setStringWeights({ ...stringWeights, stringMaterial: v as typeof stringWeights.stringMaterial })} options={[
-                { value: 'unknown', label: t('option.stringMaterial.unknown') },
-                { value: 'fastflight', label: t('option.stringMaterial.fastflight') },
-                { value: 'dacron', label: t('option.stringMaterial.dacron') },
-              ]} id="stringMaterial" />
-            </FormSection>
-          </div>
-
-          {/* Mobile: Single section based on active tab */}
-          <div className="md:hidden">
-            {activeTab === 'bow' && (
-              <FormSection title={t('section.bowSpecs')} icon="🎯">
-                <InputField label={t('field.iboVelocity')} value={bowSpecs.iboVelocity} onChange={(v) => setBowSpecs({ ...bowSpecs, iboVelocity: v })} placeholder="fps" id="iboVelocity" required unit="fps" />
-                <InputField label={t('field.drawLength')} value={bowSpecs.drawLength} onChange={(v) => setBowSpecs({ ...bowSpecs, drawLength: v })} placeholder="in" id="drawLength" required unit="in" />
-                <InputField label={t('field.drawWeight')} value={bowSpecs.drawWeight} onChange={(v) => setBowSpecs({ ...bowSpecs, drawWeight: v })} placeholder="lbs" id="drawWeight" required unit="lbs" />
-                <InputField label={t('field.braceHeight')} value={bowSpecs.braceHeight} onChange={(v) => setBowSpecs({ ...bowSpecs, braceHeight: v })} placeholder="in" id="braceHeight" required unit="in" />
-                <InputField label={t('field.axleToAxle')} value={bowSpecs.axleToAxle} onChange={(v) => setBowSpecs({ ...bowSpecs, axleToAxle: v })} placeholder="in" id="axleToAxle" unit="in" />
-                <InputField label={t('field.percentLetoff')} value={bowSpecs.percentLetoff} onChange={(v) => setBowSpecs({ ...bowSpecs, percentLetoff: v })} placeholder="%" id="percentLetoff" unit="%" />
-              </FormSection>
-            )}
-
-            {activeTab === 'arrow' && (
-              <FormSection title={t('section.arrowSpecs')} icon="➜">
-                <InputField label={t('field.pointWeight')} value={arrowSpecs.pointWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, pointWeight: v })} placeholder="gr" id="pointWeight" unit="gr" />
-                <InputField label={t('field.insertWeight')} value={arrowSpecs.insertWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, insertWeight: v })} placeholder="gr" id="insertWeight" unit="gr" />
-                <InputField label={t('field.shaftLength')} value={arrowSpecs.shaftLength} onChange={(v) => setArrowSpecs({ ...arrowSpecs, shaftLength: v })} placeholder="in" id="shaftLength" required unit="in" />
-                <InputField label={t('field.shaftGpi')} value={arrowSpecs.shaftGpi} onChange={(v) => setArrowSpecs({ ...arrowSpecs, shaftGpi: v })} placeholder="gr/in" id="shaftGpi" unit="gr/in" />
-                <InputField label={t('field.fletchQuantity')} value={arrowSpecs.fletchQuantity} onChange={(v) => setArrowSpecs({ ...arrowSpecs, fletchQuantity: v })} placeholder="#" id="fletchQuantity" />
-                <InputField label={t('field.weightEach')} value={arrowSpecs.weightEach} onChange={(v) => setArrowSpecs({ ...arrowSpecs, weightEach: v })} placeholder="gr" id="weightEach" unit="gr" />
-                <InputField label={t('field.wrapWeight')} value={arrowSpecs.wrapWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, wrapWeight: v })} placeholder="gr" id="wrapWeight" unit="gr" />
-                <InputField label={t('field.nockWeight')} value={arrowSpecs.nockWeight} onChange={(v) => setArrowSpecs({ ...arrowSpecs, nockWeight: v })} placeholder="gr" id="nockWeight" unit="gr" />
-                <InputField label={t('field.bushingPin')} value={arrowSpecs.bushingPin} onChange={(v) => setArrowSpecs({ ...arrowSpecs, bushingPin: v })} placeholder="gr" id="bushingPin" unit="gr" />
-                <InputField label={t('field.staticSpine')} value={arrowSpecs.staticSpine} onChange={(v) => setArrowSpecs({ ...arrowSpecs, staticSpine: v })} placeholder="0.400" id="staticSpine" required step="0.001" tooltip={t('field.staticSpine.tooltip')} />
-              </FormSection>
-            )}
-
-            {activeTab === 'string' && (
-              <FormSection title={t('section.weightOnString')} icon="🎣">
-                <InputField label={t('field.peep')} value={stringWeights.peep} onChange={(v) => setStringWeights({ ...stringWeights, peep: v })} placeholder="gr" id="peep" unit="gr" />
-                <InputField label={t('field.dLoop')} value={stringWeights.dLoop} onChange={(v) => setStringWeights({ ...stringWeights, dLoop: v })} placeholder="gr" id="dLoop" unit="gr" />
-                <InputField label={t('field.nockPoint')} value={stringWeights.nockPoint} onChange={(v) => setStringWeights({ ...stringWeights, nockPoint: v })} placeholder="gr" id="nockPoint" unit="gr" />
-                <InputField label={t('field.silencers')} value={stringWeights.silencers} onChange={(v) => setStringWeights({ ...stringWeights, silencers: v })} placeholder="gr" id="silencers" unit="gr" />
-                <InputField label={t('field.silencerDfc')} value={stringWeights.silencerDfc} onChange={(v) => setStringWeights({ ...stringWeights, silencerDfc: v })} placeholder="gr" id="silencerDfc" unit="gr" />
-                <SelectField label={t('field.release')} value={stringWeights.releaseType} onChange={(v) => setStringWeights({ ...stringWeights, releaseType: v })} options={[
-                  { value: 'Post Gate Release', label: t('option.release.post') },
-                  { value: 'Pre Gate Release', label: t('option.release.pre') },
-                ]} id="releaseType" />
-                <SelectField label={t('field.stringMaterial')} value={stringWeights.stringMaterial} onChange={(v) => setStringWeights({ ...stringWeights, stringMaterial: v as typeof stringWeights.stringMaterial })} options={[
-                  { value: 'unknown', label: t('option.stringMaterial.unknown') },
-                  { value: 'fastflight', label: t('option.stringMaterial.fastflight') },
-                  { value: 'dacron', label: t('option.stringMaterial.dacron') },
-                ]} id="stringMaterial" />
-              </FormSection>
-            )}
-          </div>
+        <div className="mt-6">
+          {activeTab === 'bow' && renderBowSection()}
+          {activeTab === 'arrow' && renderArrowSection()}
+          {activeTab === 'string' && renderStringSection()}
         </div>
       </main>
     </div>
+  )
+}
+
+function AlertPanel({
+  title,
+  tone,
+  items,
+}: {
+  title: string
+  tone: 'warning' | 'info'
+  items: string[]
+}) {
+  const titleColor = tone === 'warning' ? 'text-[#ef4444]' : 'text-[#60a5fa]'
+
+  return (
+    <section className="border-t border-[rgba(255,255,255,0.08)] pt-4">
+      <h3 className={`text-[10px] uppercase tracking-[0.28em] ${titleColor}`}>{title}</h3>
+      <ul className="mt-3 space-y-2">
+        {items.map((item, index) => (
+          <li key={index} className="text-[13px] leading-relaxed text-[#ababab]">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 

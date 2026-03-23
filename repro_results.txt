@@ -1,5 +1,5 @@
 --- Reproduction Results (Base Case) ---
-Calculated FPS: 276.34 (Expected: ~276.36)
+Calculated FPS: 276.84 (Expected: ~276.36)
 Total Arrow Weight: 341.90 (Expected: ~341.90)
 Dynamic Spine: 0.408 (Expected: ~0.406)
 Match Index: 0.901

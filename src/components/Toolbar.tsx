@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { MoreHorizontal } from 'lucide-react'
+import type { UnitSystem } from '../utils/unitSystem'
 
 interface ToolbarProps {
   onSave: (slot: number) => void
@@ -6,146 +8,148 @@ interface ToolbarProps {
   onClear: () => void
   lang: 'es' | 'en'
   onSetLang: (lang: 'es' | 'en') => void
+  unitSystem: UnitSystem
+  onSetUnitSystem: (unitSystem: UnitSystem) => void
   t: {
     (key: string): string
   }
 }
 
-export function Toolbar({ onSave, onLoad, onClear, lang, onSetLang }: ToolbarProps) {
+export function Toolbar({
+  onSave,
+  onLoad,
+  onClear,
+  lang,
+  onSetLang,
+  unitSystem,
+  onSetUnitSystem,
+  t,
+}: ToolbarProps) {
   const [showMenu, setShowMenu] = useState(false)
 
-  const toggleMenu = () => {
-    setShowMenu(!showMenu)
-  }
-
   return (
-    <div className="relative">
-      {/* Mobile: Hamburger menu + Quick actions */}
-      <div className="flex items-center justify-between gap-2">
-        {/* Language Toggle */}
-        <div className="flex items-center gap-1 text-xs">
-          <button
-            onClick={() => onSetLang('es')}
-            className={`px-2 py-1.5 rounded transition-colors ${
-              lang === 'es' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            ES
-          </button>
-          <button
-            onClick={() => onSetLang('en')}
-            className={`px-2 py-1.5 rounded transition-colors ${
-              lang === 'en' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            EN
-          </button>
-        </div>
+    <div className="relative flex w-full items-center gap-2">
+      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_40px] gap-2">
+        <ToggleGroup
+          label={t('toolbar.language')}
+          options={[
+            { label: 'ES', active: lang === 'es', onClick: () => onSetLang('es') },
+            { label: 'EN', active: lang === 'en', onClick: () => onSetLang('en') },
+          ]}
+        />
 
-        {/* Quick Clear Button */}
+        <ToggleGroup
+          label={t('toolbar.units')}
+          options={[
+            { label: t('option.units.imperial.short'), active: unitSystem === 'imperial', onClick: () => onSetUnitSystem('imperial') },
+            { label: t('option.units.metric.short'), active: unitSystem === 'metric', onClick: () => onSetUnitSystem('metric') },
+          ]}
+        />
+
         <button
-          onClick={onClear}
-          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium
-                     border border-red-600/50 bg-red-500/10 text-red-400
-                     hover:bg-red-500/20 transition-colors md:hidden"
+          onClick={() => setShowMenu((current) => !current)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.12)] bg-[#151515] text-[#d8d8d8] transition-colors hover:border-[rgba(255,255,255,0.22)] hover:bg-[#191919] hover:text-[#f7f7f7]"
+          aria-label={t('toolbar.actions')}
         >
-          <span>Limpiar</span>
-        </button>
-
-        {/* Desktop: Full toolbar visible */}
-        <div className="hidden md:flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-slate-400 mr-1">Config:</span>
-          {[1, 2, 3].map((slot) => (
-            <button
-              key={`save-${slot}`}
-              onClick={() => onSave(slot)}
-              className="px-3 py-1.5 rounded text-xs font-medium
-                         border border-emerald-600/50 bg-emerald-500/10 text-emerald-400
-                         hover:bg-emerald-500/20 transition-colors"
-            >
-              S{slot}
-            </button>
-          ))}
-          <div className="w-px h-5 bg-slate-600 mx-1"></div>
-          {[1, 2, 3].map((slot) => (
-            <button
-              key={`load-${slot}`}
-              onClick={() => onLoad(slot)}
-              className="px-3 py-1.5 rounded text-xs font-medium
-                         border border-sky-600/50 bg-sky-500/10 text-sky-400
-                         hover:bg-sky-500/20 transition-colors"
-            >
-              L{slot}
-            </button>
-          ))}
-          <div className="w-px h-5 bg-slate-600 mx-1"></div>
-          <button
-            onClick={onClear}
-            className="px-3 py-1.5 rounded text-xs font-medium
-                       border border-red-600/50 bg-red-500/10 text-red-400
-                       hover:bg-red-500/20 transition-colors"
-          >
-            Limpiar
-          </button>
-        </div>
-
-        {/* Mobile: Menu button */}
-        <button
-          onClick={toggleMenu}
-          className="md:hidden p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {showMenu ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
+          <MoreHorizontal size={18} />
         </button>
       </div>
 
-      {/* Mobile: Dropdown menu */}
       {showMenu && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
-          <div className="p-2">
-            <div className="text-xs text-slate-500 px-2 py-1">Guardar</div>
-            <div className="grid grid-cols-3 gap-1 mb-2">
+        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[#111111] p-3 shadow-2xl">
+          <MenuSection title={t('toolbar.save')}>
+            <div className="grid grid-cols-3 gap-1.5">
               {[1, 2, 3].map((slot) => (
-                <button
-                  key={`save-mobile-${slot}`}
-                  onClick={() => { onSave(slot); setShowMenu(false) }}
-                  className="px-3 py-2 rounded text-xs font-medium
-                             border border-emerald-600/50 bg-emerald-500/10 text-emerald-400"
+                <MenuButton
+                  key={`save-${slot}`}
+                  onClick={() => {
+                    onSave(slot)
+                    setShowMenu(false)
+                  }}
                 >
-                  S{slot}
-                </button>
+                  {slot}
+                </MenuButton>
               ))}
             </div>
+          </MenuSection>
 
-            <div className="text-xs text-slate-500 px-2 py-1">Cargar</div>
-            <div className="grid grid-cols-3 gap-1 mb-2">
+          <MenuSection title={t('toolbar.load')}>
+            <div className="grid grid-cols-3 gap-1.5">
               {[1, 2, 3].map((slot) => (
-                <button
-                  key={`load-mobile-${slot}`}
-                  onClick={() => { onLoad(slot); setShowMenu(false) }}
-                  className="px-3 py-2 rounded text-xs font-medium
-                             border border-sky-600/50 bg-sky-500/10 text-sky-400"
+                <MenuButton
+                  key={`load-${slot}`}
+                  onClick={() => {
+                    onLoad(slot)
+                    setShowMenu(false)
+                  }}
                 >
-                  L{slot}
-                </button>
+                  {slot}
+                </MenuButton>
               ))}
             </div>
+          </MenuSection>
 
-            <button
-              onClick={() => { onClear(); setShowMenu(false) }}
-              className="w-full mt-1 px-3 py-2 rounded text-xs font-medium
-                         border border-red-600/50 bg-red-500/10 text-red-400"
-            >
-              Limpiar Todo
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              onClear()
+              setShowMenu(false)
+            }}
+            className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3 text-[12px] uppercase tracking-[0.18em] text-[#ef4444] transition-colors hover:text-[#fecaca]"
+          >
+            {t('toolbar.clearAll')}
+          </button>
         </div>
       )}
     </div>
+  )
+}
+
+function ToggleGroup({
+  label,
+  options,
+}: {
+  label: string
+  options: Array<{ label: string; active: boolean; onClick: () => void }>
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-[#737373]">{label}</div>
+      <div className="grid min-w-0 grid-cols-2 gap-1 rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[#101010] p-1">
+        {options.map((option) => (
+          <div key={option.label} className="min-w-0">
+            <button
+              onClick={option.onClick}
+              className={`min-h-9 w-full min-w-0 rounded-[9px] px-2 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
+                option.active
+                  ? 'bg-[#facc15] text-[#181818]'
+                  : 'text-[#b5b5b5] hover:bg-[#181818] hover:text-[#f7f7f7]'
+              }`}
+            >
+              <span className="block truncate">{option.label}</span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MenuSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3 last:mb-0">
+      <div className="mb-2 text-[10px] uppercase tracking-[0.24em] text-[#5d5d5d]">{title}</div>
+      {children}
+    </div>
+  )
+}
+
+function MenuButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-[10px] border border-[rgba(255,255,255,0.08)] px-0 py-2 text-[12px] text-[#d0d0d0] transition-colors hover:border-[rgba(255,255,255,0.16)] hover:bg-[#181818] hover:text-[#f7f7f7]"
+    >
+      {children}
+    </button>
   )
 }
