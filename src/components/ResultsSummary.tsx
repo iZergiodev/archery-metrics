@@ -37,6 +37,7 @@ export function ResultsSummary({
 
   const metaParts = [
     t(`archeryType.${result.archeryType}`),
+    result.usedChronographData ? t('summary.chronoActive') : null,
     confidenceLabel ? `${t('summary.confidence')}: ${confidenceLabel}` : null,
     result.temperature !== undefined
       ? `${formatTemperatureDisplayValue(result.temperature, unitSystem)}${getTemperatureUnitLabel(unitSystem)}`
@@ -118,11 +119,23 @@ export function ResultsSummary({
           unit={getUnitLabel('componentWeight', unitSystem)}
         />
         <StatRow
-          label={t('summary.speed')}
-          value={formatResultDisplayValue(result.calculatedFPS, 'speed', unitSystem)}
+          label={result.usedChronographData ? t('summary.measuredSpeed') : t('summary.speed')}
+          value={formatResultDisplayValue(result.effectiveFPS, 'speed', unitSystem)}
           unit={getUnitLabel('speed', unitSystem)}
         />
-        <StatRow label={t('summary.foc')} value={result.foc?.toFixed(1) ?? '--'} unit="%" className="col-span-2" />
+        {result.usedChronographData && (
+          <StatRow
+            label={t('summary.estimatedSpeed')}
+            value={formatResultDisplayValue(result.calculatedFPS, 'speed', unitSystem)}
+            unit={getUnitLabel('speed', unitSystem)}
+          />
+        )}
+        <StatRow
+          label={t('summary.foc')}
+          value={result.foc?.toFixed(1) ?? '--'}
+          unit="%"
+          className={result.usedChronographData ? '' : 'col-span-2'}
+        />
       </div>
 
       <div className="mt-6 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[#131313] px-4 py-4">

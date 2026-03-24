@@ -24,9 +24,25 @@ import {
     FRONT_MASS_REFERENCE,
     FRONT_MASS_GRAINS_STEP,
     FRONT_MASS_SENSITIVITY,
+    STRING_DYNAMIC_REFERENCE_WEIGHT,
+    STRING_DYNAMIC_WEIGHT_STEP,
+    STRING_DYNAMIC_WEIGHT_SENSITIVITY,
+    STRING_DYNAMIC_DACRON_FACTOR,
+    WRAP_WEIGHT_SENSITIVITY,
+    REAR_MASS_REFERENCE,
+    REAR_MASS_SENSITIVITY,
     COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT,
     COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY,
     COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT,
+    COMPOUND_REQUIRED_LENGTH_EXPONENT,
+    COMPOUND_REQUIRED_IBO_REFERENCE,
+    COMPOUND_REQUIRED_IBO_SENSITIVITY,
+    COMPOUND_REQUIRED_BRACE_REFERENCE,
+    COMPOUND_REQUIRED_BRACE_SENSITIVITY,
+    COMPOUND_REQUIRED_CHART_ADJUSTMENT_BLEND,
+    COMPOUND_REQUIRED_FRONT_WEIGHT_BASELINE,
+    COMPOUND_REQUIRED_FRONT_WEIGHT_STEP,
+    COMPOUND_REQUIRED_FRONT_WEIGHT_ADJUSTMENT_PER_STEP,
     type ArcheryType,
 } from '../constants'
 
@@ -50,6 +66,9 @@ export type SpineMatchResult = {
     arrowTotalWeight: number
     foc: number | null
     calculatedFPS: number | null
+    effectiveFPS: number | null
+    measuredFPS: number | null
+    usedChronographData: boolean
 
     // Confidence intervals
     spineRequiredCI: ConfidenceInterval | null
@@ -67,6 +86,7 @@ export type BowSpecs = {
     drawWeight: string
     drawLength: string
     iboVelocity: string
+    measuredChronoSpeed?: string
     braceHeight: string
     axleToAxle: string
     percentLetoff: string
@@ -122,9 +142,18 @@ function createConfidenceInterval(
 function calculateConfidenceLevel(
     hasAllInputs: boolean,
     hasTemperature: boolean,
-    hasPreciseMeasurements: boolean
+    hasPreciseMeasurements: boolean,
+    hasKnownStringMaterial: boolean,
+    hasMeasuredChronograph: boolean,
 ): ConfidenceLevel {
-    if (hasAllInputs && hasTemperature && hasPreciseMeasurements) return 'high'
+    if (
+        hasAllInputs &&
+        hasPreciseMeasurements &&
+        hasKnownStringMaterial &&
+        (hasTemperature || hasMeasuredChronograph)
+    ) {
+        return 'high'
+    }
     if (hasAllInputs) return 'medium'
     return 'low'
 }
@@ -174,16 +203,55 @@ function calculateCompoundRequiredSpine(
     drawWeight: number,
     arrowLength: number,
     availableEnergy: number,
+    iboVelocity: number,
+    braceHeight: number,
+    totalFrontWeight: number,
 ): number {
-    const drawWeightFactor = Math.pow(drawWeight / 70, COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT)
+    const adjustedDrawWeight = Math.max(
+        drawWeight +
+            calculateCompoundChartWeightAdjustment(iboVelocity, braceHeight, totalFrontWeight) *
+                COMPOUND_REQUIRED_CHART_ADJUSTMENT_BLEND,
+        5,
+    )
+    const drawWeightFactor = Math.pow(adjustedDrawWeight / 70, COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT)
     const energyFactor = Math.pow(
         availableEnergy / COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY,
         COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT,
     )
+    const lengthFactor = Math.pow(arrowLength / STATIC_SPINE_REFERENCE_LENGTH, COMPOUND_REQUIRED_LENGTH_EXPONENT)
 
-    // The base chart trend still anchors the model, but available energy adds
-    // explicit sensitivity to draw length, brace height, let-off, IBO and cams.
-    return K_SPINE_CALIBRATION * drawWeightFactor * Math.sqrt(arrowLength / 28) * energyFactor
+    // The base chart trend anchors the model. Energy adds continuous sensitivity
+    // to draw length, let-off and cam behavior; chart adjustments inject the
+    // explicit Easton speed/brace setup corrections.
+    return K_SPINE_CALIBRATION * drawWeightFactor * lengthFactor * energyFactor
+}
+
+function calculateCompoundChartWeightAdjustment(iboVelocity: number, braceHeight: number, totalFrontWeight: number): number {
+    let adjustment = 0
+
+    // The published charts use discrete classes. We interpolate those chart
+    // tendencies into a smooth correction and let calibration tune the final
+    // sensitivity and blend against the energy model.
+    if (iboVelocity > 0) {
+        adjustment += (iboVelocity - COMPOUND_REQUIRED_IBO_REFERENCE) * COMPOUND_REQUIRED_IBO_SENSITIVITY
+    }
+
+    // Keep the correction one-sided: shorter brace height makes the bow more
+    // aggressive, but a forgiving brace height should not create a bonus.
+    if (braceHeight > 0 && braceHeight < COMPOUND_REQUIRED_BRACE_REFERENCE) {
+        adjustment += (COMPOUND_REQUIRED_BRACE_REFERENCE - braceHeight) * COMPOUND_REQUIRED_BRACE_SENSITIVITY
+    }
+
+    // Easton applies discrete point-weight corrections, and Gold Tip defines
+    // point weight as total front-end weight (point + insert/collar/FACT). We
+    // therefore use total front mass here instead of bare point mass.
+    if (totalFrontWeight > 0) {
+        const frontWeightSteps =
+            (totalFrontWeight - COMPOUND_REQUIRED_FRONT_WEIGHT_BASELINE) / COMPOUND_REQUIRED_FRONT_WEIGHT_STEP
+        adjustment += frontWeightSteps * COMPOUND_REQUIRED_FRONT_WEIGHT_ADJUSTMENT_PER_STEP
+    }
+
+    return adjustment
 }
 
 // Función para calcular factor de emplumado
@@ -215,15 +283,15 @@ function calculateStringMaterialFactor(stringWeights: { silencers: string, silen
             return 1.0 // Base para FastFlight
         case 'unknown':
         default:
-            // Mantener compatibilidad con versiones anteriores: usar silenciador como indicador
-            const silencerDfcWeight = toNumber(stringWeights.silencerDfc)
-            return silencerDfcWeight > 0 ? 0.92 : 1.0
+            // Unknown should stay neutral. Inferring string material from other
+            // accessories adds hidden bias and hurts repeatability.
+            return 1.0
     }
 }
 
-// Un eje más largo actúa más débil. Usamos un exponente efectivo para
-// introducir la tendencia estructural sin duplicar toda la dependencia de
-// longitud que ya existe en el spine requerido.
+// Un eje más largo actúa más débil. El exponente se calibra junto con una
+// pequeña corrección de longitud en el lado requerido para repartir bien el
+// efecto entre severidad del arco y reacción de la flecha.
 function calculateLengthAdjustedSpineFactor(shaftLength: number): number {
     const factor = Math.pow(shaftLength / STATIC_SPINE_REFERENCE_LENGTH, DYNAMIC_SPINE_LENGTH_EXPONENT)
     return clamp(factor, 0.75, 1.35)
@@ -239,12 +307,33 @@ function calculateFrontMassFactor(pointWeight: number, insertWeight: number): nu
     return clamp(factor, 0.75, 1.35)
 }
 
+// Heavier string-side accessories and heavier string material reduce the
+// launch impulse seen by the arrow, making it behave dynamically stiffer.
+function calculateStringDynamicFactor(
+    totalStringWeight: number,
+    stringMaterial: 'dacron' | 'fastflight' | 'unknown'
+): number {
+    const weightDeviation = totalStringWeight - STRING_DYNAMIC_REFERENCE_WEIGHT
+    const weightFactor = 1 - (weightDeviation / STRING_DYNAMIC_WEIGHT_STEP) * STRING_DYNAMIC_WEIGHT_SENSITIVITY
+
+    const materialFactor = stringMaterial === 'dacron' ? STRING_DYNAMIC_DACRON_FACTOR : 1.0
+
+    return clamp(weightFactor * materialFactor, 0.90, 1.08)
+}
+
 // Función para calcular factor de wrap (vinilo decorativo)
 function calculateWrapFactor(wrapWeight: number): number {
-    if (wrapWeight > 0) {
-        return 0.98 // -2% flexión para wraps
-    }
-    return 1.0
+    return clamp(1 - wrapWeight * WRAP_WEIGHT_SENSITIVITY, 0.95, 1.0)
+}
+
+// Masa extra cerca del nock amortigua ligeramente la oscilación inicial y hace
+// que la flecha actúe un poco más rígida. El efecto se mantiene pequeño y
+// calibrable para evitar sobreinterpretarlo.
+function calculateRearMassFactor(nockWeight: number, bushingPin: number): number {
+    const rearMass = nockWeight + bushingPin
+    const factor = 1 - (rearMass - REAR_MASS_REFERENCE) * REAR_MASS_SENSITIVITY
+
+    return clamp(factor, 0.97, 1.03)
 }
 
 // Función para obtener recomendaciones de casos límite
@@ -273,6 +362,25 @@ function calculateTransferEfficiency(arrowMass: number, drawWeight: number): num
     }
 
     return Math.min(efficiency, 0.98)
+}
+
+function calibrateAvailableEnergyFromChronograph(
+    availableEnergy: number,
+    estimatedLaunchFPS: number,
+    measuredChronoFPS: number,
+): number {
+    if (!isFinite(availableEnergy) || !isFinite(estimatedLaunchFPS) || !isFinite(measuredChronoFPS)) {
+        return availableEnergy
+    }
+
+    if (estimatedLaunchFPS <= 0 || measuredChronoFPS <= 0) {
+        return availableEnergy
+    }
+
+    const speedRatio = measuredChronoFPS / estimatedLaunchFPS
+    const energyRatio = clamp(speedRatio * speedRatio, 0.65, 1.5)
+
+    return availableEnergy * energyRatio
 }
 
 // Función para calcular FOC (Front of Center) con posiciones configurables
@@ -369,6 +477,7 @@ export function calculateSpineMatch(
     const drawWeight = toNumber(bow.drawWeight)
     const drawLength = toNumber(bow.drawLength)
     const iboVelocity = toNumber(bow.iboVelocity)
+    const measuredChronoSpeed = toNumber(bow.measuredChronoSpeed ?? '')
     const braceHeight = toNumber(bow.braceHeight)
     const axleToAxle = toNumber(bow.axleToAxle)
     const percentLetoff = toNumber(bow.percentLetoff)
@@ -461,6 +570,7 @@ export function calculateSpineMatch(
     // === PARTE B: CÁLCULO DE VELOCIDAD BASADO EN ENERGÍA ===
     const transferEfficiency = calculateTransferEfficiency(arrowTotalWeight, drawWeight)
     const stringMaterialFactor = calculateStringMaterialFactor(stringWeights)
+    const stringDynamicFactor = calculateStringDynamicFactor(totalStringWeight, stringWeights.stringMaterial)
 
     const kineticEnergy = availableEnergy * transferEfficiency * stringMaterialFactor
 
@@ -476,6 +586,11 @@ export function calculateSpineMatch(
             finalFPS += 2
         }
     }
+    const effectiveFPS = measuredChronoSpeed > 0 ? measuredChronoSpeed : finalFPS
+    const calibratedAvailableEnergy =
+        archeryType === ARCHERY_TYPE.COMPOUND && measuredChronoSpeed > 0
+            ? calibrateAvailableEnergyFromChronograph(availableEnergy, finalFPS, measuredChronoSpeed)
+            : availableEnergy
 
     // === PARTE C: FOC (necesario para cálculos posteriores) ===
     const foc = calculateFOC(shaftLength, pointWeight, insertWeight, shaftWeight, fletchWeight, nockWeight, wrapWeight, bushingPin)
@@ -489,7 +604,14 @@ export function calculateSpineMatch(
         // Spine requerido basado solo en specs del arco (drawWeight + longitud de flecha)
         // El spine requerido responde a la severidad real del lanzamiento,
         // no solo al pico de libras del arco.
-        spineRequiredBase = calculateCompoundRequiredSpine(drawWeight, shaftLength, availableEnergy)
+        spineRequiredBase = calculateCompoundRequiredSpine(
+            drawWeight,
+            shaftLength,
+            calibratedAvailableEnergy,
+            iboVelocity,
+            braceHeight,
+            pointWeight + insertWeight,
+        )
     } else {
         spineRequiredBase = calculateRecurveSpine(drawWeight, drawLength, shaftLength)
     }
@@ -501,9 +623,18 @@ export function calculateSpineMatch(
     const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
     const releaseFactor = calculateReleaseFactor(releaseType)
     const wrapFactor = calculateWrapFactor(wrapWeight)
+    const rearMassFactor = calculateRearMassFactor(nockWeight, bushingPin)
 
     // Spine Dinámico (Efectivo)
-    let spineDynamic = staticSpine * lengthAdjustedSpineFactor * frontMassFactor * fletchingFactor * releaseFactor * wrapFactor
+    let spineDynamic =
+        staticSpine *
+        lengthAdjustedSpineFactor *
+        frontMassFactor *
+        fletchingFactor *
+        releaseFactor *
+        wrapFactor *
+        rearMassFactor *
+        stringDynamicFactor
 
     // Aplicar corrección por temperatura si está disponible
     if (temperatureF !== undefined) {
@@ -543,16 +674,16 @@ export function calculateSpineMatch(
         }
     }
 
-    if (isFinite(finalFPS)) {
-        if (finalFPS > VELOCITY_MAX_SAFE) {
+    if (isFinite(effectiveFPS)) {
+        if (effectiveFPS > VELOCITY_MAX_SAFE) {
             warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
         }
     }
 
-    if (isFinite(finalFPS)) {
-        if (finalFPS < VELOCITY_MIN_TARGET) {
+    if (isFinite(effectiveFPS)) {
+        if (effectiveFPS < VELOCITY_MIN_TARGET) {
             recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
-        } else if (finalFPS > VELOCITY_OPTIMAL_MAX) {
+        } else if (effectiveFPS > VELOCITY_OPTIMAL_MAX) {
             recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
         }
     }
@@ -587,7 +718,13 @@ export function calculateSpineMatch(
 
     // Calcular niveles de confianza
     const hasPreciseMeasurements = shaftGpi > 0 && pointWeight > 0 && insertWeight > 0
-    const confidence = calculateConfidenceLevel(hasAllInputs, temperatureF !== undefined, hasPreciseMeasurements)
+    const confidence = calculateConfidenceLevel(
+        hasAllInputs,
+        temperatureF !== undefined,
+        hasPreciseMeasurements,
+        stringWeights.stringMaterial !== 'unknown',
+        measuredChronoSpeed > 0,
+    )
 
     return {
         spineRequired: isFinite(spineRequiredBase) ? spineRequiredBase : null,
@@ -597,6 +734,9 @@ export function calculateSpineMatch(
         arrowTotalWeight,
         foc: isFinite(foc) ? foc : null,
         calculatedFPS: isFinite(finalFPS) ? finalFPS : null,
+        effectiveFPS: isFinite(effectiveFPS) ? effectiveFPS : null,
+        measuredFPS: measuredChronoSpeed > 0 ? measuredChronoSpeed : null,
+        usedChronographData: measuredChronoSpeed > 0,
         spineRequiredCI: isFinite(spineRequiredBase) ? createConfidenceInterval(spineRequiredBase, 0.05, confidence) : null,
         spineDynamicCI: isFinite(spineDynamic) ? createConfidenceInterval(spineDynamic, 0.08, confidence) : null,
         matchIndexCI: isFinite(matchIndex) ? createConfidenceInterval(matchIndex, 0.10, confidence) : null,
@@ -621,6 +761,9 @@ function createEmptyResult(
         arrowTotalWeight: 0,
         foc: null,
         calculatedFPS: null,
+        effectiveFPS: null,
+        measuredFPS: null,
+        usedChronographData: false,
         spineRequiredCI: null,
         spineDynamicCI: null,
         matchIndexCI: null,

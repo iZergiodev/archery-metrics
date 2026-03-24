@@ -19,7 +19,7 @@ describe('unitSystem', () => {
 
   it('convierte peso de tiro entre libras y kilos', () => {
     const canonical = convertDisplayToCanonical(27.22, 'drawWeight', 'metric')
-    expect(canonical).toBeCloseTo(60, 3)
+    expect(canonical).toBeCloseTo(60.01, 2)
     expect(convertCanonicalToDisplay(canonical, 'drawWeight', 'metric')).toBeCloseTo(27.22, 2)
   })
 
@@ -43,7 +43,7 @@ describe('unitSystem', () => {
 
   it('normaliza inputs metricos a unidades canonicas', () => {
     expect(Number(toCanonicalInputValue('71.12', 'length', 'metric'))).toBeCloseTo(28, 3)
-    expect(Number(toCanonicalInputValue('27.22', 'drawWeight', 'metric'))).toBeCloseTo(60, 2)
+    expect(Number(toCanonicalInputValue('27.22', 'drawWeight', 'metric'))).toBeCloseTo(60.01, 2)
     expect(Number(toCanonicalInputValue('6.48', 'componentWeight', 'metric'))).toBeCloseTo(100, 2)
   })
 

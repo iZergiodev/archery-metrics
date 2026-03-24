@@ -1,8 +1,0 @@
---- Refactored Results ---
-[110gr] Dynamic Spine Target: 0.406 | Actual: 0.408
-[110gr] FPS Target: ~276.36 | Actual: 276.84
-[110gr] Status Target: Good | Actual: good
-[150gr] Dynamic Spine Target: 0.382 | Actual: 0.382
-[150gr] FPS Target: ~263.32 | Actual: 263.30
-[150gr] Status Target: Weak | Actual: stiff
-VERDICT: Increasing point weight DECREASED Dynamic Spine (Correct Requirement Behavior)

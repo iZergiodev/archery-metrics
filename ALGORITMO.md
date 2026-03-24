@@ -1,351 +1,190 @@
-# 🏹 Algoritmo de Cálculo de Spine Match - Guía Detallada
+# Algoritmo de Spine
 
-## 📋 Tabla de Contenidos
-1. [Introducción](#introducción)
-2. [Conceptos Básicos de Física](#conceptos-básicos-de-física)
-3. [El Problema del Spine Match](#el-problema-del-spine-match)
-4. [Algoritmo Anterior vs Nuevo](#algoritmo-anterior-vs-nuevo)
-5. [Desglose del Algoritmo Mejorado](#desglose-del-algoritmo-mejorado)
-6. [Explicación de cada Componente](#explicación-de-cada-componente)
-7. [Ejemplo Práctico](#ejemplo-práctico)
-8. [Preguntas Frecuentes](#preguntas-frecuentes)
+## Alcance
 
----
+Este documento describe el modelo actual implementado en [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts) y calibrado mediante [src/utils/spineCalibrationDataset.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibrationDataset.ts).
 
-## 🎯 Introducción
+La base de fuentes oficiales que alimenta esa calibración vive en [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts).
 
-Este documento explica el algoritmo mejorado para calcular el **spine match** en tiro con arco. El spine match es crucial porque determina si una flecha funcionará correctamente con un arco específico, asegurando vuelo estable y precisión.
+La app calcula tres valores principales:
 
-> **¿Qué es el Spine?** El spine es la medida de flexibilidad de una flecha. Un número más bajo significa más rígida, un número más alto significa más flexible.
+- `spineRequired`: la rigidez que exige el arco.
+- `spineDynamic`: cómo actúa realmente la flecha.
+- `matchIndex = spineDynamic / spineRequired`
 
----
+Interpretación:
 
-## 📚 Conceptos Básicos de Física (Explicados Sencillo)
+- `< 0.90`: rígida
+- `0.90 - 1.10`: buena zona
+- `> 1.10`: blanda
 
-### 1. **Energía Almacenada en el Arco**
-Imagina que el arco es como un resorte gigante. Cuando tiras de la cuerda, estás almacenando energía en las extremidades del arco.
+## Modelo de unidades
 
-```
-Energía = Fuerza × Distancia
-```
+- Internamente todo se calcula en unidades imperiales canónicas.
+- La UI convierte globalmente entre imperial y métrico.
+- La velocidad puede venir del modelo o de una lectura opcional de cronógrafo.
 
-- **Fuerza**: El peso que necesitas para mantener el arco abierto (ej: 70 libras)
-- **Distancia**: Cuánto tiras la cuerda (ej: 30 pulgadas)
+## Modelo del arco
 
-### 2. **Transferencia de Energía**
-Cuando sueltas la cuerda, la energía almacenada se transfiere a la flecha. Pero no toda la energía llega a la flecha:
+### 1. Energía almacenada y disponible
 
-```
-Energía en flecha = Energía almacenada × Eficiencia
+Para compound:
+
+```text
+storedEnergy = drawWeight * (drawLength - braceHeight) * camEfficiency * letOffRatio / 12
+availableEnergy = storedEnergy * bowEfficiency
 ```
 
-- **Eficiencia típica**: 70-90% (algunos energía se pierde en calor, sonido, vibración)
+Entradas clave:
 
-### 3. **Velocidad desde Energía**
-La velocidad de la flecha depende de su masa y la energía que recibe:
+- `drawWeight`
+- `drawLength`
+- `braceHeight`
+- `percentLetoff`
+- `camAggressiveness`
+- `iboVelocity`
 
-```
-Velocidad = √(2 × Energía / Masa)
-```
+Para recurvo/tradicional se usa una aproximación lineal más simple y una eficiencia base fija.
 
-- **Flechas más ligeras** = Más velocidad (con misma energía)
-- **Más energía** = Más velocidad (con misma flecha)
+### 2. Corrección por cronógrafo
 
-### 4. **La Paradoja del Arquero**
-¡Esto es lo más interesante! Cuando disparas, la flecha debe **doblarse** alrededor del arco:
+Si el usuario introduce FPS medidos, la energía disponible se recalibra con el cuadrado de la relación de velocidades:
 
-```
-Riser (parte central) ←→ Flecha se dobla ←→ Cuerda
-```
-
-Si la flecha es:
-- **Muy rígida**: No se dobla suficiente → Golpea el arco
-- **Muy flexible**: Se dobla demasiado → Vuelo inestable
-- **Perfecta**: Se dobla justo lo necesario → Vuelo estable
-
----
-
-## 🎯 El Problema del Spine Match
-
-Encontrar el spine perfecto es como encontrar la llave correcta para una cerradura:
-
-| Arco Potencia | Flecha Muy Rígida | Flecha Perfecta | Flecha Muy Flexible |
-|---------------|------------------|-----------------|-------------------|
-| **60 lbs**    | ❌ No vuela bien  | ✅ Vuelo estable| ❌ Demasiado flexible|
-| **70 lbs**    | ❌ No vuela bien  | ✅ Vuelo estable| ❌ Demasiado flexible|
-| **80 lbs**    | ❌ No vuela bien  | ✅ Vuelo estable| ❌ Demasiado flexible|
-
----
-
-## 🔄 Algoritmo Anterior vs Nuevo
-
-### Algoritmo Anterior (Simplificado)
-```javascript
-// Método aproximado
-FPS = IBO + ajustes_lineales
-Spine = constante / (peso × velocidad)
-```
-- ✅ Simple y rápido
-- ❌ No físicamente preciso
-- ❌ Ignora muchos factores importantes
-
-### Algoritmo Nuevo (Físico)
-```javascript
-// Método basado en física real
-Energía = calcular_energía_almacenada()
-FPS = √(2 × energía / masa_flecha)
-Spine = calcular_flexión_necesaria()
-```
-- ✅ Físicamente preciso
-- ✅ Considera todos los factores
-- ✅ Resultados más realistas
-
----
-
-## 🔍 Desglose del Algoritmo Mejorado
-
-### Paso 1: Calcular Energía Almacenada
-```javascript
-function calcularEnergiaAlmacenada(peso, apertura, braceHeight) {
-    // Distancia útil de tiro
-    powerStroke = apertura - braceHeight
-    
-    // Área bajo la curva fuerza-apertura
-    energia = peso × powerStroke × 0.85
-    
-    return energia  // en foot-pounds
-}
+```text
+energyRatio = clamp((measuredFPS / estimatedFPS)^2, 0.65, 1.5)
+calibratedAvailableEnergy = availableEnergy * energyRatio
 ```
 
-**¿Por qué 0.85?** 
-Los arcos compuestos no son lineales. A medida que tiras, la fuerza aumenta más que proporcionalmente. El 0.85 representa el área promedio bajo esta curva.
+Eso hace que la severidad del arco dependa del rendimiento real medido y no solo de la ficha técnica.
 
-### Paso 2: Calcular Eficiencia del Arco
-```javascript
-function calcularEficiencia(braceHeight, velocidadIBO) {
-    eficiencia = 0.80  // Base para arcos compuestos
-    
-    // Brace height más largo = mejor eficiencia
-    eficiencia += (braceHeight - 7) × 0.01
-    
-    // IBO más alto = mejor diseño
-    eficiencia += (velocidadIBO - 330) × 0.0001
-    
-    return limitar(0.70, 0.90, eficiencia)
-}
+### 3. Spine requerido en compound
+
+```text
+spineRequired =
+  K
+  * (adjustedDrawWeight / 70)^drawWeightExponent
+  * (arrowLength / 28)^lengthExponent
+  * (availableEnergy / referenceEnergy)^energyExponent
 ```
 
-### Paso 3: Calcular Velocidad Real
-```javascript
-function calcularVelocidad(energia, masaFlecha) {
-    // E = ½mv²  →  v = √(2E/m)
-    velocidad = √(2 × 32.174 × energia / masaFlecha)
-    
-    // Ajustes finos
-    velocidad += ajustes_adicionales
-    
-    return velocidad  // en FPS
-}
+Donde `adjustedDrawWeight` añade correcciones suaves de tipo chart:
+
+```text
+adjustedDrawWeight =
+  drawWeight
+  + blend * (
+      iboAdjustment
+      + shortBraceAdjustment
+      + frontWeightAdjustment
+    )
 ```
 
-**¿Por qué 32.174?** Es la constante gravitacional para convertir de foot-pounds a la unidad correcta para velocidad.
+Las correcciones actuales son continuas, no por buckets:
 
-### Paso 4: Calcular Spine Requerido
-```javascript
-function calcularSpineRequerido(pesoPico, offsetCenterShot, longitudFlecha) {
-    // La flecha debe doblarse suficiente alrededor del riser
-    flexionNecesaria = offsetCenterShot / longitudFlecha
-    
-    // Spine basado en física de vigas
-    spine = 0.5 × √(longitudFlecha/28) × (70/pesoPico)
-    
-    return spine
-}
+- más `IBO` pide spine más rígido
+- menos `brace height` pide spine más rígido
+- más peso frontal total pide spine más rígido
+
+Para recurvo/tradicional el spine requerido usa una ley de potencias calibrada:
+
+```text
+spineRequired =
+  K_recurve
+  * (drawWeight / 40)^(-0.85)
+  * sqrt(arrowLength / 28)
+  / (drawLength / 28)^0.3
 ```
 
-### Paso 5: Calcular Spine Dinámico Real
-```javascript
-function calcularSpineDinamico(spineEstatico, longitud, masaFrontal, energia) {
-    // Factor de longitud: flechas más largas se comportan más flexibles
-    factorLongitud = (longitud/28)²
-    
-    // Factor de masa: más peso en punta = más flexión
-    factorMasa = 1 + (masaFrontal-100) × 0.002
-    
-    // Factor dinámico: aceleración causa flexión adicional
-    factorDinamico = 1 + (energia/1000) × (1/√spineEstatico)
-    
-    return spineEstatico × factorLongitud × factorMasa × factorDinamico
-}
+## Modelo de la flecha
+
+El spine dinámico se construye multiplicando factores:
+
+```text
+spineDynamic =
+  staticSpine
+  * lengthFactor
+  * frontMassFactor
+  * fletchingFactor
+  * releaseFactor
+  * wrapFactor
+  * rearMassFactor
+  * stringDynamicFactor
+  * temperatureFactor?
 ```
 
----
+### Factores dinámicos
 
-## 📊 Explicación de cada Componente
+- `lengthFactor`: un shaft más largo actúa más blando.
+- `frontMassFactor`: más masa frontal actúa más blando.
+- `fletchingFactor`: más pluma o más peso atrás endurece ligeramente la reacción.
+- `releaseFactor`: soltar con dedos debilita el spine dinámico; `pre-gate` lo endurece un poco.
+- `wrapFactor`: el wrap escala por peso, ya no es binario.
+- `rearMassFactor`: más masa en el nock endurece ligeramente la reacción.
+- `stringDynamicFactor`: más masa en cuerda y `dacron` hacen que la flecha actúe más rígida.
+- `temperatureFactor`: solo se aplica a shafts de carbono.
 
-### 🏹 Energa Almacenada (Stored Energy)
-**Concepto**: Es el "combustible" del arco.
-**Analogía**: Como un resorte comprimido.
-**Fórmula**: `E = F × d × 0.85`
+El `FOC` se calcula con momentos de masa y se usa para feedback, no como multiplicador directo del spine.
 
-**Factores que la aumentan**:
-- Más peso de apertura (más fuerza)
-- Más distancia de tiro (más recorrido)
-- Mejor diseño de levas (curva más eficiente)
+## Modelo de velocidad
 
-### ⚡ Eficiencia del Arco (Bow Efficiency)
-**Concepto**: Cuánta energía se conserva en el proceso.
-**Analogía**: Como el rendimiento de un motor.
-**Rango típico**: 70-90%
+La app devuelve:
 
-**Factores que la mejoran**:
-- Brace height más largo (menos ángulo extremo)
-- Mejor diseño de levas (IBO más alto)
-- Menos vibración y calor
+- `calculatedFPS`: velocidad estimada por el modelo
+- `measuredFPS`: velocidad introducida desde cronógrafo
+- `effectiveFPS`: velocidad usada realmente por el resultado
 
-### 🎯 Velocidad Calculada (Calculated FPS)
-**Concepto**: Velocidad real basada en física.
-**Analogía**: Como calcular velocidad de un coche desde caballos de fuerza.
-**Fórmula**: `v = √(2E/m)`
+Si hay cronógrafo, `effectiveFPS = measuredFPS`; si no, usa la estimación del modelo.
 
-**Factores que la aumentan**:
-- Más energía disponible
-- Menos masa de flecha
-- Mejor transferencia de energía
+## Seguridad y feedback
 
-### 🌊 Spine Requerido (Required Spine)
-**Concepto**: Flexibilidad que necesita la flecha.
-**Analogía**: Como elegir la rigidez correcta de un resorte.
-**Basado en**: Paradoja del arquero
+El resultado final también emite:
 
-**Factores que lo disminuyen (más rígido)**:
-- Más potencia del arco
-- Menos longitud de flecha
-- Menos offset del center-shot
+- intervalos de confianza para `spineRequired`, `spineDynamic` y `matchIndex`
+- advertencias por `GPP`, velocidad extrema y casos severos de rigidez/blandura
+- recomendaciones por baja velocidad, peso de flecha, FOC, temperatura y casos límite
 
-### 🔄 Spine Dinámico (Dynamic Spine)
-**Concepto**: Cómo se comporta la flecha en realidad.
-**Analogía**: Como un material se comporta bajo carga real vs estática.
-**Factores adicionales**:
-- Fuerzas de aceleración
-- Vibraciones durante el disparo
-- Comportamiento real del material
+## Flujo de calibración
 
----
+La calibración vive en:
 
-## 📈 Ejemplo Práctico Completo
+- [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts)
+- [src/utils/spineCalibrationDataset.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibrationDataset.ts)
+- [src/utils/spineCalibration.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibration.ts)
+- [scripts/calibrate-compound.mjs](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/calibrate-compound.mjs)
 
-### Configuración de Ejemplo:
-- **Arco**: 70 lbs, 30" apertura, 7" brace height, 330 IBO
-- **Flecha**: 28" longitud, 400 grains total, 100 grains punta, 0.400 spine estático
+Flujo actual:
 
-### Paso 1: Energía Almacenada
-```
-powerStroke = 30" - 7" = 23"
-energia = 70 × 23 × 0.85 = 1,368.5 foot-pounds
+1. evaluar un dataset compound ponderado con casos exactos y casos tipo chart
+2. penalizar soluciones que rompan monotonicidad física
+3. ejecutar una búsqueda en rejilla sobre las constantes compound
+
+Las checks de monotonicidad exigen:
+
+- un arco más rápido debe pedir más rigidez
+- menos brace height debe pedir más rigidez
+- más peso frontal debe pedir más rigidez y debilitar la flecha
+- finger release debe debilitar la flecha
+- más masa trasera debe endurecer ligeramente la flecha
+
+Para ejecutar la calibración:
+
+```bash
+pnpm run calibrate:compound
 ```
 
-### Paso 2: Eficiencia
-```
-eficiencia = 0.80 + (7-7)×0.01 + (330-330)×0.0001 = 0.80
-energiaDisponible = 1,368.5 × 0.80 = 1,094.8 foot-pounds
-```
+## Referencias de contraste
 
-### Paso 3: Velocidad
-```
-velocidad = √(2 × 32.174 × 1,094.8 / 400) = 295.2 FPS
-```
+El código se contrasta sobre todo con:
 
-### Paso 4: Spine Requerido
-```
-spineRequerido = 0.5 × √(28/28) × (70/70) = 0.500
-```
+- lógica del selector y charts de Easton
+- charts de Gold Tip y semántica de peso frontal total
+- guías de seguridad de Hoyt
 
-### Paso 5: Spine Dinámico
-```
-factorLongitud = (28/28)² = 1.0
-factorMasa = 1 + (100-100)×0.002 = 1.0
-factorDinamico = 1 + (1,094.8/1000) × (1/√0.400) = 1.74
-spineDinamico = 0.400 × 1.0 × 1.0 × 1.74 = 0.696
-```
+El modelo sigue siendo una inferencia continua construida encima de esas referencias; no es una ecuación oficial publicada por los fabricantes.
 
-### Resultado Final:
-```
-matchIndex = 0.696 / 0.500 = 1.39
-Estado: "Débil" (la flecha es demasiado flexible)
-Recomendación: Usar spine más rígido (ej: 0.340 o 0.300)
-```
+## Limitaciones
 
----
-
-## ❓ Preguntas Frecuentes
-
-### **Q: ¿Por qué el algoritmo nuevo da resultados diferentes?**
-**A**: Porque considera la física real. El algoritmo antiguo usaba aproximaciones lineales, mientras que el nuevo modela la energía real y las fuerzas de flexión.
-
-### **Q: ¿Qué es más importante: velocidad o spine?**
-**A**: ¡El spine! Una flecha con spine incorrecto no volará bien sin importar la velocidad. La velocidad óptima viene después del spine correcto.
-
-### **Q: ¿Por qué las flechas más ligeras no siempre son mejores?**
-**A**: Aunque dan más velocidad, pueden ser demasiado ligeras para el arco (menos de 4 GPP), causando:
-- Menos eficiencia de transferencia
-- Más estrés en el arco
-- Vuelo menos estable
-
-### **Q: ¿Qué significa "paradoja del arquero"?**
-**A**: Es el fenómeno donde la flecha debe doblarse alrededor del arco para volar recto. Sin esta flexión controlada, la flecha golpearía el arco.
-
-### **Q: ¿Cómo afecta el brace height?**
-**A**: Brace height más largo:
-- ✅ Mayor eficiencia de energía
-- ✅ Menos estrés en la flecha
-- ❌ Menos velocidad potencial (menor power stroke)
-
-### **Q: ¿Por qué el IBO importa si no lo usamos directamente?**
-**A**: El IBO indica la calidad del diseño de levas del arco. Un IBO más alto generalmente significa:
-- Mejor almacenamiento de energía
-- Mayor eficiencia
-- Mejor transferencia a la flecha
-
----
-
-## 🎯 Consejos Prácticos
-
-### **Para Principiantes:**
-1. **Empieza con spine recomendado** por el fabricante
-2. **Ajusta gradualmente** basado en resultados reales
-3. **Filma tus disparos** para ver el comportamiento de la flecha
-
-### **Para Tiradores Avanzados:**
-1. **Usa el algoritmo como punto de partida**
-2. **Ajusta según tu estilo de tiro**
-3. **Considera factores ambientales** (viento, humedad)
-
-### **Optimización:**
-- **Velocidad ideal**: 280-320 FPS para caza
-- **Relación masa/potencia**: 5-8 GPP
-- **Spine match**: 0.85-1.15 para óptimo
-
----
-
-## 🔬 Referencias Físicas
-
-- **Conservación de energía**: E_total = E_potencial + E_cinética + E_pérdidas
-- **Energía cinética**: E = ½mv²
-- **Deflexión de vigas**: δ ∝ FL³/(3EI)
-- **Transferencia de momentum**: p = mv
-
----
-
-## 📝 Conclusión
-
-El algoritmo mejorado representa un avance significativo en la precisión del cálculo de spine match al:
-
-1. **Usar física real** en lugar de aproximaciones
-2. **Considerar todos los factores** importantes
-3. **Proporcionar resultados más precisos**
-4. **Ofrecer recomendaciones inteligentes**
-
-Aunque es más complejo, los resultados justifican completamente la complejidad adicional, especialmente para tiradores serios que buscan optimizar su equipo.
-
-> **Recuerda**: El mejor algoritmo es solo una herramienta. La experiencia práctica y el ajuste fino siguen siendo indispensables para lograr el rendimiento óptimo.
+- Compound es la vía mejor calibrada; recurvo/tradicional siguen siendo más simples.
+- La calidad del input sigue mandando mucho sobre la precisión final.
+- Un FPS real de cronógrafo mejora más el resultado que otra heurística pequeña.
+- Aún no se incorpora feedback de paper tune, bareshaft o broadhead tune al modelo.

@@ -4,10 +4,13 @@ import { calculateSpineMatch } from './utils/archeryCalculator'
 import { Toolbar } from './components/Toolbar'
 import { TabNavigation } from './components/TabNavigation'
 import { ResultsSummary } from './components/ResultsSummary'
+import { TuningAssistant } from './components/TuningAssistant'
+import { SetupComparator, type SetupComparisonEntry } from './components/SetupComparator'
 import { FormSection } from './components/FormSection'
 import { FieldGroup } from './components/FieldGroup'
 import { InputField } from './components/InputField'
 import { SelectField } from './components/SelectField'
+import { buildTuningActions } from './utils/tuningAssistant'
 import {
   formatInputDisplayValue,
   getUnitLabel,
@@ -25,6 +28,7 @@ const STRING_CORE_FIELDS = ['releaseType', 'stringMaterial', 'dLoop', 'peep'] as
 
 const initialBowSpecs = {
   iboVelocity: '',
+  measuredChronoSpeed: '',
   drawLength: '',
   drawWeight: '',
   braceHeight: '',
@@ -59,9 +63,25 @@ function countFilledFields<T extends Record<string, string>>(state: T, fields: r
   return fields.filter((field) => state[field].trim() !== '').length
 }
 
+function getSavedConfiguration(slot: number) {
+  const saved = localStorage.getItem(`archery-config-${slot}`)
+  if (!saved) return null
+
+  try {
+    return JSON.parse(saved) as {
+      bowSpecs?: Partial<typeof initialBowSpecs>
+      arrowSpecs?: Partial<typeof initialArrowSpecs>
+      stringWeights?: Partial<typeof initialStringWeights>
+    }
+  } catch {
+    return null
+  }
+}
+
 function App() {
   const { t, lang, setLang } = useI18n()
   const [activeTab, setActiveTab] = useState<ActiveTab>('bow')
+  const [savedSetupsVersion, setSavedSetupsVersion] = useState(0)
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(() => {
     const saved = localStorage.getItem(UNIT_SYSTEM_STORAGE_KEY)
     return saved === 'metric' ? 'metric' : 'imperial'
@@ -79,15 +99,16 @@ function App() {
   const saveConfiguration = (slot: number) => {
     const config = { bowSpecs, arrowSpecs, stringWeights }
     localStorage.setItem(`archery-config-${slot}`, JSON.stringify(config))
+    setSavedSetupsVersion((current) => current + 1)
   }
 
   const loadConfiguration = (slot: number) => {
     const saved = localStorage.getItem(`archery-config-${slot}`)
     if (saved) {
       const config = JSON.parse(saved)
-      setBowSpecs(config.bowSpecs)
-      setArrowSpecs(config.arrowSpecs)
-      setStringWeights(config.stringWeights)
+      setBowSpecs({ ...initialBowSpecs, ...config.bowSpecs })
+      setArrowSpecs({ ...initialArrowSpecs, ...config.arrowSpecs })
+      setStringWeights({ ...initialStringWeights, ...config.stringWeights })
     }
   }
 
@@ -153,6 +174,63 @@ function App() {
         return 'text-[#8a8a8a]'
     }
   }, [spineMatch.status])
+
+  const tuningActions = useMemo(
+    () => buildTuningActions(spineMatch, bowSpecs, arrowSpecs, unitSystem, t),
+    [spineMatch, bowSpecs, arrowSpecs, unitSystem, t],
+  )
+
+  const comparisonEntries = useMemo<SetupComparisonEntry[]>(() => {
+    const savedEntries = [1, 2, 3].flatMap((slot) => {
+        const config = getSavedConfiguration(slot)
+        if (!config) return []
+
+        const savedBowSpecs = { ...initialBowSpecs, ...config.bowSpecs }
+        const savedArrowSpecs = { ...initialArrowSpecs, ...config.arrowSpecs }
+        const savedStringWeights = { ...initialStringWeights, ...config.stringWeights }
+
+        return [{
+          id: `slot-${slot}`,
+          label: `${t('compare.slot')} ${slot}`,
+          isCurrent: false,
+          slot,
+          setup: {
+            bowSpecs: savedBowSpecs,
+            arrowSpecs: savedArrowSpecs,
+            stringWeights: savedStringWeights,
+            result: calculateSpineMatch(savedBowSpecs, savedArrowSpecs, savedStringWeights),
+          },
+        } satisfies SetupComparisonEntry]
+      })
+
+    return [
+      {
+        id: 'current',
+        label: t('compare.current'),
+        isCurrent: true,
+        setup: {
+          bowSpecs,
+          arrowSpecs,
+          stringWeights,
+          result: spineMatch,
+        },
+      },
+      ...savedEntries,
+    ]
+  }, [arrowSpecs, bowSpecs, savedSetupsVersion, spineMatch, stringWeights, t])
+
+  const bestComparisonEntryId = useMemo(() => {
+    const candidates = comparisonEntries.filter((entry) => entry.setup.result.matchIndex != null)
+    if (candidates.length === 0) return null
+
+    return candidates
+      .slice()
+      .sort(
+        (left, right) =>
+          Math.abs((left.setup.result.matchIndex ?? 0) - 1) - Math.abs((right.setup.result.matchIndex ?? 0) - 1),
+      )[0]
+      ?.id ?? null
+  }, [comparisonEntries])
 
   const getMatchIndexPosition = (matchIndex: number): number => {
     if (matchIndex <= 0.6) return 2
@@ -238,6 +316,15 @@ function App() {
 
       <FieldGroup title={t('group.advanced')}>
         <div className="space-y-5">
+          <InputField
+            {...bowField('measuredChronoSpeed', 'speed')}
+            label={t('field.measuredChronoSpeed')}
+            placeholder={unitLabel('speed')}
+            id="measuredChronoSpeed"
+            unit={unitLabel('speed')}
+            hint={t('field.measuredChronoSpeed.hint')}
+            tooltip={t('field.measuredChronoSpeed.tooltip')}
+          />
           <InputField
             {...bowField('axleToAxle', 'length')}
             label={t('field.axleToAxle')}
@@ -467,6 +554,8 @@ function App() {
           t={t}
         />
 
+        <TuningAssistant actions={tuningActions} status={spineMatch.status} t={t} />
+
         {(spineMatch.warnings.length > 0 || spineMatch.recommendations.length > 0) && (
           <div className="mt-6 space-y-5">
             {spineMatch.warnings.length > 0 && (
@@ -477,6 +566,14 @@ function App() {
             )}
           </div>
         )}
+
+        <SetupComparator
+          entries={comparisonEntries}
+          bestEntryId={bestComparisonEntryId}
+          onLoadSlot={loadConfiguration}
+          unitSystem={unitSystem}
+          t={t}
+        />
 
         <div className="mt-8">
           <TabNavigation tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as ActiveTab)} />

@@ -48,7 +48,10 @@ function parseNumeric(value: string): number | null {
 }
 
 function formatNumber(value: number, decimals: number): string {
-  return value.toFixed(decimals).replace(/\.?0+$/, '')
+  return value
+    .toFixed(decimals)
+    .replace(/(\.\d*?[1-9])0+$/, '$1')
+    .replace(/\.0+$/, '')
 }
 
 export function getUnitLabel(field: ConvertibleField, unitSystem: UnitSystem): string {
