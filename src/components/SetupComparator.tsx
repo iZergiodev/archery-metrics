@@ -28,10 +28,10 @@ export function SetupComparator({
   const currentEntry = entries.find((entry) => entry.isCurrent) ?? null
 
   return (
-    <section className="mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
+    <section className="mt-6 border-t border-[var(--border)] pt-4">
       <div className="min-w-0">
-        <h3 className="text-[10px] uppercase tracking-[0.28em] text-[#facc15]">{t('compare.title')}</h3>
-        <p className="mt-2 text-[13px] leading-relaxed text-[#9f9f9f]">{t('compare.subtitle')}</p>
+        <h3 className="text-[10px] uppercase tracking-[0.28em] text-[var(--gold)]">{t('compare.title')}</h3>
+        <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">{t('compare.subtitle')}</p>
       </div>
 
       {entries.length > 1 ? (
@@ -49,7 +49,7 @@ export function SetupComparator({
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[#131313] px-4 py-4 text-[13px] leading-relaxed text-[#a8a8a8]">
+        <div className="mt-4 rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-4 text-[13px] leading-relaxed text-[var(--text-secondary)]">
           {t('compare.empty')}
         </div>
       )}
@@ -75,24 +75,24 @@ function ComparisonCard({
   const analysis = !entry.isCurrent && currentEntry ? analyzeSetupDifference(currentEntry.setup, entry.setup) : null
 
   return (
-    <article className="rounded-[14px] border border-[rgba(255,255,255,0.08)] bg-[#131313] px-4 py-4">
+    <article className="rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-[14px] font-medium text-[#f3f3f3]">{entry.label}</h4>
+            <h4 className="text-[14px] font-medium text-[var(--text-primary)]">{entry.label}</h4>
             {bestEntryId === entry.id && (
-              <span className="rounded-full bg-[#facc15] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[#161616]">
+              <span className="rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--bg-primary)]">
                 {t('compare.best')}
               </span>
             )}
           </div>
-          <p className="mt-1 text-[12px] text-[#9d9d9d]">{getStatusLabel(entry.setup.result.status, t)}</p>
+          <p className="mt-1 text-[12px] text-[var(--text-secondary)]">{getStatusLabel(entry.setup.result.status, t)}</p>
         </div>
 
         {!entry.isCurrent && entry.slot != null && (
           <button
             onClick={() => onLoadSlot(entry.slot!)}
-            className="shrink-0 rounded-[10px] border border-[rgba(255,255,255,0.1)] px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-[#d8d8d8] transition-colors hover:border-[rgba(255,255,255,0.18)] hover:bg-[#181818] hover:text-[#f7f7f7]"
+            className="shrink-0 rounded-[10px] border border-[var(--border)] px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
           >
             {t('compare.load')}
           </button>
@@ -116,9 +116,9 @@ function ComparisonCard({
         />
       </div>
 
-      <div className="mt-4 border-t border-[rgba(255,255,255,0.08)] pt-3">
+      <div className="mt-4 border-t border-[var(--border)] pt-3">
         {entry.isCurrent ? (
-          <p className="text-[12px] leading-relaxed text-[#9d9d9d]">{t('compare.baseline')}</p>
+          <p className="text-[12px] leading-relaxed text-[var(--text-secondary)]">{t('compare.baseline')}</p>
         ) : (
           <ComparisonDetails analysis={analysis} unitSystem={unitSystem} t={t} />
         )}
@@ -137,7 +137,7 @@ function ComparisonDetails({
   t: (key: string) => string
 }) {
   if (!analysis) {
-    return <p className="text-[12px] leading-relaxed text-[#9d9d9d]">{t('compare.noFactors')}</p>
+    return <p className="text-[12px] leading-relaxed text-[var(--text-secondary)]">{t('compare.noFactors')}</p>
   }
 
   const proximityText = getProximityText(analysis, t)
@@ -146,19 +146,19 @@ function ComparisonDetails({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <p className="text-[12px] font-medium text-[#f2f2f2]">{proximityText}</p>
-        {driverText && <p className="text-[12px] leading-relaxed text-[#9d9d9d]">{driverText}</p>}
+        <p className="text-[12px] font-medium text-[var(--text-primary)]">{proximityText}</p>
+        {driverText && <p className="text-[12px] leading-relaxed text-[var(--text-secondary)]">{driverText}</p>}
       </div>
 
       {analysis.factors.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-[#6f6f6f]">{t('compare.factorsTitle')}</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{t('compare.factorsTitle')}</p>
           <ul className="space-y-2">
             {analysis.factors.map((factor) => (
               <li key={factor.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[12px] text-[#ececec]">{getFactorLabel(factor.id, t)}</p>
-                  <p className="mt-0.5 break-words text-[11px] text-[#8d8d8d]">
+                  <p className="text-[12px] text-[var(--text-primary)]">{getFactorLabel(factor.id, t)}</p>
+                  <p className="mt-0.5 break-words text-[11px] text-[var(--text-secondary)]">
                     {formatFactorValues(factor, unitSystem)}
                   </p>
                 </div>
@@ -170,7 +170,7 @@ function ComparisonDetails({
           </ul>
         </div>
       ) : (
-        <p className="text-[12px] leading-relaxed text-[#9d9d9d]">{t('compare.noFactors')}</p>
+        <p className="text-[12px] leading-relaxed text-[var(--text-secondary)]">{t('compare.noFactors')}</p>
       )}
     </div>
   )
@@ -179,10 +179,10 @@ function ComparisonDetails({
 function Metric({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-[0.14em] text-[#5f5f5f]">{label}</div>
-      <div className="mt-1 break-all font-mono text-[15px] text-[#f1f1f1]">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</div>
+      <div className="mt-1 break-all font-mono text-[15px] text-[var(--text-primary)]">
         {value}
-        {unit && <span className="ml-1 text-[11px] text-[#6d6d6d]">{unit}</span>}
+        {unit && <span className="ml-1 text-[11px] text-[var(--text-muted)]">{unit}</span>}
       </div>
     </div>
   )
@@ -220,8 +220,8 @@ function formatFactorValues(factor: ComparisonFactor, unitSystem: UnitSystem) {
 
 function getFactorToneClass(effect: ComparisonFactor['effect']) {
   return effect === 'weaker'
-    ? 'shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-[#ef4444]'
-    : 'shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-[#60a5fa]'
+    ? 'shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--target-red)]'
+    : 'shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--target-blue)]'
 }
 
 function getStatusLabel(status: SpineMatchResult['status'], t: (key: string) => string) {

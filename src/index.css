@@ -1,12 +1,28 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --gold: #D4A017;
+    --gold-light: #F2D06B;
+    --target-red: #E03C31;
+    --target-blue: #00A1DE;
+    --bg-primary: #0B0B0B;
+    --bg-surface: #141414;
+    --bg-elevated: #1A1A1A;
+    --text-primary: #F0EDE8;
+    --text-secondary: #9A948A;
+    --text-muted: #6B6560;
+    --border: rgba(255, 248, 235, 0.08);
+    --border-hover: rgba(255, 248, 235, 0.16);
+    --ring-gold: rgba(212, 160, 23, 0.5);
+  }
+
   html, body {
     @apply h-full antialiased;
     font-size: 16px;
     font-family: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
-    background-color: #0c0c0c;
-    color: #f0f0f0;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
   }
 
   #root {
@@ -14,8 +30,8 @@
   }
 
   ::selection {
-    background: rgba(34, 211, 238, 0.18);
-    color: #f0f0f0;
+    background: rgba(212, 160, 23, 0.22);
+    color: var(--text-primary);
   }
 
   h1, h2, h3 {
@@ -38,8 +54,8 @@
 
   option,
   optgroup {
-    background-color: #151515;
-    color: #f8f8f8;
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
   }
 
   /* Improve touch targets on mobile */

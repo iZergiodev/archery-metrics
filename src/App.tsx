@@ -165,13 +165,26 @@ function App() {
   const matchColor: string = useMemo(() => {
     switch (spineMatch.status) {
       case 'weak':
-        return 'text-[#ef4444]'
+        return 'text-[var(--target-red)]'
       case 'stiff':
-        return 'text-[#60a5fa]'
+        return 'text-[var(--target-blue)]'
       case 'good':
-        return 'text-[#facc15]'
+        return 'text-[var(--gold)]'
       default:
-        return 'text-[#8a8a8a]'
+        return 'text-[var(--text-secondary)]'
+    }
+  }, [spineMatch.status])
+
+  const stickyBarBorderColor: string = useMemo(() => {
+    switch (spineMatch.status) {
+      case 'weak':
+        return 'var(--target-red)'
+      case 'stiff':
+        return 'var(--target-blue)'
+      case 'good':
+        return 'var(--gold)'
+      default:
+        return 'var(--text-muted)'
     }
   }, [spineMatch.status])
 
@@ -246,6 +259,10 @@ function App() {
   const totalProgress = bowProgress + arrowProgress + stringProgress
   const totalCoreFields = BOW_CORE_FIELDS.length + ARROW_CORE_FIELDS.length + STRING_CORE_FIELDS.length
 
+  const fitPercent = spineMatch.matchIndex != null
+    ? Math.round((1 - Math.min(Math.abs(spineMatch.matchIndex - 1) / 0.4, 1)) * 100)
+    : null
+
   const tabs = [
     {
       id: 'bow',
@@ -314,7 +331,7 @@ function App() {
         </div>
       </FieldGroup>
 
-      <FieldGroup title={t('group.advanced')}>
+      <FieldGroup title={t('group.advanced')} collapsible defaultCollapsed>
         <div className="space-y-5">
           <InputField
             {...bowField('measuredChronoSpeed', 'speed')}
@@ -388,7 +405,7 @@ function App() {
         </div>
       </FieldGroup>
 
-      <FieldGroup title={t('group.build')}>
+      <FieldGroup title={t('group.build')} collapsible defaultCollapsed>
         <div className="space-y-5">
           <InputField
             {...arrowField('insertWeight', 'componentWeight')}
@@ -488,7 +505,7 @@ function App() {
         </div>
       </FieldGroup>
 
-      <FieldGroup title={t('group.accessories')}>
+      <FieldGroup title={t('group.accessories')} collapsible defaultCollapsed>
         <div className="space-y-5">
           <InputField
             {...stringField('nockPoint', 'componentWeight')}
@@ -517,17 +534,18 @@ function App() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0c0c0c] text-[#f0f0f0]">
-      <header className="sticky top-0 z-40 border-b border-[rgba(255,255,255,0.08)] bg-[rgba(12,12,12,0.94)] safe-top">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      <header className="sticky top-0 z-40 border-b border-[var(--border)] safe-top" style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(12px)' }}>
         <div className="mx-auto max-w-[560px] px-4 py-3">
           <div className="flex flex-col gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[#facc15]">{t('app.kicker')}</p>
-              <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-[#f7f7f7]">{t('app.title')}</h1>
-              <p className="mt-1 break-words text-[12px] leading-relaxed text-[#747474]">{t('app.subtitle')}</p>
-              <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[#575757]">
-                {totalProgress}/{totalCoreFields} {t('app.progress')}
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--gold)]">{t('app.kicker')}</p>
+                <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-[var(--text-primary)]">{t('app.title')}</h1>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  {totalProgress}/{totalCoreFields} {t('app.progress')}
+                </p>
+              </div>
             </div>
 
             <Toolbar
@@ -544,15 +562,28 @@ function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[560px] px-4 py-4 pb-24 safe-bottom">
-        <ResultsSummary
-          result={spineMatch}
-          matchColor={matchColor}
-          matchLabel={matchLabel}
-          getMatchIndexPosition={getMatchIndexPosition}
-          unitSystem={unitSystem}
-          t={t}
-        />
+      <main className="mx-auto max-w-[560px] px-4 py-4" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+        {/* Tabs first - immediately accessible */}
+        <TabNavigation tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as ActiveTab)} />
+
+        {/* Form content - primary interaction area */}
+        <div>
+          {activeTab === 'bow' && renderBowSection()}
+          {activeTab === 'arrow' && renderArrowSection()}
+          {activeTab === 'string' && renderStringSection()}
+        </div>
+
+        {/* Results below form */}
+        <div className="mt-8">
+          <ResultsSummary
+            result={spineMatch}
+            matchColor={matchColor}
+            matchLabel={matchLabel}
+            getMatchIndexPosition={getMatchIndexPosition}
+            unitSystem={unitSystem}
+            t={t}
+          />
+        </div>
 
         <TuningAssistant actions={tuningActions} status={spineMatch.status} t={t} />
 
@@ -574,17 +605,30 @@ function App() {
           unitSystem={unitSystem}
           t={t}
         />
-
-        <div className="mt-8">
-          <TabNavigation tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as ActiveTab)} />
-        </div>
-
-        <div className="mt-6">
-          {activeTab === 'bow' && renderBowSection()}
-          {activeTab === 'arrow' && renderArrowSection()}
-          {activeTab === 'string' && renderStringSection()}
-        </div>
       </main>
+
+      {/* Sticky bottom match indicator */}
+      {spineMatch.status != null && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+          style={{ backgroundColor: 'rgba(11,11,11,0.92)', backdropFilter: 'blur(12px)' }}
+        >
+          <div
+            className="mx-auto flex h-12 max-w-[560px] items-center gap-4 px-4"
+            style={{ borderLeft: `3px solid ${stickyBarBorderColor}` }}
+          >
+            <span className={`text-[13px] font-semibold ${matchColor}`}>{matchLabel}</span>
+            <span className="font-mono text-[14px] text-[var(--text-primary)]">
+              {spineMatch.matchIndex?.toFixed(3) ?? '--'}
+            </span>
+            {fitPercent != null && (
+              <span className="ml-auto text-[12px] text-[var(--text-secondary)]">
+                {fitPercent}% fit
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -598,14 +642,14 @@ function AlertPanel({
   tone: 'warning' | 'info'
   items: string[]
 }) {
-  const titleColor = tone === 'warning' ? 'text-[#ef4444]' : 'text-[#60a5fa]'
+  const titleColor = tone === 'warning' ? 'text-[var(--target-red)]' : 'text-[var(--target-blue)]'
 
   return (
-    <section className="border-t border-[rgba(255,255,255,0.08)] pt-4">
+    <section className="border-t border-[var(--border)] pt-4">
       <h3 className={`text-[10px] uppercase tracking-[0.28em] ${titleColor}`}>{title}</h3>
       <ul className="mt-3 space-y-2">
         {items.map((item, index) => (
-          <li key={index} className="text-[13px] leading-relaxed text-[#ababab]">
+          <li key={index} className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
             {item}
           </li>
         ))}

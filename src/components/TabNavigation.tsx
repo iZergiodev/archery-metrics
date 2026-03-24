@@ -25,14 +25,14 @@ export function TabNavigation({ tabs, activeTab, onChange }: TabNavigationProps)
               onClick={() => onChange(tab.id)}
               className={`min-w-0 rounded-[14px] border px-2.5 py-3 text-left transition-colors ${
                 isActive
-                  ? 'border-[#facc15]/45 bg-[#181818] text-[#f8f8f8]'
-                  : 'border-[rgba(255,255,255,0.08)] bg-[#111111] text-[#9a9a9a] hover:border-[rgba(255,255,255,0.16)] hover:text-[#dcdcdc]'
+                  ? 'border-[var(--gold)]/45 bg-[var(--bg-elevated)] text-[var(--text-primary)]'
+                  : 'border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
               }`}
             >
-              <div className={`font-mono text-[10px] ${isActive ? 'text-[#facc15]' : 'text-[#5d5d5d]'}`}>{tab.icon}</div>
+              <div className={`font-mono text-[10px] ${isActive ? 'text-[var(--gold)]' : 'text-[var(--text-muted)]'}`}>{tab.icon}</div>
               <div className="mt-2 break-words text-[11px] uppercase leading-tight tracking-[0.08em]">{tab.label}</div>
               {tab.detail && (
-                <div className={`mt-1 truncate text-[10px] ${isActive ? 'text-[#d9d9d9]' : 'text-[#666666]'}`}>{tab.detail}</div>
+                <div className={`mt-1 truncate text-[10px] ${isActive ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}>{tab.detail}</div>
               )}
             </button>
           )
