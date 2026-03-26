@@ -1,0 +1,392 @@
+*,2022 Sight
+=,MFG,MDL,PITCH,CPM,CV,TA
+-,Generic
+Target Sight w/Scope,0,20,0.002,1.0
+Linear W/O Clicks,Li,20,0.002,1.0
+SH Dial,SH Dial,8,0.004328,1.6751
+FE Dial W/O Clicks,FE,8,0.004328,1.6751
+HHA Dial,HHA Dial,20,0.002,3.842
+HHA KingPin,HKP Dial,20,0.002,2.2775
+Slider,Sl,20,0.002,1.6
+Multi-Pin,Mu,20,0.002,1.0
+NFAA Pin,NF,20,0.002,1.0
+G5 XR1+1,X1,20,0.002,1.0
+G5 XR3+1,X3,20,0.002,1.185
+-,AIM
+ACTIVA,24,20,0.002,1.0
+-,AGF
+Profi,25.4,10,0.00394,1.0
+3D,25.4,10,0.00394,1.0
+Safari,25.4,10,0.00394,1.0
+Technic-15,0,10,0.00394,1.0
+Top,0,10,0.00394,1.0
+ZGV,0,10,0.00394,1.0
+-,Angel
+MA-RNd,10-32,20,0.002,1.0
+MA-RNm,10-32,20,0.002,1.0
+MA-CNd,10-32,20,0.002,1.0
+MA-CNm,10-32,20,0.002,1.0
+-,Apex
+Covert,Li,20,0.002,1.0
+Covert Pro,Li,20,0.002,1.0
+Atomic Rover,Sl,20,0.002,1.0
+-,ARC
+20 Click,24,20,0.00197,1.0
+-,AXCEL
+Axcel Achieve CB,32x20,20,0.001562,1.0
+Axcel Achieve XP,32x20,20,0.001562,1.0
+Axcel Achieve CBL,32x20,20,0.001562,1.0
+-
+Achieve RXL,32x20,20,0.001562,1.0
+AccuTouch,Li,20,0.002075,1.0
+AccuTouch Carbon Pro,Li,20,0.002075,1.0
+RX,32x20,20,0.001562,1.0
+RXL,32x20,20,0.001562,1.0
+CX,32x20,20,0.001562,1.0
+CXL,32x20,20,0.001562,1.0
+AX2000,32x20,20,0.001562,1.0
+AX3000,32x20,20,0.001562,1.0
+AX4500,32x20,20,0.001562,1.0
+AX2000,32x20,20,0.001562,1.0
+AX3000,32x20,20,0.001562,1.0
+AX4500,32x20,20,0.001562,1.0
+FITA,32x20,20,0.001562,1.0
+-,AXT
+AX Driver1,Slide,20,0.002075,1.0
+AX Driver4,Slide,20,0.002075,1.0
+-,Black Gold
+Ascent Verdict,Slide,20,0.002,1.00
+Ascent,Slide,20,0.002,1.00
+Ascent Target,Slide,20,0.002,1.00
+Easy Glider,Slide,20,0.002,1.28
+Easy Glider2,Slide,20,0.002,0.9285714
+PURE Adrenalin 75,Li,20,0.002075,1.0
+PURE Driven 75,Li,20,0.002075,1.0
+Competition Sight,24,20,0.002075,1.0
+-,Cabelas
+Pro Hunter Microsight,Slide,20,0.002,1.477
+-,Cartel
+Alcon,24,20,0.002,1.0
+Spectra Carbon,24,20,0.002,1.0
+Spectra AL,24,20,0.002,1.0
+Activa Carbon,24,20,0.002,1.0
+Activa AL,24,20,0.002,1.0
+Midas Hunter,24,20,0.002,1.0
+Midas Carbon,Slide,20,0.002,1.0
+Max Compound,10-32,20,0.002,1.0
+X-Pert Carbon,Slide,20,0.002,1.0
+Medalist,Slide,20,0.002,1.0
+Junior,Slide,20,0.002,1.0
+-,CBE
+Engage,Li,20,0.002,1.0
+Trek,Li,20,0.002,1.0
+TrekPro,Li,20,0.002,1.0
+Vertex Elevate,16,30,0.0020833,1.0
+Vertex Target,16,30,0.0020833,1.0
+Vertex 3D,16,30,0.0020833,1.0
+Elite Target,16,30,0.0020833,1.0
+Elite 3D,16,30,0.0020833,1.0
+TekHunter,Slide,20,0.002,1.0
+TekHunterXL,Slide,20,0.002,1.0
+TekTarget,Slide,20,0.002,1.0
+TekHybrid,Slide,20,0.002,1.0
+QLT-30,16,30,0.00208,1.0
+QL3D-30,16,30,0.00208,1.0
+QLT-25,1/4,25,0.010,1.0
+QL3D-25,1/4,25,0.010,1.0
+QuadLite Target-30,16,30,0.00208,1.0
+QuadLite 3D-30,16,30,0.00208,1.0
+Quad Lite,1/4,25,0.010,1.0
+Pro Lite,1/4,25,0.010,1.0
+Micro,1/4,25,0.001,1.0
+Micro Lite,1/4,25,0.001,1.0
+Micro Lite2,1/4,25,0.001,1.0
+Micro Lite3,20,20,0.002,1.0
+Spot 10,20,10,0.005,1.0
+Spot 20,20,20,0.002,1.0
+3DXL,Slide,20,0.002,1.0
+TH3,Slide,20,0.002,1.0
+-,Cobra
+EZ Slide II,Slide,20,0.002,1.40
+Buckhead D-Tine,Slide,20,0.002,1.40
+Electra Slide,Slide,20,0.002,1.40
+Easy Slide Extreme,Slide,20,0.002,1.40
+King Cobra 1,Slide,20,0.002,1.45
+King Cobra 3,Slide,20,0.002,1.45
+-,Copper John
+A.N.T.S 3D,32,20,0.00156,0.9386516
+A.N.T.S FITA,32,20,0.00156,0.9386516
+Evolution2 3D,32,20,0.001535,0.9186516
+Evolution2 FITA,32,20,0.001535,0.9186516
+Mark IV,Slide,20,0.002,1.529629
+-,Davis
+BD System2,24,10,0.004,1.0
+BD System3,24,10,0.004,1.0
+BD System4,24,10,0.004,1.0
+BD System5,24,10,0.004,1.0
+-
+BD System2-20,24,20,0.002,1.0
+BD System3-20,24,20,0.002,1.0
+BD System4-20,24,20,0.002,1.0
+BD System5-20,24,20,0.002,1.0
+-,DS
+Standard,24,20,0.00208,1.0
+Advantage,24,20,0.00208,1.0
+-,Dynamic
+Recurve,24,20,0.002,1.0
+-,EOTech
+Holographic,Li,20,0.002,1.0
+-,Fuse
+Navigator,Slide,20,0.002,1.118
+-,Fivics
+FV-100,24,20,0.002,1.0
+Scorpion,24,20,0.002,1.0
+Black Shark,24,20,0.002,1.0
+-,G5 Outdoors
+XR2,X1,20,0.002,1.0
+XR1+1,X1,20,0.002,1.0
+OptixXR1+1,X1,20,0.002,1.0
+XR,X3,20,0.002,1.185
+XR3+1,X3,20,0.002,1.185
+OptixXR3+1,X3,20,0.002,1.185
+-,GWS
+Pro Hunter Micro,Slide,20,0.002,1.1
+2000 PRO Hunter,Slide,20,0.002,1.1
+Sniper Sight,Slide,20,0.002,1.1
+-,HHA
+King Pin TE-5519,HKP Dial,20,0.002,2.2775
+King Pin KP-5510,HKP Dial,20,0.002,2.2775
+King Pin KP-5519,HKP Dial,20,0.002,2.2775
+King Pin KP-XL5510,HKP Dial,20,0.002,2.2775
+King Pin KP-XL5519,HKP Dial,20,0.002,2.2775
+Tetra OT-XL5510,HKP Dial,20,0.002,2.2775
+Tetra OT-XL5519,HKP Dial,20,0.002,2.2775
+DS-5000,HHA Dial,20,0.002,3.842
+DS-5010,HHA Dial,20,0.002,3.842
+DS-5019,HHA Dial,20,0.002,3.842
+DS-5500,HHA Dial,20,0.002,3.842
+DS-5510,HHA Dial,20,0.002,3.842
+DS-5519,HHA Dial,20,0.002,3.842
+DS-XL5500,HHA Dial,20,0.002,3.842
+DS-XL5510,HHA Dial,20,0.002,3.842
+DS-XL5519,HHA Dial,20,0.002,3.842
+OL-3019,Slide,20,0.002,1.6
+OL-5019,Slide,20,0.002,1.6
+OL-5219,Slide,20,0.002,1.6
+OL-5519,Slide,20,0.002,1.6
+XL-5019,Slide,20,0.002,1.6
+XL-5519,Slide,20,0.002,1.6
+ELT-5000,Slide,20,0.002,1.6
+ELT-5019,Slide,20,0.002,1.6
+ELT-5519,Slide,20,0.002,1.6
+ELT-6019,Slide,20,0.002,1.6
+ELT-5259X,Slide,20,0.002,1.6
+ELT-5219X,Slide,20,0.002,1.6
+ELT-5500,Slide,20,0.002,1.6
+ELT-6000,Slide,20,0.002,1.6
+ELT-5250X,Slide,20,0.002,1.6
+ELT-5200X,Slide,20,0.002,1.6
+XL-5000,Slide,20,0.002,1.6
+XL-5500,Slide,20,0.002,1.6
+OL-TT500,Slide,20,0.002,1.6
+OL-2000,Slide,20,0.002,1.6
+OL-4000,Slide,20,0.002,1.6
+OL-4100,Slide,20,0.002,1.6
+OL-5200X,Slide,20,0.002,1.6
+OL-5000,Slide,20,0.002,1.6
+OL-5500,Slide,20,0.002,1.6
+OL-6000,Slide,20,0.002,1.6
+OL-3D Boss19,Slide,20,0.002,1.6
+OL-BSA,Slide,20,0.002,1.6
+OL-Cadet,Slide,20,0.002,1.0
+OL-PLUS,Slide,20,0.002,1.0
+Infringer 2000,Slide,20,0.002,1.6
+-,HTM
+Std Drive,24,20,0.0021,1.0
+LW3D 700,24,12,0.0021,1.0
+LRD 800,24,12,0.0021,1.0
+BB3D 900,24,12,0.0021,1.0
+BBLR 1000,24,12,0.0021,1.0
+Fast Drive,24,10,0.0042,1.0
+SuperDrive,24,4,0.0105,1.0
+3D BB3D 900,24,4,0.0105,1.0
+Long Range BBLR 1000,24,4,0.0105,1.0
+-,Impact
+AIRLITE NI-138,Li,20,0.002,1.0
+AIRLITE XL NI-139,Li,20,0.002,1.0
+AIRLITE DX NI-143,Li,20,0.002,1.0
+AIRLITE MDX NI-144,Li,20,0.002,1.0
+COSMIC NI-135,Li,20,0.002,1.0
+COSMIC XL NI-136,Li,20,0.002,1.0
+COSMIC DX NI-145,Li,20,0.002,1.0
+COSMIC MDX NI-146,Li,20,0.002,1.0
+CROSS AIR NI-137,Li,20,0.002,1.0
+OMEGA NI-131,Li,20,0.002,1.0
+OMEGA XL NI-132,Li,20,0.002,1.0
+OMEGA DX NI-133,Li,20,0.002,1.0
+OMEGA MDX NI-134,Li,20,0.002,1.0
+QUAD NI-170,Li,20,0.002,1.0
+-,Infinitec
+Challenger,24,20,0.002,1.0
+Eagle X1,24,20,0.002,1.0
+-,IQ
+Pro One,Li,20,0.002,1.0
+Pro Hunter,Li,20,0.002,1.0
+-,K&K
+Lite 10,24,10,0.004,1.0
+Lite 20,24,20,0.002,1.0
+-,MagSight
+All,33,20,0.003,1.0
+-,Merlin
+Tri Axis,3/16unc,10,0.00417,1.0
+-,PSE
+Pivoting,Slide,20,0.002,1.4042
+-,Savage
+Quick Click Ranger,Slide,20,0.002,1.15
+-,Sightmaster
+All,Slide,20,0.002,1.15
+-,Shibuya
+Ultimate CPX365 Carbon,24,20,0.002,1.0
+Ultimate CPX365 Std,24,20,0.002,1.0
+Ultimate CPX520 Carbon,24,20,0.002,1.0
+Ultimate CPX520 Std,24,20,0.002,1.0
+DualClick Std,24,20,0.002,1.0
+DualClick Carbon,24,20,0.002,1.0
+DualClick Xtreme,24,20,0.002,1.0
+Ultimate CP365,24,20,0.002,1.0
+Ultimate CP520,24,20,0.002,1.0
+Ultimate RC520,24,20,0.002,1.0
+-,Shrewd
+Competition Plus16,16Turn,30,0.002083,1.0
+Competition Plus2,2Lead,30,0.004166,1.0
+Competition Plus4,4Lead,30,0.008333,1.0
+-,SME
+All,Slide,20,0.002,1.40
+-,SpotHogg
+Fast Eddie,FE,8,0.004328,1.6751
+Fast Eddie XL,FE,8,0.004328,1.6751
+Hogg Father,SH Dial,8,0.004328,1.6751
+Tommy Hogg,SH Dial,8,0.004328,1.6751
+Boss Hogg,SH Dial,8,0.004328,1.6751
+Hoggernaut,Prism,8,0.00414,1.0
+-,Sure Loc
+Carbonic,24,20,0.002075,1.0
+Fury,24,20,0.002075,1.0
+One 400,24,20,0.002075,1.0
+One 550,24,20,0.002075,1.0
+PhoenixQA 400,3/8,10,0.00375,1.0
+PhoenixQA 400,3/8,10,0.00375,1.0
+IconX 400,24,20,0.002075,1.0
+IconX 550,24,20,0.002075,1.0
+Icon 400,24,20,0.002075,1.0
+Icon 550,24,20,0.002075,1.0
+Challenger 400,24,20,0.002075,1.0
+Challenger 550,24,20,0.002075,1.0
+Supreme 400,24,20,0.002075,1.0
+Supreme 550,24,20,0.002075,1.0
+Contender-X,24,20,0.002075,1.0
+Quest-X,24,20,0.002075,1.0
+Lethal Weapon MAX,Slide,20,0.002075,0.8450
+Lethal Weapon MAX ST,Slide,20,0.002075,0.8450
+Lethal Weapon Sportsman Special,Slide,20,0.002075,0.8450
+Edge,24,20,0.002075,1.0
+Lite-10 Click,24,10,0.00415,1.0
+Lite-20 Click,24,20,0.002075,1.0
+Prodigy,24n,10,0.00415,1.0
+24x10,24,10,0.00415,1.0
+24x20,24,20,0.002075,1.0
+Phoenix 400,3/8,10,0.00375,1.0
+-,Sword
+Judge Pro,Slide,20,0.002,1.0
+Judge,Slide,20,0.002,1.0
+Jury Pro,Slide,20,0.002,1.0
+Jury,Slide,20,0.002,1.0
+Titan II,4-16,24,0.0104166,1.0
+Titan 24,4-16,24,0.0104166,1.0
+Titan 12,4-16,12,0.020833,1.0
+Trident 24,4-16,24,0.0104166,1.0
+Trident 12,4-16,12,0.020833,1.0
+Centurion,Slide,20,0.002,0.667
+Centurion 2010,Slide,20,0.002,0.75
+-,Terrapin Archery
+TS-3,1mm,20,0.00197,1.0
+-,TGB
+Tech Slide,Slide,20,0.002,1.40
+-,Toxonics
+24x6,32,6,0.00694,1.0
+24x12,32,12,0.00347,1.0
+32x6,32,6,0.00521,1.0
+32x12,32,12,0.0026,1.0
+24x10,24,10,0.004166,1.0
+24x20,24,20,0.002083,1.0
+1400,24n,10,0.002083,1.0
+1500,24,10,0.0042,1.0
+3515 Tackdriver10,24,10,0.004166,1.0
+3515 Tackdriver20,24,20,0.002083,1.0
+3575-24 Basic,24,10,0.004166,1.0
+3575-32 Basic,32,10,0.003125,1.0
+Pro3600,32,10,0.003125,1.0
+5000 Naildriver10,24,10,0.004166,1.0
+5200 Naildriver10,24,10,0.00342,1.0
+5300 Naildriver10,24,10,0.004166,1.0
+5300 Naildriver10 Lite,24,10,0.004166,1.0
+5300 Naildriver20,24,20,0.002083,1.0
+5400 SpeedDriver,3/16,10,0.01875,1.0
+5300 B09,24,10,0.004166,1.0
+5500,32,10,0.003125,1.0
+5600DL-S,24,10,0.004166,1.0
+57003D-B,24,10,0.004166,1.0
+57003D-S,24,10,0.004166,1.0
+Naildriver,24,12,0.00347,1.0
+PS-100,24,10,0.004166,1.0
+PS-200,24,10,0.004166,1.0
+T6000 Gear Head,24,20,0.002,1.0
+T7000,10.4,30,0.0032,1.0
+T7200,10.4,30,0.0032,1.0
+T7300,10.4,30,0.0032,1.0
+T7400,10.4,30,0.0032,1.0
+T7500,10.4,30,0.0032,1.0
+T7500 HI-Helix,10.4,5,0.0032,1.0
+T7600,10.4,30,0.0032,1.0
+H-575 Hybrid Pivotal,Slide,20,0.002,1.40
+H-590 Hybrid Pivotal,Slide,20,0.002,1.40
+ProSlide,Slide,20,0.002,1.25
+-,Trophy Ridge
+ReactOne Pro,Li,20,0.002,1.0
+React Alpha,Li,20,0.002,1.0
+Alpha Slider,Slide,20,0.002,1.65
+ReactOne,Li,20,0.002,1.0
+Mantis,Li,20,0.002,1.0
+Mantis Hunter V-Drive,Li,20,0.002,1.0
+Mantis Guide V-Drive,Li,20,0.002,1.0
+Rhino V-Drive,Li,20,0.002,1.0
+Titan V-Drive,Li,20,0.002,1.0
+Drive Slider,Slide,20,0.002,1.65
+Pursuit,Slide,20,0.002,1.45
+-,Trophy Taker
+Option 6,Li,20,0.002,1.0
+HeartBreaker Pro,Li,20,0.002,1.0
+-,TruGlo
+AC Range Rover,Slide,20,0.002,1.60
+Range Rover,Slide,20,0.002,1.40
+Atomic Rover,Li,20,0.002,1.0
+PowerDot,Li,20,0.002,1.0
+-,WIN&WIN
+SF Velocity,24,20,0.0021,1.0
+SF Velocity Pro,24,20,0.0021,1.0
+SF Axiom,24,20,0.0021,1.0
+WS-525,24,20,0.0021,1.0
+WS-600,24,20,0.0021,1.0
+-,Viper
+Q-1 Microtune,Li,20,0.002075,1.0
+Predator QuickSet,Slide,20,0.002,1.0674
+QuickSet MicroTUNE,Slide,20,0.002,1.0674
+QuickSet MicroTUNE 2-Pin,Slide,20,0.002,1.0674
+-,Vital Bow Gear
+Glow Slide,Slide,20,0.002,1.32
+Compromiser,Slide,20,0.002,1.62
+Pro Slide,Slide,20,0.002,2.40625
+Star Track,Slide,20,0.002,2.0625
+-,Xtreme
+AX Driver,Li,20,0.002,1.0
+-,EOF

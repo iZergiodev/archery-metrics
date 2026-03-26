@@ -1,0 +1,254 @@
+[
+  {
+    "id": "mathews-halonx-vap350",
+    "label": "Mathews Halon X + VAP Elite 350",
+    "source": "SoftwareForArchers Xpert V2.5.22",
+    "bow": {
+      "iboVelocity": 330,
+      "drawLength": 30,
+      "drawWeight": 59,
+      "braceHeight": 7,
+      "axleToAxle": 35,
+      "percentLetoff": 75
+    },
+    "arrow": {
+      "staticSpine": 0.350,
+      "shaftLength": 27.75,
+      "shaftGpi": 8.1,
+      "pointWeight": 125,
+      "insertWeight": 50,
+      "fletchQuantity": 3,
+      "weightEach": 6,
+      "wrapWeight": 0,
+      "nockWeight": 4,
+      "bushingPin": 10
+    },
+    "string": {
+      "releaseType": "Post Gate Release",
+      "dLoop": 4,
+      "peep": 8,
+      "nockPoint": 2,
+      "silencers": 0,
+      "silencerDfc": 0
+    },
+    "sfaxResults": {
+      "fps": 269.91,
+      "ke": 69.78,
+      "foc": 16.60,
+      "totalArrowWeight": 431.77,
+      "grlb": 7.32,
+      "staticSpine": 0.350,
+      "dynamicSpine": 0.341
+    }
+  },
+  {
+    "id": "pse-axe6-acc371",
+    "label": "PSE X-Force AXE 6 + Easton ACC 3-71",
+    "source": "SoftwareForArchers Xpert V2.5.15",
+    "bow": {
+      "iboVelocity": 337,
+      "drawLength": 29,
+      "drawWeight": 71.5,
+      "braceHeight": 6,
+      "axleToAxle": 32.5,
+      "percentLetoff": 75
+    },
+    "arrow": {
+      "staticSpine": 0.300,
+      "shaftLength": 27.75,
+      "shaftGpi": 9.92,
+      "pointWeight": 125,
+      "insertWeight": 14,
+      "fletchQuantity": 3,
+      "weightEach": 6.5,
+      "wrapWeight": 0,
+      "nockWeight": 7,
+      "bushingPin": 8
+    },
+    "string": {
+      "releaseType": "Caliper Release",
+      "dLoop": 6,
+      "peep": 10,
+      "nockPoint": 0,
+      "silencers": 0,
+      "silencerDfc": 0
+    },
+    "sfaxResults": {
+      "fps": 295.31,
+      "ke": 86.82,
+      "foc": 11.98,
+      "totalArrowWeight": 448.78,
+      "grlb": 6.28,
+      "staticSpine": 0.300,
+      "dynamicSpine": 0.307
+    }
+  },
+  {
+    "id": "smoke-lgcam-acc360",
+    "label": "OK Smoke LG-Cam + Easton ACC 360",
+    "source": "SoftwareForArchers Xpert",
+    "bow": {
+      "iboVelocity": 335,
+      "drawLength": 30,
+      "drawWeight": 60.5,
+      "braceHeight": 7.25,
+      "axleToAxle": 34.5,
+      "percentLetoff": 70
+    },
+    "arrow": {
+      "staticSpine": 0.390,
+      "shaftLength": 28,
+      "shaftGpi": 0,
+      "pointWeight": 125,
+      "insertWeight": 11,
+      "fletchQuantity": 3,
+      "weightEach": 6,
+      "wrapWeight": 0,
+      "nockWeight": 7,
+      "bushingPin": 6
+    },
+    "string": {
+      "releaseType": "Post Gate Release",
+      "dLoop": 4,
+      "peep": 0,
+      "nockPoint": 2,
+      "silencers": 0,
+      "silencerDfc": 0
+    },
+    "sfaxResults": {
+      "fps": 279.05,
+      "ke": 71.55,
+      "foc": 12.96,
+      "totalArrowWeight": 414.24,
+      "grlb": 6.85,
+      "staticSpine": 0.390,
+      "dynamicSpine": 0.341
+    }
+  },
+  {
+    "id": "smoke-lgcam-ce350",
+    "label": "OK Smoke LG-Cam + Carbon Express 350",
+    "source": "SoftwareForArchers Xpert",
+    "bow": {
+      "iboVelocity": 325,
+      "drawLength": 30,
+      "drawWeight": 60,
+      "braceHeight": 7.25,
+      "axleToAxle": 34.5,
+      "percentLetoff": 70
+    },
+    "arrow": {
+      "staticSpine": 0.345,
+      "shaftLength": 27.6875,
+      "shaftGpi": 0,
+      "pointWeight": 125,
+      "insertWeight": 11,
+      "fletchQuantity": 0,
+      "weightEach": 6,
+      "wrapWeight": 0,
+      "nockWeight": 5,
+      "bushingPin": 10.2
+    },
+    "string": {
+      "releaseType": "Post Gate Release",
+      "dLoop": 4,
+      "peep": 8,
+      "nockPoint": 2,
+      "silencers": 0,
+      "silencerDfc": 0
+    },
+    "sfaxResults": {
+      "fps": 284.27,
+      "ke": 67.80,
+      "foc": 15.82,
+      "totalArrowWeight": 378.24,
+      "grlb": 6.30,
+      "staticSpine": 0.345,
+      "dynamicSpine": 0.351
+    }
+  },
+  {
+    "id": "smoke-lgcam-ripxv350",
+    "label": "OK Smoke LG-Cam + Victory RIP XV 350",
+    "source": "SoftwareForArchers Xpert",
+    "bow": {
+      "iboVelocity": 335,
+      "drawLength": 30,
+      "drawWeight": 57,
+      "braceHeight": 7.25,
+      "axleToAxle": 34.5,
+      "percentLetoff": 60
+    },
+    "arrow": {
+      "staticSpine": 0.350,
+      "shaftLength": 27.75,
+      "shaftGpi": 0,
+      "pointWeight": 125,
+      "insertWeight": 21,
+      "fletchQuantity": 3,
+      "weightEach": 6,
+      "wrapWeight": 0,
+      "nockWeight": 7,
+      "bushingPin": 4
+    },
+    "string": {
+      "releaseType": "Post Gate Release",
+      "dLoop": 4,
+      "peep": 8,
+      "nockPoint": 2,
+      "silencers": 0,
+      "silencerDfc": 0
+    },
+    "sfaxResults": {
+      "fps": 290.84,
+      "ke": 66.16,
+      "foc": 16.68,
+      "totalArrowWeight": 352.60,
+      "grlb": 6.19,
+      "staticSpine": 0.350,
+      "dynamicSpine": 0.350
+    }
+  },
+  {
+    "id": "podium-x40-twistedx",
+    "label": "Podium X 40 70lbs + Twisted X 400",
+    "source": "SoftwareForArchers Xpert",
+    "bow": {
+      "iboVelocity": 335,
+      "drawLength": 29.875,
+      "drawWeight": 57,
+      "braceHeight": 7.25,
+      "axleToAxle": 34.5,
+      "percentLetoff": 70
+    },
+    "arrow": {
+      "staticSpine": 0.400,
+      "shaftLength": 28,
+      "shaftGpi": 0,
+      "pointWeight": 110,
+      "insertWeight": 0,
+      "fletchQuantity": 3,
+      "weightEach": 5.9,
+      "wrapWeight": 0,
+      "nockWeight": 7,
+      "bushingPin": 0
+    },
+    "string": {
+      "releaseType": "Post Gate Release",
+      "dLoop": 6,
+      "peep": 10,
+      "nockPoint": 2,
+      "silencers": 0,
+      "silencerDfc": 0
+    },
+    "sfaxResults": {
+      "fps": 292.47,
+      "ke": 63.28,
+      "foc": 13.09,
+      "totalArrowWeight": 333.50,
+      "grlb": 5.85,
+      "staticSpine": 0.400,
+      "dynamicSpine": 0.375
+    }
+  }
+]

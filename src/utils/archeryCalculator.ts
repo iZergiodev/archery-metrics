@@ -1,53 +1,36 @@
 import {
-    K_SPINE_CALIBRATION,
-    K_RECURVE_CALIBRATION,
-    K_FPS_CONVERSION,
-    CAM_EFFICIENCY,
+    ARCHERY_TYPE,
+    FOC_MAX_RECOMMENDED,
+    FOC_MIN_RECOMMENDED,
+    GPP_MAX_RECOMMENDED,
+    GPP_MIN_RECOMMENDED,
+    GPP_MIN_SAFE,
+    MATCH_EXTREME_STIFF,
+    MATCH_EXTREME_WEAK,
     MATCH_GOOD_MAX,
     MATCH_GOOD_MIN,
-    MATCH_EXTREME_WEAK,
-    MATCH_EXTREME_STIFF,
-    GPP_MIN_SAFE,
-    GPP_MIN_RECOMMENDED,
-    GPP_MAX_RECOMMENDED,
-    FOC_MIN_RECOMMENDED,
-    FOC_MAX_RECOMMENDED,
-    VELOCITY_MIN_TARGET,
-    VELOCITY_MAX_SAFE,
-    VELOCITY_OPTIMAL_MAX,
+    SFAX_CHRONOGRAPH_MAX_RATIO,
+    SFAX_CHRONOGRAPH_MIN_RATIO,
+    SFAX_FOC_FLETCH_BASE_OFFSET,
+    SFAX_FOC_FLETCH_DIVISOR,
+    SFAX_FOC_FRONT_MASS_DEPTH_MULTIPLIER,
+    SFAX_FOC_NOCK_OVERHANG,
+    SFAX_FOC_WRAP_OFFSET,
+    SFAX_INSERT_DEPTHS,
+    SFAX_SHAFT_CATEGORY_BASE,
+    SFAX_SHAFT_CATEGORY_HUNTING,
+    SFAX_SHAFT_CATEGORY_TARGET,
     TEMP_REFERENCE,
     TEMP_SPINE_COEFFICIENT,
-    COMPONENT_POSITIONS,
-    ARCHERY_TYPE,
-    STATIC_SPINE_REFERENCE_LENGTH,
-    DYNAMIC_SPINE_LENGTH_EXPONENT,
-    FRONT_MASS_REFERENCE,
-    FRONT_MASS_GRAINS_STEP,
-    FRONT_MASS_SENSITIVITY,
-    STRING_DYNAMIC_REFERENCE_WEIGHT,
-    STRING_DYNAMIC_WEIGHT_STEP,
-    STRING_DYNAMIC_WEIGHT_SENSITIVITY,
-    STRING_DYNAMIC_DACRON_FACTOR,
-    WRAP_WEIGHT_SENSITIVITY,
-    REAR_MASS_REFERENCE,
-    REAR_MASS_SENSITIVITY,
-    COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT,
-    COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY,
-    COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT,
-    COMPOUND_REQUIRED_LENGTH_EXPONENT,
-    COMPOUND_REQUIRED_IBO_REFERENCE,
-    COMPOUND_REQUIRED_IBO_SENSITIVITY,
-    COMPOUND_REQUIRED_BRACE_REFERENCE,
-    COMPOUND_REQUIRED_BRACE_SENSITIVITY,
-    COMPOUND_REQUIRED_CHART_ADJUSTMENT_BLEND,
-    COMPOUND_REQUIRED_FRONT_WEIGHT_BASELINE,
-    COMPOUND_REQUIRED_FRONT_WEIGHT_STEP,
-    COMPOUND_REQUIRED_FRONT_WEIGHT_ADJUSTMENT_PER_STEP,
+    VELOCITY_MAX_SAFE,
+    VELOCITY_MIN_TARGET,
+    VELOCITY_OPTIMAL_MAX,
     type ArcheryType,
 } from '../constants'
 
+export type ShaftUseCategory = 'base' | 'hunting' | 'target'
+export type InsertType = keyof typeof SFAX_INSERT_DEPTHS
 export type SpineMatchStatus = 'weak' | 'good' | 'stiff' | 'unknown'
-
 export type ConfidenceLevel = 'high' | 'medium' | 'low'
 
 export type ConfidenceInterval = {
@@ -58,7 +41,6 @@ export type ConfidenceInterval = {
 }
 
 export type SpineMatchResult = {
-    // Core results
     spineRequired: number | null
     spineDynamic: number | null
     matchIndex: number | null
@@ -69,13 +51,9 @@ export type SpineMatchResult = {
     effectiveFPS: number | null
     measuredFPS: number | null
     usedChronographData: boolean
-
-    // Confidence intervals
     spineRequiredCI: ConfidenceInterval | null
     spineDynamicCI: ConfidenceInterval | null
     matchIndexCI: ConfidenceInterval | null
-
-    // Metadata
     temperature?: number
     archeryType: ArcheryType
     recommendations: string[]
@@ -90,7 +68,7 @@ export type BowSpecs = {
     braceHeight: string
     axleToAxle: string
     percentLetoff: string
-    camAggressiveness?: string // 'soft' | 'medium' | 'hard'
+    camAggressiveness?: string
     archeryType?: ArcheryType
 }
 
@@ -99,12 +77,18 @@ export type ArrowSpecs = {
     pointWeight: string
     insertWeight: string
     shaftGpi: string
+    measuredArrowTotalWeight?: string
     fletchQuantity: string
     weightEach: string
+    fletchLength?: string
+    fletchHeight?: string
+    fletchOffset?: string
     wrapWeight: string
     nockWeight: string
     bushingPin: string
     staticSpine: string
+    shaftUseCategory?: ShaftUseCategory
+    insertType?: InsertType
     shaftMaterial?: 'carbon' | 'aluminum' | 'wood' | 'fiberglass'
 }
 
@@ -118,27 +102,109 @@ export type StringWeights = {
     stringMaterial: 'dacron' | 'fastflight' | 'unknown'
 }
 
-const toNumber = (value: string) =>
-    value.trim() === '' ? 0 : Number(value.replace(',', '.'))
-
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-
-// Helper to create confidence interval
-function createConfidenceInterval(
-    value: number,
-    uncertaintyPercent: number,
-    confidence: ConfidenceLevel
-): ConfidenceInterval {
-    const uncertainty = value * uncertaintyPercent
-    return {
-        value,
-        lower: value - uncertainty,
-        upper: value + uncertainty,
-        confidence,
-    }
+type VelocityModel = {
+    adjustedVelocity: number
+    baseEfficiency: number
+    weightDecay: number
+    totalEfficiency: number
+    drawWeightFactor: number
+    drawLengthFactor: number
+    weightCorrectionFactor: number
 }
 
-// Confidence based on data completeness
+type ArrowComponentWeight = {
+    shaftWeight: number
+    arrowTotalWeight: number
+    pointWeight: number
+    insertWeight: number
+    fletchQuantity: number
+    weightEach: number
+    wrapWeight: number
+    nockWeight: number
+    bushingPin: number
+}
+
+const DEFAULT_FLETCH_LENGTH = 2
+const DEFAULT_FLETCH_HEIGHT = 0.5
+const DEFAULT_FLETCH_OFFSET = 0
+const SFAX_DRAW_WEIGHT_REFERENCE = 70
+const SFAX_DRAW_LENGTH_REFERENCE = 30
+const SFAX_BRACE_HEIGHT_REFERENCE = 7
+const SFAX_ARROW_WEIGHT_REFERENCE = 350
+const SFAX_ARROW_WEIGHT_CLASS_BASE = 300
+const SFAX_ARROW_WEIGHT_CLASS_STEP = 10
+const SFAX_PERCENT_REFERENCE = 100
+const SFAX_HOLDING_PERCENT_REFERENCE = 65
+const SFAX_SPEED_ADJUST_DRAW_WEIGHT = 0.325
+const SFAX_SPEED_ADJUST_BRACE_HEIGHT = 10.2
+const SFAX_SPEED_COMPOUND_BASE_OFFSET = 325
+const SFAX_SPEED_NON_COMPOUND_BASE_OFFSET = 220
+const SFAX_SPEED_COMPOUND_BASE_EFFICIENCY = 82
+const SFAX_SPEED_NON_COMPOUND_BASE_EFFICIENCY = 76
+const SFAX_SPEED_EFFICIENCY_DIVISOR = 5.35
+const SFAX_SPEED_EFFICIENCY_SCALE = 1.5
+const SFAX_SPEED_DECAY_LOW = 0.55
+const SFAX_SPEED_DECAY_HIGH = 0.45
+const SFAX_SPEED_DEFAULT_DRAW_WEIGHT_FACTOR = 2
+const SFAX_SPEED_DEFAULT_DRAW_LENGTH_FACTOR = 10.2
+const SFAX_SPEED_DRAW_WEIGHT_MICRO_FACTOR = 0.01
+const SFAX_SPEED_DRAW_LENGTH_MICRO_FACTOR = 0.03175
+const SFAX_SPEED_WEIGHT_CORRECTION_OFFSET = 0.04
+const SFAX_SPEED_WEIGHT_CORRECTION_SCALE = 1.05
+const SFAX_SPEED_DRAG_MULTIPLIER = 0.33
+const SFAX_SPEED_LOW_IBO_THRESHOLD = 200
+const SFAX_DYNAMIC_DRAW_START = -70
+const SFAX_DYNAMIC_DRAW_END = 110
+const SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND = 22
+const SFAX_DYNAMIC_DRAW_DELTA_COMPOUND = 15
+const SFAX_DYNAMIC_A2A_START = 24
+const SFAX_DYNAMIC_A2A_END = 45
+const SFAX_DYNAMIC_A2A_DELTA = 2
+const SFAX_DYNAMIC_FINGER_START = 10
+const SFAX_DYNAMIC_FINGER_END = 60
+const SFAX_DYNAMIC_FINGER_BASE = 1.25
+const SFAX_DYNAMIC_FINGER_DELTA = 2.5
+const SFAX_DYNAMIC_INTERMEDIATE_REFERENCE = 50
+const SFAX_DYNAMIC_LENGTH_MULTIPLIER = 2.75
+const SFAX_DYNAMIC_LENGTH_DIVISOR = 80
+const SFAX_DYNAMIC_LENGTH_BASE = 20.75
+const SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK = 20
+const SFAX_DYNAMIC_COMPONENT_SENSITIVITY = 0.12
+const SFAX_DYNAMIC_FRONT_MASS_REFERENCE = 75
+const SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE = 30
+const SFAX_DYNAMIC_REAR_MASS_REFERENCE = 12
+const SFAX_DYNAMIC_MIN_INTERMEDIATE = 15
+const SFAX_DYNAMIC_AMO_TEST_LENGTH = 28
+const SFAX_DYNAMIC_RELEASE_UNKNOWN = 0.25
+const SFAX_DYNAMIC_RELEASE_POST = 1
+const SFAX_DYNAMIC_RELEASE_ROPE = 1.75
+const SFAX_DYNAMIC_RELEASE_FINGER = 5
+const SFAX_DACRON_BASE = 3
+const SFAX_DACRON_MAX = 5
+const SFAX_DACRON_START_DRAW_LENGTH = 14
+const SFAX_DACRON_END_DRAW_LENGTH = 35
+const SFAX_DACRON_DIVISOR = 21
+const SFAX_PI = Math.PI
+const SFAX_ENERGY_FLETCH_DRAG_COEFFICIENT = 0.65
+const SFAX_ENERGY_FLETCH_DRAG_FACTOR = 15.25
+const SFAX_ENERGY_FLETCH_OFFSET_BASE = 2.34
+const SFAX_ENERGY_SCALE = 1.234
+const SFAX_ENERGY_LETOFF_FACTOR = 9.5
+const SFAX_ENERGY_SHAFT_AERO_FACTOR = 0.000000385
+const SFAX_ENERGY_SHAFT_LENGTH_FACTOR = 23.45
+const SFAX_DEFAULT_SHAFT_VELOCITY_FACTOR = 0.000015
+const SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR = 0.00000104
+
+const toNumber = (value: string | undefined) => (value == null || value.trim() === '' ? 0 : Number(value.replace(',', '.')))
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+const round3 = (value: number) => Number(value.toFixed(3))
+const sfaxAbs = (value: number) => Math.abs(value)
+
+function createConfidenceInterval(value: number, uncertaintyPercent: number, confidence: ConfidenceLevel): ConfidenceInterval {
+    const uncertainty = value * uncertaintyPercent
+    return { value, lower: value - uncertainty, upper: value + uncertainty, confidence }
+}
+
 function calculateConfidenceLevel(
     hasAllInputs: boolean,
     hasTemperature: boolean,
@@ -146,322 +212,587 @@ function calculateConfidenceLevel(
     hasKnownStringMaterial: boolean,
     hasMeasuredChronograph: boolean,
 ): ConfidenceLevel {
-    if (
-        hasAllInputs &&
-        hasPreciseMeasurements &&
-        hasKnownStringMaterial &&
-        (hasTemperature || hasMeasuredChronograph)
-    ) {
+    if (hasAllInputs && hasPreciseMeasurements && hasKnownStringMaterial && (hasTemperature || hasMeasuredChronograph)) {
         return 'high'
     }
     if (hasAllInputs) return 'medium'
     return 'low'
 }
 
-// Función para calcular energía almacenada basada en curva fuerza-apertura
-function calculateStoredEnergy(
+function getEffectiveArcheryType(type: ArcheryType | undefined): ArcheryType {
+    return type || ARCHERY_TYPE.COMPOUND
+}
+
+function getInsertDepth(insertType: InsertType | undefined): number {
+    return SFAX_INSERT_DEPTHS[insertType ?? 'default'] ?? SFAX_INSERT_DEPTHS.default
+}
+
+function getShaftCategoryConstant(category: ShaftUseCategory | undefined): number {
+    switch (category) {
+        case 'hunting':
+            return SFAX_SHAFT_CATEGORY_HUNTING
+        case 'target':
+            return SFAX_SHAFT_CATEGORY_TARGET
+        default:
+            return SFAX_SHAFT_CATEGORY_BASE
+    }
+}
+
+function getVelocityShaftFactor(category: ShaftUseCategory | undefined): number {
+    switch (category) {
+        case 'hunting':
+            return 0.000018
+        case 'target':
+            return 0.000021
+        default:
+            return SFAX_DEFAULT_SHAFT_VELOCITY_FACTOR
+    }
+}
+
+function getCamEfficiencyFactor(camAggressiveness: string | undefined): number {
+    const normalized = (camAggressiveness ?? '').trim().toLowerCase()
+    if (normalized === 'soft') return SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR * 0.9
+    if (normalized === 'hard') return SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR * 1.1
+    return SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR
+}
+
+function getReleaseMultiplier(releaseType: string): number {
+    const normalized = releaseType.trim().toLowerCase()
+    if (normalized.includes('finger') || normalized.includes('manual')) return SFAX_DYNAMIC_RELEASE_FINGER
+    if (normalized.includes('rope')) return SFAX_DYNAMIC_RELEASE_ROPE
+    if (normalized.includes('post') || normalized.includes('caliper') || normalized.includes('pre') || normalized.includes('release')) {
+        return SFAX_DYNAMIC_RELEASE_POST
+    }
+    return SFAX_DYNAMIC_RELEASE_UNKNOWN
+}
+
+function calculateArrowComponentWeight(arrow: ArrowSpecs): ArrowComponentWeight {
+    const shaftLength = toNumber(arrow.shaftLength)
+    const shaftGpi = toNumber(arrow.shaftGpi)
+    const measuredArrowTotalWeight = toNumber(arrow.measuredArrowTotalWeight ?? '')
+    const pointWeight = toNumber(arrow.pointWeight)
+    const insertWeight = toNumber(arrow.insertWeight)
+    const fletchQuantity = toNumber(arrow.fletchQuantity)
+    const weightEach = toNumber(arrow.weightEach)
+    const wrapWeight = toNumber(arrow.wrapWeight)
+    const nockWeight = toNumber(arrow.nockWeight)
+    const bushingPin = toNumber(arrow.bushingPin)
+    const componentWeightWithoutShaft =
+        pointWeight + insertWeight + fletchQuantity * weightEach + wrapWeight + nockWeight + bushingPin
+    const calculatedShaftWeight = shaftLength * shaftGpi
+    const shaftWeight =
+        measuredArrowTotalWeight > 0 ? Math.max(0, measuredArrowTotalWeight - componentWeightWithoutShaft) : calculatedShaftWeight
+
+    return {
+        shaftWeight,
+        arrowTotalWeight: measuredArrowTotalWeight > 0 ? measuredArrowTotalWeight : componentWeightWithoutShaft + calculatedShaftWeight,
+        pointWeight,
+        insertWeight,
+        fletchQuantity,
+        weightEach,
+        wrapWeight,
+        nockWeight,
+        bushingPin,
+    }
+}
+
+function calculateHoldingWeight(drawWeight: number, percentLetoff: number): number {
+    return ((SFAX_PERCENT_REFERENCE - percentLetoff) / SFAX_PERCENT_REFERENCE) * drawWeight
+}
+
+function sfaxSignedCurve(value: number, start: number, end: number, base: number, delta: number): number {
+    const midpoint = (end - start) * 0.5 + start
+    if (end < value) return -(base + delta)
+    if (value < start) return base
+    const scale = delta / sfaxAbs(end - start)
+    const sign = midpoint <= value ? 1 : -1
+    return sfaxAbs(midpoint - value) * scale * sign
+}
+
+function sfaxPositiveCurve(value: number, start: number, end: number, base: number, delta: number): number {
+    if (end < value) return base + delta
+    if (value < start) return base
+    return sfaxAbs(end - value) * (delta / sfaxAbs(end - start)) + base
+}
+
+function calculateVelocityAdjustment(
+    referenceBraceHeight: number,
+    braceHeight: number,
+    referenceLetoff: number,
+    percentLetoff: number,
+    drawWeight: number,
+    drawLength: number,
+    drawWeightFactor: number,
+    drawLengthFactor: number,
+): number {
+    const letOffAdjustment =
+        percentLetoff === referenceLetoff || percentLetoff === 0 ? 0 : (referenceLetoff - percentLetoff) * 0.2
+    const velFromDL = (((referenceBraceHeight - braceHeight) + drawLength) - SFAX_DRAW_LENGTH_REFERENCE) * drawLengthFactor
+    const velFromDW =
+        (((letOffAdjustment * 0.2 * drawWeightFactor) + drawWeight) - SFAX_DRAW_WEIGHT_REFERENCE) * drawWeightFactor
+    return velFromDL + velFromDW
+}
+
+function buildVelocityModel(
+    archeryType: ArcheryType,
+    iboVelocity: number,
     drawWeight: number,
     drawLength: number,
     braceHeight: number,
     percentLetoff: number,
-    camAggressiveness: string = 'medium'
-): number {
-    // Modelo simplificado de curva fuerza-apertura para arco compuesto
-    const powerStroke = drawLength - braceHeight
+    arrowTotalWeight: number,
+): VelocityModel {
+    const adjustedVelocity =
+        iboVelocity +
+        (drawWeight - SFAX_DRAW_WEIGHT_REFERENCE) * SFAX_SPEED_ADJUST_DRAW_WEIGHT +
+        (braceHeight - SFAX_BRACE_HEIGHT_REFERENCE) * SFAX_SPEED_ADJUST_BRACE_HEIGHT
 
-    // Seleccionar eficiencia base según el tipo de polea
-    const forceDrawRatioBase = CAM_EFFICIENCY[camAggressiveness as keyof typeof CAM_EFFICIENCY] || CAM_EFFICIENCY.medium
+    const isCompound = archeryType === ARCHERY_TYPE.COMPOUND
+    const speedBaseOffset = isCompound ? SFAX_SPEED_COMPOUND_BASE_OFFSET : SFAX_SPEED_NON_COMPOUND_BASE_OFFSET
+    const baseEfficiencyOffset = isCompound ? SFAX_SPEED_COMPOUND_BASE_EFFICIENCY : SFAX_SPEED_NON_COMPOUND_BASE_EFFICIENCY
+    const baseEfficiency = ((adjustedVelocity - speedBaseOffset) / SFAX_SPEED_EFFICIENCY_DIVISOR + baseEfficiencyOffset) / SFAX_PERCENT_REFERENCE
 
-    const letOffRatio = clamp(1 - (percentLetoff / 100) * 0.35, 0.7, 1.05)
-    const forceDrawRatio = forceDrawRatioBase * letOffRatio
-    const storedEnergyInInchLbs = drawWeight * powerStroke * forceDrawRatio
-    return storedEnergyInInchLbs / 12 // Convertir a foot-pounds
-}
+    const weightClassIndex = Math.trunc((arrowTotalWeight - SFAX_ARROW_WEIGHT_CLASS_BASE) / SFAX_ARROW_WEIGHT_CLASS_STEP)
+    let scaledEfficiency = (baseEfficiency * SFAX_SPEED_EFFICIENCY_SCALE) / SFAX_ARROW_WEIGHT_CLASS_STEP
+    let cumulativeDecay = 0
 
-// Función para calcular eficiencia del arco
-function calculateBowEfficiency(braceHeight: number, iboVelocity: number, drawLength: number): number {
-    // Eficiencia base: 0.75-0.85 para arcos compuestos modernos
-    let efficiency = 0.80
-
-    // Brace height más largo = mayor eficiencia
-    efficiency += (braceHeight - 7) * 0.01
-
-    // IBO más alto = mejor diseño de levas = mayor eficiencia
-    efficiency += (iboVelocity - 330) * 0.0001
-
-    // Draw length largo (>30") = mayor tiempo de aceleración = mayor eficiencia
-    if (drawLength > 30) {
-        efficiency += (drawLength - 30) * 0.02
-    }
-
-    return Math.max(0.70, Math.min(0.90, efficiency))
-}
-
-
-
-function calculateCompoundRequiredSpine(
-    drawWeight: number,
-    arrowLength: number,
-    availableEnergy: number,
-    iboVelocity: number,
-    braceHeight: number,
-    totalFrontWeight: number,
-): number {
-    const adjustedDrawWeight = Math.max(
-        drawWeight +
-            calculateCompoundChartWeightAdjustment(iboVelocity, braceHeight, totalFrontWeight) *
-                COMPOUND_REQUIRED_CHART_ADJUSTMENT_BLEND,
-        5,
-    )
-    const drawWeightFactor = Math.pow(adjustedDrawWeight / 70, COMPOUND_REQUIRED_SPINE_DRAW_WEIGHT_EXPONENT)
-    const energyFactor = Math.pow(
-        availableEnergy / COMPOUND_REQUIRED_SPINE_REFERENCE_AVAILABLE_ENERGY,
-        COMPOUND_REQUIRED_SPINE_ENERGY_EXPONENT,
-    )
-    const lengthFactor = Math.pow(arrowLength / STATIC_SPINE_REFERENCE_LENGTH, COMPOUND_REQUIRED_LENGTH_EXPONENT)
-
-    // The base chart trend anchors the model. Energy adds continuous sensitivity
-    // to draw length, let-off and cam behavior; chart adjustments inject the
-    // explicit Easton speed/brace setup corrections.
-    return K_SPINE_CALIBRATION * drawWeightFactor * lengthFactor * energyFactor
-}
-
-function calculateCompoundChartWeightAdjustment(iboVelocity: number, braceHeight: number, totalFrontWeight: number): number {
-    let adjustment = 0
-
-    // The published charts use discrete classes. We interpolate those chart
-    // tendencies into a smooth correction and let calibration tune the final
-    // sensitivity and blend against the energy model.
-    if (iboVelocity > 0) {
-        adjustment += (iboVelocity - COMPOUND_REQUIRED_IBO_REFERENCE) * COMPOUND_REQUIRED_IBO_SENSITIVITY
-    }
-
-    // Keep the correction one-sided: shorter brace height makes the bow more
-    // aggressive, but a forgiving brace height should not create a bonus.
-    if (braceHeight > 0 && braceHeight < COMPOUND_REQUIRED_BRACE_REFERENCE) {
-        adjustment += (COMPOUND_REQUIRED_BRACE_REFERENCE - braceHeight) * COMPOUND_REQUIRED_BRACE_SENSITIVITY
-    }
-
-    // Easton applies discrete point-weight corrections, and Gold Tip defines
-    // point weight as total front-end weight (point + insert/collar/FACT). We
-    // therefore use total front mass here instead of bare point mass.
-    if (totalFrontWeight > 0) {
-        const frontWeightSteps =
-            (totalFrontWeight - COMPOUND_REQUIRED_FRONT_WEIGHT_BASELINE) / COMPOUND_REQUIRED_FRONT_WEIGHT_STEP
-        adjustment += frontWeightSteps * COMPOUND_REQUIRED_FRONT_WEIGHT_ADJUSTMENT_PER_STEP
-    }
-
-    return adjustment
-}
-
-// Función para calcular factor de emplumado
-function calculateFletchingFactor(fletchQuantity: number, weightEach: number): number {
-    const baseFactor = 1.0
-    const quantityFactor = (fletchQuantity - 3) * 0.02
-    const weightFactor = (weightEach - 8) * 0.005
-    return baseFactor - quantityFactor - weightFactor
-}
-
-// Función para calcular factor de método de suelta
-function calculateReleaseFactor(releaseType: string): number {
-    if (releaseType.toLowerCase().includes('manual') || releaseType.toLowerCase().includes('fingers')) {
-        return 1.12 // 12% más flexión para sueltas manuales
-    } else if (releaseType.toLowerCase().includes('pre')) {
-        return 0.95 // Pre-gate son muy consistentes
-    }
-    return 1.0 // Base para liberaciones mecánicas estándar
-}
-
-
-
-// Función para calcular factor de material de cuerda
-function calculateStringMaterialFactor(stringWeights: { silencers: string, silencerDfc: string, stringMaterial: 'dacron' | 'fastflight' | 'unknown' }): number {
-    switch (stringWeights.stringMaterial) {
-        case 'dacron':
-            return 0.92 // -8% eficiencia para Dacrón (equivalente a -4 lbs)
-        case 'fastflight':
-            return 1.0 // Base para FastFlight
-        case 'unknown':
-        default:
-            // Unknown should stay neutral. Inferring string material from other
-            // accessories adds hidden bias and hurts repeatability.
-            return 1.0
-    }
-}
-
-// Un eje más largo actúa más débil. El exponente se calibra junto con una
-// pequeña corrección de longitud en el lado requerido para repartir bien el
-// efecto entre severidad del arco y reacción de la flecha.
-function calculateLengthAdjustedSpineFactor(shaftLength: number): number {
-    const factor = Math.pow(shaftLength / STATIC_SPINE_REFERENCE_LENGTH, DYNAMIC_SPINE_LENGTH_EXPONENT)
-    return clamp(factor, 0.75, 1.35)
-}
-
-// Basado en guías prácticas de spine: aumentar el peso frontal debilita la
-// reacción dinámica; reducirlo la endurece.
-function calculateFrontMassFactor(pointWeight: number, insertWeight: number): number {
-    const totalFrontWeight = pointWeight + insertWeight
-    const deviation = totalFrontWeight - FRONT_MASS_REFERENCE
-    const factor = 1 + (deviation / FRONT_MASS_GRAINS_STEP) * FRONT_MASS_SENSITIVITY
-
-    return clamp(factor, 0.75, 1.35)
-}
-
-// Heavier string-side accessories and heavier string material reduce the
-// launch impulse seen by the arrow, making it behave dynamically stiffer.
-function calculateStringDynamicFactor(
-    totalStringWeight: number,
-    stringMaterial: 'dacron' | 'fastflight' | 'unknown'
-): number {
-    const weightDeviation = totalStringWeight - STRING_DYNAMIC_REFERENCE_WEIGHT
-    const weightFactor = 1 - (weightDeviation / STRING_DYNAMIC_WEIGHT_STEP) * STRING_DYNAMIC_WEIGHT_SENSITIVITY
-
-    const materialFactor = stringMaterial === 'dacron' ? STRING_DYNAMIC_DACRON_FACTOR : 1.0
-
-    return clamp(weightFactor * materialFactor, 0.90, 1.08)
-}
-
-// Función para calcular factor de wrap (vinilo decorativo)
-function calculateWrapFactor(wrapWeight: number): number {
-    return clamp(1 - wrapWeight * WRAP_WEIGHT_SENSITIVITY, 0.95, 1.0)
-}
-
-// Masa extra cerca del nock amortigua ligeramente la oscilación inicial y hace
-// que la flecha actúe un poco más rígida. El efecto se mantiene pequeño y
-// calibrable para evitar sobreinterpretarlo.
-function calculateRearMassFactor(nockWeight: number, bushingPin: number): number {
-    const rearMass = nockWeight + bushingPin
-    const factor = 1 - (rearMass - REAR_MASS_REFERENCE) * REAR_MASS_SENSITIVITY
-
-    return clamp(factor, 0.97, 1.03)
-}
-
-// Función para obtener recomendaciones de casos límite
-function getEdgeCaseRecommendation(drawWeight: number): string {
-    if (drawWeight % 10 > 4 && drawWeight % 10 < 6) {
-        return "Considerar spine más rígido si planea aumentar potencia en el futuro"
-    }
-    return "Spine recomendado para configuración actual"
-}
-
-// Función para calcular eficiencia de transferencia de masa
-function calculateTransferEfficiency(arrowMass: number, drawWeight: number): number {
-    const massRatio = arrowMass / drawWeight
-    let efficiency = 1.0
-
-    if (massRatio < 4) {
-        efficiency = 0.85 // Flecha muy ligera = menor eficiencia
-    } else if (massRatio > 8) {
-        efficiency = 0.90 // Flecha muy pesada = menor eficiencia
-    } else {
-        efficiency = 0.95 // Rango óptimo
-        // Slight boost for heavier arrows (momentum efficiency)
-        if (massRatio > 5.5) {
-            efficiency += (massRatio - 5.5) * 0.015
+    for (let index = 0; index < weightClassIndex; index += 1) {
+        if (index % 10 === 0 && index > 9) {
+            scaledEfficiency *= index < 21 ? SFAX_SPEED_DECAY_LOW : SFAX_SPEED_DECAY_HIGH
         }
+        cumulativeDecay += scaledEfficiency
     }
 
-    return Math.min(efficiency, 0.98)
+    const weightDecay = cumulativeDecay / SFAX_PERCENT_REFERENCE
+    const totalEfficiency = baseEfficiency + weightDecay
+    const drawWeightFactor =
+        iboVelocity > SFAX_SPEED_LOW_IBO_THRESHOLD
+            ? baseEfficiency * adjustedVelocity * SFAX_SPEED_DRAW_WEIGHT_MICRO_FACTOR
+            : SFAX_SPEED_DEFAULT_DRAW_WEIGHT_FACTOR
+    const drawLengthFactor =
+        iboVelocity > SFAX_SPEED_LOW_IBO_THRESHOLD
+            ? adjustedVelocity * SFAX_SPEED_DRAW_LENGTH_MICRO_FACTOR * baseEfficiency
+            : SFAX_SPEED_DEFAULT_DRAW_LENGTH_FACTOR
+
+    const speedAt350 =
+        calculateVelocityAdjustment(
+            braceHeight,
+            braceHeight,
+            percentLetoff,
+            percentLetoff,
+            drawWeight,
+            drawLength,
+            drawWeightFactor,
+            drawLengthFactor,
+        ) + iboVelocity
+    const energyLike = (Math.pow(speedAt350, 2) * SFAX_ARROW_WEIGHT_REFERENCE) / (drawWeight * 2 * 7000)
+    const adjustedEnergyLike = energyLike / ((baseEfficiency - SFAX_SPEED_WEIGHT_CORRECTION_OFFSET) + weightDecay)
+    const equivalentWeight = (adjustedEnergyLike / energyLike - 1) * SFAX_ARROW_WEIGHT_REFERENCE
+    const projectedSpeed =
+        Math.sqrt(
+            ((1 - weightDecay * SFAX_SPEED_WEIGHT_CORRECTION_SCALE) * adjustedEnergyLike) / (equivalentWeight + arrowTotalWeight),
+        ) * Math.sqrt(drawWeight * 7000 * 2)
+
+    let weightCorrectionFactor = 0
+    if (arrowTotalWeight < 348 || arrowTotalWeight > 352) {
+        weightCorrectionFactor = Math.abs(speedAt350 - projectedSpeed) / Math.abs(arrowTotalWeight - SFAX_ARROW_WEIGHT_REFERENCE)
+    }
+    if (iboVelocity <= SFAX_SPEED_LOW_IBO_THRESHOLD) {
+        weightCorrectionFactor = 0.2
+    }
+
+    return {
+        adjustedVelocity,
+        baseEfficiency,
+        weightDecay,
+        totalEfficiency,
+        drawWeightFactor,
+        drawLengthFactor,
+        weightCorrectionFactor,
+    }
 }
 
-function calibrateAvailableEnergyFromChronograph(
-    availableEnergy: number,
-    estimatedLaunchFPS: number,
-    measuredChronoFPS: number,
+function calculateStringOffsetEffect(axleToAxle: number, nockPeepWeight: number, fletchOffset: number): number {
+    const halfA2A = axleToAxle * 0.5
+    if (halfA2A === 0) return 0
+    return (1 - (halfA2A - nockPeepWeight) / halfA2A) * fletchOffset
+}
+
+function calculateVelocityDragBundle(
+    axleToAxle: number,
+    nockPeepWeight: number,
+    fletchOffset: number,
+    stringAccessoryWeight: number,
+    fletchHeight: number,
+    fletchLength: number,
 ): number {
-    if (!isFinite(availableEnergy) || !isFinite(estimatedLaunchFPS) || !isFinite(measuredChronoFPS)) {
-        return availableEnergy
-    }
-
-    if (estimatedLaunchFPS <= 0 || measuredChronoFPS <= 0) {
-        return availableEnergy
-    }
-
-    const speedRatio = measuredChronoFPS / estimatedLaunchFPS
-    const energyRatio = clamp(speedRatio * speedRatio, 0.65, 1.5)
-
-    return availableEnergy * energyRatio
+    return calculateStringOffsetEffect(axleToAxle, nockPeepWeight, fletchOffset) + stringAccessoryWeight + fletchHeight + fletchLength
 }
 
-// Función para calcular FOC (Front of Center) con posiciones configurables
+function calculateSfaxStoredDrag(
+    shaftUseCategory: ShaftUseCategory | undefined,
+    camAggressiveness: string | undefined,
+    pointHoldingWeight: number,
+    shaftLength: number,
+    fletchQuantity: number,
+    fletchLength: number,
+    fletchHeight: number,
+    fletchOffset: number,
+): number {
+    const shaftTypeFactor = getVelocityShaftFactor(shaftUseCategory)
+    const camTypeFactor = getCamEfficiencyFactor(camAggressiveness)
+    return (
+        fletchLength *
+            fletchQuantity *
+            fletchHeight *
+            SFAX_ENERGY_FLETCH_DRAG_COEFFICIENT *
+            camTypeFactor *
+            SFAX_ENERGY_FLETCH_DRAG_FACTOR *
+            (fletchOffset + SFAX_ENERGY_FLETCH_OFFSET_BASE) *
+            SFAX_ENERGY_SCALE +
+        pointHoldingWeight * pointHoldingWeight * shaftTypeFactor * SFAX_ENERGY_LETOFF_FACTOR +
+        SFAX_PI * 2 * pointHoldingWeight * 0.5 * shaftLength * SFAX_ENERGY_SHAFT_AERO_FACTOR * SFAX_ENERGY_SHAFT_LENGTH_FACTOR
+    )
+}
+
+function calculateArrowSpeed(
+    bow: {
+        archeryType: ArcheryType
+        iboVelocity: number
+        drawWeight: number
+        drawLength: number
+        braceHeight: number
+        axleToAxle: number
+        percentLetoff: number
+        camAggressiveness?: string
+    },
+    arrow: {
+        arrowTotalWeight: number
+        shaftLength: number
+        fletchQuantity: number
+        fletchLength: number
+        fletchHeight: number
+        fletchOffset: number
+        shaftUseCategory?: ShaftUseCategory
+    },
+    stringSide: {
+        stringAccessoryWeight: number
+        nockPeepWeight: number
+    },
+): { fps: number; model: VelocityModel; storedDrag: number } {
+    const holdingWeight = calculateHoldingWeight(bow.drawWeight, bow.percentLetoff)
+    const model = buildVelocityModel(
+        bow.archeryType,
+        bow.iboVelocity,
+        bow.drawWeight,
+        bow.drawLength,
+        bow.braceHeight,
+        bow.percentLetoff,
+        arrow.arrowTotalWeight,
+    )
+    const baseVelocity =
+        calculateVelocityAdjustment(
+            bow.braceHeight,
+            bow.braceHeight,
+            bow.percentLetoff,
+            bow.percentLetoff,
+            bow.drawWeight,
+            bow.drawLength,
+            model.drawWeightFactor,
+            model.drawLengthFactor,
+        ) + bow.iboVelocity
+    const weightCorrection = (SFAX_ARROW_WEIGHT_REFERENCE - arrow.arrowTotalWeight) * model.weightCorrectionFactor
+    const dragBundle = calculateVelocityDragBundle(
+        bow.axleToAxle,
+        stringSide.nockPeepWeight,
+        arrow.fletchOffset,
+        stringSide.stringAccessoryWeight,
+        arrow.fletchHeight,
+        arrow.fletchLength,
+    )
+    const fps = baseVelocity + weightCorrection - dragBundle * SFAX_SPEED_DRAG_MULTIPLIER * model.totalEfficiency
+    const storedDrag = calculateSfaxStoredDrag(
+        arrow.shaftUseCategory,
+        bow.camAggressiveness,
+        holdingWeight,
+        arrow.shaftLength,
+        arrow.fletchQuantity,
+        arrow.fletchLength,
+        arrow.fletchHeight,
+        arrow.fletchOffset,
+    )
+    return { fps, model, storedDrag }
+}
+
+function calculateCompoundTargetSpine(
+    bow: {
+        iboVelocity: number
+        drawWeight: number
+        drawLength: number
+        braceHeight: number
+        axleToAxle: number
+        percentLetoff: number
+        releaseType: string
+        stringMaterial: StringWeights['stringMaterial']
+    },
+    arrow: {
+        shaftLength: number
+        pointWeight: number
+        insertWeight: number
+        fletchQuantity: number
+        weightEach: number
+        fletchLength: number
+        fletchHeight: number
+        wrapWeight: number
+        nockWeight: number
+        bushingPin: number
+        shaftUseCategory?: ShaftUseCategory
+    },
+    stringSide: {
+        stringAccessoryWeight: number
+        nockPeepWeight: number
+        fletchOffset: number
+    },
+): number {
+    let intermediate =
+        (bow.iboVelocity / 290) *
+        (sfaxSignedCurve(bow.drawWeight, SFAX_DYNAMIC_DRAW_START, SFAX_DYNAMIC_DRAW_END, 0, SFAX_DYNAMIC_DRAW_DELTA_COMPOUND) +
+            bow.drawWeight)
+    intermediate -= sfaxSignedCurve(bow.axleToAxle, SFAX_DYNAMIC_A2A_START, SFAX_DYNAMIC_A2A_END, 0, SFAX_DYNAMIC_A2A_DELTA)
+
+    const powerStroke = bow.drawLength - bow.braceHeight
+    let lengthFactor =
+        (SFAX_DYNAMIC_LENGTH_MULTIPLIER / sfaxAbs(SFAX_DYNAMIC_LENGTH_DIVISOR)) *
+            (intermediate - SFAX_DYNAMIC_INTERMEDIATE_REFERENCE) +
+        SFAX_DYNAMIC_LENGTH_BASE
+    const velocityRatio = (bow.braceHeight / powerStroke) * bow.iboVelocity * (powerStroke / lengthFactor)
+
+    if (lengthFactor === 0) {
+        lengthFactor = SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK
+    }
+
+    intermediate = (velocityRatio / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) * (powerStroke - lengthFactor) + intermediate
+
+    if (bow.percentLetoff !== SFAX_HOLDING_PERCENT_REFERENCE && bow.percentLetoff !== 0) {
+        intermediate += (SFAX_HOLDING_PERCENT_REFERENCE - bow.percentLetoff) * 0.2
+    }
+
+    intermediate +=
+        (getReleaseMultiplier(bow.releaseType) / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) *
+        (bow.percentLetoff - SFAX_HOLDING_PERCENT_REFERENCE)
+
+    if (intermediate <= 0) {
+        intermediate = SFAX_DYNAMIC_MIN_INTERMEDIATE
+    }
+
+    const stringEffect =
+        (stringSide.stringAccessoryWeight +
+            calculateStringOffsetEffect(bow.axleToAxle, stringSide.nockPeepWeight, stringSide.fletchOffset) +
+            arrow.fletchHeight) *
+        SFAX_DYNAMIC_COMPONENT_SENSITIVITY
+
+    intermediate =
+        intermediate -
+        (SFAX_DYNAMIC_FRONT_MASS_REFERENCE - (arrow.pointWeight + arrow.insertWeight)) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        ((arrow.wrapWeight + arrow.fletchQuantity * arrow.weightEach) - SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE) *
+            SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        ((arrow.bushingPin + arrow.nockWeight) - SFAX_DYNAMIC_REAR_MASS_REFERENCE) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        arrow.fletchLength * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        stringEffect
+
+    if (bow.stringMaterial === 'dacron') {
+        let dacronAdjustment = SFAX_DACRON_MAX
+        if (bow.drawLength <= SFAX_DACRON_END_DRAW_LENGTH) {
+            dacronAdjustment =
+                bow.drawLength >= SFAX_DACRON_START_DRAW_LENGTH
+                    ? sfaxAbs(SFAX_DACRON_END_DRAW_LENGTH - bow.drawLength) *
+                          (2 / sfaxAbs(SFAX_DACRON_DIVISOR)) +
+                      SFAX_DACRON_BASE
+                    : SFAX_DACRON_BASE
+        }
+        intermediate -= dacronAdjustment
+    }
+
+    return round3((SFAX_DYNAMIC_AMO_TEST_LENGTH / intermediate) * (SFAX_DYNAMIC_AMO_TEST_LENGTH / arrow.shaftLength) + getShaftCategoryConstant(arrow.shaftUseCategory))
+}
+
+function calculateNonCompoundTargetSpine(
+    bow: {
+        iboVelocity: number
+        drawWeight: number
+        drawLength: number
+        braceHeight: number
+        axleToAxle: number
+        percentLetoff: number
+        releaseType: string
+        stringMaterial: StringWeights['stringMaterial']
+    },
+    arrow: {
+        shaftLength: number
+        pointWeight: number
+        insertWeight: number
+        fletchQuantity: number
+        weightEach: number
+        fletchLength: number
+        fletchHeight: number
+        wrapWeight: number
+        nockWeight: number
+        bushingPin: number
+        shaftUseCategory?: ShaftUseCategory
+    },
+    stringSide: {
+        stringAccessoryWeight: number
+        nockPeepWeight: number
+        fletchOffset: number
+    },
+): number {
+    let intermediate =
+        (bow.iboVelocity / 290) *
+        (sfaxSignedCurve(bow.drawWeight, SFAX_DYNAMIC_DRAW_START, SFAX_DYNAMIC_DRAW_END, 0, SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND) +
+            bow.drawWeight)
+
+    let nonCompoundCurveBase = SFAX_DACRON_BASE
+    if (intermediate <= SFAX_HOLDING_PERCENT_REFERENCE) {
+        nonCompoundCurveBase =
+            intermediate >= 25
+                ? (SFAX_DACRON_BASE / sfaxAbs(SFAX_DYNAMIC_A2A_END - SFAX_DYNAMIC_FINGER_START)) *
+                  sfaxAbs(SFAX_HOLDING_PERCENT_REFERENCE - intermediate)
+                : 0
+    }
+
+    intermediate += nonCompoundCurveBase * 0.15
+
+    const powerStroke = bow.drawLength - bow.braceHeight
+    let lengthFactor =
+        (SFAX_DYNAMIC_LENGTH_MULTIPLIER / sfaxAbs(SFAX_DYNAMIC_LENGTH_DIVISOR)) *
+            (intermediate - SFAX_DYNAMIC_INTERMEDIATE_REFERENCE) +
+        SFAX_DYNAMIC_LENGTH_BASE
+    const velocityRatio = (bow.braceHeight / powerStroke) * SFAX_SPEED_LOW_IBO_THRESHOLD * (powerStroke / lengthFactor)
+
+    if (lengthFactor === 0) {
+        lengthFactor = SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK
+    }
+
+    intermediate = (velocityRatio / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) * (powerStroke - lengthFactor) + intermediate
+
+    if (bow.releaseType.toLowerCase().includes('finger') || bow.releaseType.toLowerCase().includes('manual')) {
+        intermediate =
+            sfaxPositiveCurve(
+                bow.drawWeight,
+                SFAX_DYNAMIC_FINGER_START,
+                SFAX_DYNAMIC_FINGER_END,
+                SFAX_DYNAMIC_FINGER_BASE,
+                SFAX_DYNAMIC_FINGER_DELTA,
+            ) * 0.05 +
+            intermediate
+    }
+
+    if (intermediate <= 0) {
+        intermediate = SFAX_DYNAMIC_MIN_INTERMEDIATE
+    }
+
+    const stringEffect =
+        (stringSide.stringAccessoryWeight +
+            calculateStringOffsetEffect(bow.axleToAxle, stringSide.nockPeepWeight, stringSide.fletchOffset) +
+            arrow.fletchHeight) *
+        SFAX_DYNAMIC_COMPONENT_SENSITIVITY
+
+    intermediate =
+        intermediate -
+        (SFAX_DYNAMIC_FRONT_MASS_REFERENCE - (arrow.pointWeight + arrow.insertWeight)) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        ((arrow.wrapWeight + arrow.fletchQuantity * arrow.weightEach) - SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE) *
+            SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        ((arrow.bushingPin + arrow.nockWeight) - SFAX_DYNAMIC_REAR_MASS_REFERENCE) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        arrow.fletchLength * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
+        stringEffect
+
+    if (bow.stringMaterial === 'dacron') {
+        let dacronAdjustment = SFAX_DACRON_MAX
+        if (bow.drawLength <= SFAX_DACRON_END_DRAW_LENGTH) {
+            dacronAdjustment =
+                bow.drawLength >= SFAX_DACRON_START_DRAW_LENGTH
+                    ? sfaxAbs(SFAX_DACRON_END_DRAW_LENGTH - bow.drawLength) *
+                          (2 / sfaxAbs(SFAX_DACRON_DIVISOR)) +
+                      SFAX_DACRON_BASE
+                    : SFAX_DACRON_BASE
+        }
+        intermediate -= dacronAdjustment
+    }
+
+    return round3((SFAX_DYNAMIC_AMO_TEST_LENGTH / intermediate) * (SFAX_DYNAMIC_AMO_TEST_LENGTH / arrow.shaftLength) + getShaftCategoryConstant(arrow.shaftUseCategory))
+}
+
+function calibrateTargetSpineFromChronograph(targetSpine: number, estimatedFPS: number, measuredFPS: number): number {
+    if (!isFinite(targetSpine) || !isFinite(estimatedFPS) || !isFinite(measuredFPS) || estimatedFPS <= 0 || measuredFPS <= 0) {
+        return targetSpine
+    }
+    const speedRatio = clamp(measuredFPS / estimatedFPS, SFAX_CHRONOGRAPH_MIN_RATIO, SFAX_CHRONOGRAPH_MAX_RATIO)
+    return round3(targetSpine / speedRatio)
+}
+
 function calculateFOC(
     shaftLength: number,
     pointWeight: number,
     insertWeight: number,
     shaftWeight: number,
     fletchWeight: number,
+    fletchLength: number,
     nockWeight: number,
     wrapWeight: number,
     bushingPin: number,
-    positions: typeof COMPONENT_POSITIONS = COMPONENT_POSITIONS
+    insertType?: InsertType,
 ): number {
     const totalWeight = shaftWeight + pointWeight + insertWeight + fletchWeight + nockWeight + wrapWeight + bushingPin
-    if (totalWeight === 0 || shaftLength === 0) return 0
+    if (totalWeight <= 0 || shaftLength <= 0) return 0
 
-    // Momentos respecto al nock usando posiciones configurables
-    const mNock = nockWeight * 0
-    const mBushing = bushingPin * 0
-    const mFletch = fletchWeight * positions.fletchCenter
-    const mWrap = wrapWeight * positions.wrapCenter
-    const mShaft = shaftWeight * (shaftLength * positions.shaftCenterRatio)
-    const mInsert = insertWeight * shaftLength
-    const mPoint = pointWeight * shaftLength
+    const totalLength = shaftLength + SFAX_FOC_NOCK_OVERHANG
+    const midpoint = totalLength * 0.5
+    const insertDepth = getInsertDepth(insertType)
+    const frontMassCG = 1 - insertDepth * SFAX_FOC_FRONT_MASS_DEPTH_MULTIPLIER
 
-    const sumMoments = mNock + mBushing + mFletch + mWrap + mShaft + mInsert + mPoint
-    const centerOfGravity = sumMoments / totalWeight
+    const weightedDistanceFromFront =
+        (frontMassCG * (pointWeight + insertWeight) +
+            shaftLength * 0.5 * shaftWeight +
+            shaftLength * (nockWeight + bushingPin) +
+            ((shaftLength - fletchLength / SFAX_FOC_FLETCH_DIVISOR) - SFAX_FOC_FLETCH_BASE_OFFSET) * fletchWeight +
+            (shaftLength - SFAX_FOC_WRAP_OFFSET) * wrapWeight) /
+        totalWeight
 
-    const geometricCenter = shaftLength / 2
-
-    const foc = ((centerOfGravity - geometricCenter) / shaftLength) * 100
-
-    return foc
+    return ((midpoint - weightedDistanceFromFront) / totalLength) * SFAX_PERCENT_REFERENCE
 }
 
-// Función para corregir spine por temperatura
-function temperatureCorrection(
-    spine: number,
-    temperatureF: number,
-    shaftMaterial: string = 'carbon'
-): number {
-    // Solo afecta significativamente a flechas de carbono
+function temperatureCorrection(spine: number, temperatureF: number, shaftMaterial: string = 'carbon'): number {
     if (shaftMaterial !== 'carbon') return spine
-
     const tempDiff = temperatureF - TEMP_REFERENCE
-    const spineChange = tempDiff * TEMP_SPINE_COEFFICIENT
-
-    return spine * (1 + spineChange)
+    return spine * (1 + tempDiff * TEMP_SPINE_COEFFICIENT)
 }
 
-// Función para calcular spine requerido para recurvo/tradicional
-// Modelo de ley de potencias calibrado contra tablas de spine para recurvo
-// Referencia: 40# @ 28" con flecha de 28" → spine 0.500
-function calculateRecurveSpine(drawWeight: number, drawLength: number, arrowLength: number): number {
-    // Factor de apertura: mayor apertura = más energía = spine más rígido necesario
-    const drawLengthAdjust = Math.pow(drawLength / 28, 0.3)
-
-    const spineRequired = K_RECURVE_CALIBRATION *
-        Math.pow(drawWeight / 40, -0.85) *
-        Math.sqrt(arrowLength / 28) /
-        drawLengthAdjust
-
-    return clamp(spineRequired, 0.200, 1.200)
+function getEdgeCaseRecommendation(drawWeight: number): string {
+    if (drawWeight % 10 > 4 && drawWeight % 10 < 6) {
+        return 'Considerar spine más rígido si planea aumentar potencia en el futuro'
+    }
+    return 'Spine recomendado para configuración actual'
 }
 
-// Función para calcular energía almacenada en recurvo (curva lineal)
-function calculateRecurveStoredEnergy(
-    drawWeight: number,
-    drawLength: number,
-    braceHeight: number
-): number {
-    // Para recurvo, la curva fuerza-apertura es aproximadamente lineal
-    const powerStroke = drawLength - braceHeight
-    const avgForce = drawWeight * 0.5 // Fuerza promedio ~50% del pico
-    return (avgForce * powerStroke) / 12 // foot-pounds
-}
-
-// Función para obtener el tipo de arco efectivo
-function getEffectiveArcheryType(type: ArcheryType | undefined): ArcheryType {
-    return type || ARCHERY_TYPE.COMPOUND
+function createEmptyResult(archeryType: ArcheryType, recommendations: string[], warnings: string[]): SpineMatchResult {
+    return {
+        spineRequired: null,
+        spineDynamic: null,
+        matchIndex: null,
+        status: null,
+        arrowTotalWeight: 0,
+        foc: null,
+        calculatedFPS: null,
+        effectiveFPS: null,
+        measuredFPS: null,
+        usedChronographData: false,
+        spineRequiredCI: null,
+        spineDynamicCI: null,
+        matchIndexCI: null,
+        archeryType,
+        recommendations,
+        warnings,
+    }
 }
 
 export function calculateSpineMatch(
@@ -473,7 +804,6 @@ export function calculateSpineMatch(
     const recommendations: string[] = []
     const warnings: string[] = []
 
-    // --- 1. PARSEO DE DATOS ---
     const drawWeight = toNumber(bow.drawWeight)
     const drawLength = toNumber(bow.drawLength)
     const iboVelocity = toNumber(bow.iboVelocity)
@@ -481,171 +811,166 @@ export function calculateSpineMatch(
     const braceHeight = toNumber(bow.braceHeight)
     const axleToAxle = toNumber(bow.axleToAxle)
     const percentLetoff = toNumber(bow.percentLetoff)
-    const camAggressiveness = bow.camAggressiveness || 'medium'
     const archeryType = getEffectiveArcheryType(bow.archeryType)
 
     const shaftLength = toNumber(arrow.shaftLength)
-    const pointWeight = toNumber(arrow.pointWeight)
-    const insertWeight = toNumber(arrow.insertWeight)
-    const shaftGpi = toNumber(arrow.shaftGpi)
-    const fletchQuantity = toNumber(arrow.fletchQuantity)
-    const weightEach = toNumber(arrow.weightEach)
-    const wrapWeight = toNumber(arrow.wrapWeight)
-    const nockWeight = toNumber(arrow.nockWeight)
-    const bushingPin = toNumber(arrow.bushingPin)
     const staticSpine = toNumber(arrow.staticSpine)
+    const fletchLength = toNumber(arrow.fletchLength ?? '') || DEFAULT_FLETCH_LENGTH
+    const fletchHeight = toNumber(arrow.fletchHeight ?? '') || DEFAULT_FLETCH_HEIGHT
+    const fletchOffset = toNumber(arrow.fletchOffset ?? '') || DEFAULT_FLETCH_OFFSET
     const shaftMaterial = arrow.shaftMaterial || 'carbon'
+
+    const componentWeights = calculateArrowComponentWeight(arrow)
 
     const peepWeight = toNumber(stringWeights.peep)
     const dLoopWeight = toNumber(stringWeights.dLoop)
     const nockPointWeight = toNumber(stringWeights.nockPoint)
     const silencersWeight = toNumber(stringWeights.silencers)
     const silencerDfcWeight = toNumber(stringWeights.silencerDfc)
-    const releaseType = stringWeights.releaseType
+    const stringAccessoryWeight = peepWeight + dLoopWeight + nockPointWeight + silencersWeight + silencerDfcWeight
+    const nockPeepWeight = peepWeight + nockPointWeight
 
-    // --- 2. CÁLCULOS INTERMEDIOS ---
-
-    // Guard Clause
-    const hasAllInputs = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 &&
-        drawLength > 0 && braceHeight > 0
-
+    const hasAllInputs = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0 && braceHeight > 0
     if (!hasAllInputs) {
         const missingFields: string[] = []
-
         if (drawWeight <= 0) missingFields.push('peso de tiro')
         if (drawLength <= 0) missingFields.push('longitud de tiro')
         if (braceHeight <= 0) missingFields.push('brace height')
         if (shaftLength <= 0) missingFields.push('longitud del eje')
         if (staticSpine <= 0) missingFields.push('spine estático')
-
         if (missingFields.length > 0) {
             recommendations.push(`Faltan datos clave para calcular el spine: ${missingFields.join(', ')}.`)
         }
-
         return createEmptyResult(archeryType, recommendations, warnings)
     }
 
-    // Peso total de la flecha
-    const shaftWeight = shaftLength * shaftGpi
-    const fletchWeight = fletchQuantity * weightEach
-    const arrowTotalWeight =
-        shaftWeight +
-        pointWeight +
-        insertWeight +
-        fletchWeight +
-        wrapWeight +
-        nockWeight +
-        bushingPin
-
-    // Peso total en la cuerda
-    const totalStringWeight = peepWeight + dLoopWeight + nockPointWeight + silencersWeight + silencerDfcWeight
-
-    // Validación
     const powerStroke = drawLength - braceHeight
-    if (arrowTotalWeight === 0) {
-        recommendations.push('Falta peso de flecha para calcular el resultado. Añade al menos el GPI del eje y/o el peso de la punta.')
+    if (componentWeights.arrowTotalWeight <= 0) {
+        recommendations.push('Falta peso de flecha para calcular el resultado. Añade GPI, peso total medido o los componentes principales.')
         return createEmptyResult(archeryType, recommendations, warnings)
     }
-
     if (powerStroke <= 0) {
         warnings.push('La longitud de tiro debe ser mayor que el brace height para poder calcular el disparo.')
         return createEmptyResult(archeryType, recommendations, warnings)
     }
 
-    // === PARTE A: MODELO DE ENERGÍA ALMACENADA ===
-    let storedEnergy: number
-    let bowEfficiency: number
-
-    if (archeryType === ARCHERY_TYPE.COMPOUND) {
-        storedEnergy = calculateStoredEnergy(drawWeight, drawLength, braceHeight, percentLetoff, camAggressiveness)
-        bowEfficiency = calculateBowEfficiency(braceHeight, iboVelocity, drawLength)
-    } else {
-        // Recurvo/Traditional - different physics
-        storedEnergy = calculateRecurveStoredEnergy(drawWeight, drawLength, braceHeight)
-        bowEfficiency = 0.75 // Fixed efficiency for recurvo
-    }
-
-    const availableEnergy = storedEnergy * bowEfficiency
-
-    // === PARTE B: CÁLCULO DE VELOCIDAD BASADO EN ENERGÍA ===
-    const transferEfficiency = calculateTransferEfficiency(arrowTotalWeight, drawWeight)
-    const stringMaterialFactor = calculateStringMaterialFactor(stringWeights)
-    const stringDynamicFactor = calculateStringDynamicFactor(totalStringWeight, stringWeights.stringMaterial)
-
-    const kineticEnergy = availableEnergy * transferEfficiency * stringMaterialFactor
-
-    let calculatedFPS = Math.sqrt((kineticEnergy * K_FPS_CONVERSION) / arrowTotalWeight)
-
-    // Ajustes finos
-    let finalFPS = calculatedFPS
-    if (isFinite(calculatedFPS)) {
-        // ATA más corto = arco más rápido, ATA más largo = más lento
-        finalFPS -= (axleToAxle - 35) * 0.5
-        finalFPS -= totalStringWeight / 6
-        if (releaseType.includes('Pre')) {
-            finalFPS += 2
-        }
-    }
-    const effectiveFPS = measuredChronoSpeed > 0 ? measuredChronoSpeed : finalFPS
-    const calibratedAvailableEnergy =
-        archeryType === ARCHERY_TYPE.COMPOUND && measuredChronoSpeed > 0
-            ? calibrateAvailableEnergyFromChronograph(availableEnergy, finalFPS, measuredChronoSpeed)
-            : availableEnergy
-
-    // === PARTE C: FOC (necesario para cálculos posteriores) ===
-    const foc = calculateFOC(shaftLength, pointWeight, insertWeight, shaftWeight, fletchWeight, nockWeight, wrapWeight, bushingPin)
-
-    // === PARTE D: SPINE DINÁMICO REQUERIDO (SDR) ===
-    // GPP usa drawWeight real del arco (no ajustado por peso de punta)
-    const massRatio = arrowTotalWeight / drawWeight
-    let spineRequiredBase: number
-
-    if (archeryType === ARCHERY_TYPE.COMPOUND) {
-        // Spine requerido basado solo en specs del arco (drawWeight + longitud de flecha)
-        // El spine requerido responde a la severidad real del lanzamiento,
-        // no solo al pico de libras del arco.
-        spineRequiredBase = calculateCompoundRequiredSpine(
-            drawWeight,
-            shaftLength,
-            calibratedAvailableEnergy,
+    const speedResult = calculateArrowSpeed(
+        {
+            archeryType,
             iboVelocity,
+            drawWeight,
+            drawLength,
             braceHeight,
-            pointWeight + insertWeight,
-        )
-    } else {
-        spineRequiredBase = calculateRecurveSpine(drawWeight, drawLength, shaftLength)
+            axleToAxle,
+            percentLetoff,
+            camAggressiveness: bow.camAggressiveness,
+        },
+        {
+            arrowTotalWeight: componentWeights.arrowTotalWeight,
+            shaftLength,
+            fletchQuantity: componentWeights.fletchQuantity,
+            fletchLength,
+            fletchHeight,
+            fletchOffset,
+            shaftUseCategory: arrow.shaftUseCategory,
+        },
+        {
+            stringAccessoryWeight,
+            nockPeepWeight,
+        },
+    )
+
+    const calculatedFPS = speedResult.fps
+    let spineRequiredBase =
+        archeryType === ARCHERY_TYPE.COMPOUND
+            ? calculateCompoundTargetSpine(
+                  {
+                      iboVelocity,
+                      drawWeight,
+                      drawLength,
+                      braceHeight,
+                      axleToAxle,
+                      percentLetoff,
+                      releaseType: stringWeights.releaseType,
+                      stringMaterial: stringWeights.stringMaterial,
+                  },
+                  {
+                      shaftLength,
+                      pointWeight: componentWeights.pointWeight,
+                      insertWeight: componentWeights.insertWeight,
+                      fletchQuantity: componentWeights.fletchQuantity,
+                      weightEach: componentWeights.weightEach,
+                      fletchLength,
+                      fletchHeight,
+                      wrapWeight: componentWeights.wrapWeight,
+                      nockWeight: componentWeights.nockWeight,
+                      bushingPin: componentWeights.bushingPin,
+                      shaftUseCategory: arrow.shaftUseCategory,
+                  },
+                  {
+                      stringAccessoryWeight,
+                      nockPeepWeight,
+                      fletchOffset,
+                  },
+              )
+            : calculateNonCompoundTargetSpine(
+                  {
+                      iboVelocity,
+                      drawWeight,
+                      drawLength,
+                      braceHeight,
+                      axleToAxle,
+                      percentLetoff,
+                      releaseType: stringWeights.releaseType,
+                      stringMaterial: stringWeights.stringMaterial,
+                  },
+                  {
+                      shaftLength,
+                      pointWeight: componentWeights.pointWeight,
+                      insertWeight: componentWeights.insertWeight,
+                      fletchQuantity: componentWeights.fletchQuantity,
+                      weightEach: componentWeights.weightEach,
+                      fletchLength,
+                      fletchHeight,
+                      wrapWeight: componentWeights.wrapWeight,
+                      nockWeight: componentWeights.nockWeight,
+                      bushingPin: componentWeights.bushingPin,
+                      shaftUseCategory: arrow.shaftUseCategory,
+                  },
+                  {
+                      stringAccessoryWeight,
+                      nockPeepWeight,
+                      fletchOffset,
+                  },
+              )
+
+    if (measuredChronoSpeed > 0) {
+        spineRequiredBase = calibrateTargetSpineFromChronograph(spineRequiredBase, calculatedFPS, measuredChronoSpeed)
     }
 
-    // === PARTE E: SPINE EFECTIVO DE LA FLECHA ===
-    const lengthAdjustedSpineFactor = calculateLengthAdjustedSpineFactor(shaftLength)
-    const frontMassFactor = calculateFrontMassFactor(pointWeight, insertWeight)
+    const effectiveFPS = measuredChronoSpeed > 0 ? measuredChronoSpeed : calculatedFPS
 
-    const fletchingFactor = calculateFletchingFactor(fletchQuantity, weightEach)
-    const releaseFactor = calculateReleaseFactor(releaseType)
-    const wrapFactor = calculateWrapFactor(wrapWeight)
-    const rearMassFactor = calculateRearMassFactor(nockWeight, bushingPin)
+    const foc = calculateFOC(
+        shaftLength,
+        componentWeights.pointWeight,
+        componentWeights.insertWeight,
+        componentWeights.shaftWeight,
+        componentWeights.fletchQuantity * componentWeights.weightEach,
+        fletchLength,
+        componentWeights.nockWeight,
+        componentWeights.wrapWeight,
+        componentWeights.bushingPin,
+        arrow.insertType,
+    )
 
-    // Spine Dinámico (Efectivo)
-    let spineDynamic =
-        staticSpine *
-        lengthAdjustedSpineFactor *
-        frontMassFactor *
-        fletchingFactor *
-        releaseFactor *
-        wrapFactor *
-        rearMassFactor *
-        stringDynamicFactor
-
-    // Aplicar corrección por temperatura si está disponible
+    let spineDynamic = staticSpine
     if (temperatureF !== undefined) {
         spineDynamic = temperatureCorrection(spineDynamic, temperatureF, shaftMaterial)
     }
 
-    // === PARTE F: COMPARACIÓN Y RESULTADO ===
-    const matchIndex = spineDynamic / spineRequiredBase
-
+    const matchIndex = spineRequiredBase > 0 ? spineDynamic / spineRequiredBase : NaN
     let status: SpineMatchStatus | null = null
-    if (matchIndex != null && isFinite(matchIndex)) {
+    if (isFinite(matchIndex)) {
         if (matchIndex > MATCH_GOOD_MAX) {
             status = 'weak'
             recommendations.push('Considera una flecha con spine más rígido (número más bajo)')
@@ -657,11 +982,11 @@ export function calculateSpineMatch(
         }
     }
 
-    // === PARTE G: ADVERTENCIAS Y RECOMENDACIONES ===
-    if (isFinite(massRatio)) {
-        if (massRatio < GPP_MIN_SAFE) {
+    const grainsPerPound = componentWeights.arrowTotalWeight / drawWeight
+    if (isFinite(grainsPerPound)) {
+        if (grainsPerPound < GPP_MIN_SAFE) {
             warnings.push('¡PELIGRO! Flecha muy ligera - puede dañar el arco o romperse durante el disparo')
-        } else if (massRatio < GPP_MIN_RECOMMENDED) {
+        } else if (grainsPerPound < GPP_MIN_RECOMMENDED) {
             warnings.push('Flecha ligera - considere aumentar el peso para mayor seguridad del arco')
         }
     }
@@ -677,26 +1002,21 @@ export function calculateSpineMatch(
     if (isFinite(effectiveFPS)) {
         if (effectiveFPS > VELOCITY_MAX_SAFE) {
             warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
-        }
-    }
-
-    if (isFinite(effectiveFPS)) {
-        if (effectiveFPS < VELOCITY_MIN_TARGET) {
+        } else if (effectiveFPS < VELOCITY_MIN_TARGET) {
             recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
         } else if (effectiveFPS > VELOCITY_OPTIMAL_MAX) {
             recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
         }
     }
 
-    if (isFinite(massRatio)) {
-        if (massRatio < GPP_MIN_RECOMMENDED) {
+    if (isFinite(grainsPerPound)) {
+        if (grainsPerPound < GPP_MIN_RECOMMENDED) {
             recommendations.push('La flecha es muy ligera para la potencia. Considera aumentar el peso para mejor eficiencia.')
-        } else if (massRatio > GPP_MAX_RECOMMENDED) {
+        } else if (grainsPerPound > GPP_MAX_RECOMMENDED) {
             recommendations.push('La flecha es muy pesada para la potencia. Considera reducir el peso para mejor velocidad.')
         }
     }
 
-    // FOC Recommendations
     if (foc > 0) {
         if (foc < FOC_MIN_RECOMMENDED) {
             recommendations.push(`FOC bajo (<${FOC_MIN_RECOMMENDED}%). La flecha puede ser inestable a largas distancias. Aumenta el peso en punta.`)
@@ -705,19 +1025,22 @@ export function calculateSpineMatch(
         }
     }
 
-    // Temperature recommendation
     if (temperatureF !== undefined && Math.abs(temperatureF - TEMP_REFERENCE) > 20) {
         const direction = temperatureF > TEMP_REFERENCE ? 'más' : 'menos'
         recommendations.push(`Temperatura ${direction} flexible. Considera ajustar el spine ${temperatureF > TEMP_REFERENCE ? 'más rígido' : 'más flexible'}.`)
     }
 
     const edgeCaseRecommendation = getEdgeCaseRecommendation(drawWeight)
-    if (edgeCaseRecommendation !== "Spine recomendado para configuración actual" && status !== 'weak') {
+    if (edgeCaseRecommendation !== 'Spine recomendado para configuración actual' && status !== 'weak') {
         recommendations.push(edgeCaseRecommendation)
     }
 
-    // Calcular niveles de confianza
-    const hasPreciseMeasurements = shaftGpi > 0 && pointWeight > 0 && insertWeight > 0
+    const hasPreciseMeasurements =
+        (toNumber(arrow.shaftGpi) > 0 || toNumber(arrow.measuredArrowTotalWeight ?? '') > 0) &&
+        componentWeights.pointWeight > 0 &&
+        fletchLength > 0 &&
+        fletchHeight > 0
+
     const confidence = calculateConfidenceLevel(
         hasAllInputs,
         temperatureF !== undefined,
@@ -731,42 +1054,16 @@ export function calculateSpineMatch(
         spineDynamic: isFinite(spineDynamic) ? spineDynamic : null,
         matchIndex: isFinite(matchIndex) ? matchIndex : null,
         status,
-        arrowTotalWeight,
+        arrowTotalWeight: componentWeights.arrowTotalWeight,
         foc: isFinite(foc) ? foc : null,
-        calculatedFPS: isFinite(finalFPS) ? finalFPS : null,
+        calculatedFPS: isFinite(calculatedFPS) ? calculatedFPS : null,
         effectiveFPS: isFinite(effectiveFPS) ? effectiveFPS : null,
         measuredFPS: measuredChronoSpeed > 0 ? measuredChronoSpeed : null,
         usedChronographData: measuredChronoSpeed > 0,
-        spineRequiredCI: isFinite(spineRequiredBase) ? createConfidenceInterval(spineRequiredBase, 0.05, confidence) : null,
-        spineDynamicCI: isFinite(spineDynamic) ? createConfidenceInterval(spineDynamic, 0.08, confidence) : null,
-        matchIndexCI: isFinite(matchIndex) ? createConfidenceInterval(matchIndex, 0.10, confidence) : null,
+        spineRequiredCI: isFinite(spineRequiredBase) ? createConfidenceInterval(spineRequiredBase, 0.03, confidence) : null,
+        spineDynamicCI: isFinite(spineDynamic) ? createConfidenceInterval(spineDynamic, 0.02, confidence) : null,
+        matchIndexCI: isFinite(matchIndex) ? createConfidenceInterval(matchIndex, 0.06, confidence) : null,
         temperature: temperatureF,
-        archeryType,
-        recommendations,
-        warnings,
-    }
-}
-
-// Helper function for empty results
-function createEmptyResult(
-    archeryType: ArcheryType,
-    recommendations: string[],
-    warnings: string[]
-): SpineMatchResult {
-    return {
-        spineRequired: null,
-        spineDynamic: null,
-        matchIndex: null,
-        status: null,
-        arrowTotalWeight: 0,
-        foc: null,
-        calculatedFPS: null,
-        effectiveFPS: null,
-        measuredFPS: null,
-        usedChronographData: false,
-        spineRequiredCI: null,
-        spineDynamicCI: null,
-        matchIndexCI: null,
         archeryType,
         recommendations,
         warnings,

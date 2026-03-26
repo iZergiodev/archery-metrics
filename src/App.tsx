@@ -41,12 +41,18 @@ const initialArrowSpecs = {
   insertWeight: '',
   shaftLength: '',
   shaftGpi: '',
+  measuredArrowTotalWeight: '',
   fletchQuantity: '',
   weightEach: '',
+  fletchLength: '',
+  fletchHeight: '',
+  fletchOffset: '',
   wrapWeight: '',
   nockWeight: '',
   bushingPin: '',
   staticSpine: '',
+  shaftUseCategory: 'base' as const,
+  insertType: 'default' as const,
 }
 
 const initialStringWeights = {
@@ -408,11 +414,53 @@ function App() {
       <FieldGroup title={t('group.build')} collapsible defaultCollapsed>
         <div className="space-y-5">
           <InputField
+            {...arrowField('measuredArrowTotalWeight', 'componentWeight')}
+            label={t('field.measuredArrowTotalWeight')}
+            placeholder={unitLabel('componentWeight')}
+            id="measuredArrowTotalWeight"
+            unit={unitLabel('componentWeight')}
+            hint={t('field.measuredArrowTotalWeight.hint')}
+          />
+          <InputField
             {...arrowField('insertWeight', 'componentWeight')}
             label={t('field.insertWeight')}
             placeholder={unitLabel('componentWeight')}
             id="insertWeight"
             unit={unitLabel('componentWeight')}
+          />
+          <SelectField
+            label={t('field.insertType')}
+            value={arrowSpecs.insertType}
+            onChange={(value) =>
+              setArrowSpecs({
+                ...arrowSpecs,
+                insertType: value as typeof arrowSpecs.insertType,
+              })
+            }
+            options={[
+              { value: 'default', label: t('option.insertType.default') },
+              { value: 'shallow', label: t('option.insertType.shallow') },
+              { value: 'halfOutsert', label: t('option.insertType.halfOutsert') },
+              { value: 'fullOutsert', label: t('option.insertType.fullOutsert') },
+              { value: 'extendedOutsert', label: t('option.insertType.extendedOutsert') },
+            ]}
+            id="insertType"
+          />
+          <SelectField
+            label={t('field.shaftUseCategory')}
+            value={arrowSpecs.shaftUseCategory}
+            onChange={(value) =>
+              setArrowSpecs({
+                ...arrowSpecs,
+                shaftUseCategory: value as typeof arrowSpecs.shaftUseCategory,
+              })
+            }
+            options={[
+              { value: 'base', label: t('option.shaftUse.base') },
+              { value: 'hunting', label: t('option.shaftUse.hunting') },
+              { value: 'target', label: t('option.shaftUse.target') },
+            ]}
+            id="shaftUseCategory"
           />
           <InputField
             {...arrowField('fletchQuantity')}
@@ -426,6 +474,27 @@ function App() {
             placeholder={unitLabel('componentWeight')}
             id="weightEach"
             unit={unitLabel('componentWeight')}
+          />
+          <InputField
+            {...arrowField('fletchLength', 'length')}
+            label={t('field.fletchLength')}
+            placeholder={unitLabel('length')}
+            id="fletchLength"
+            unit={unitLabel('length')}
+          />
+          <InputField
+            {...arrowField('fletchHeight', 'length')}
+            label={t('field.fletchHeight')}
+            placeholder={unitLabel('length')}
+            id="fletchHeight"
+            unit={unitLabel('length')}
+          />
+          <InputField
+            {...arrowField('fletchOffset', 'length')}
+            label={t('field.fletchOffset')}
+            placeholder={unitLabel('length')}
+            id="fletchOffset"
+            unit={unitLabel('length')}
           />
           <InputField
             {...arrowField('wrapWeight', 'componentWeight')}
@@ -467,6 +536,9 @@ function App() {
             value={stringWeights.releaseType}
             onChange={(value) => setStringWeights({ ...stringWeights, releaseType: value })}
             options={[
+              { value: 'manual fingers', label: t('option.release.finger') },
+              { value: 'Rope Release', label: t('option.release.rope') },
+              { value: 'Caliper Release', label: t('option.release.caliper') },
               { value: 'Post Gate Release', label: t('option.release.post') },
               { value: 'Pre Gate Release', label: t('option.release.pre') },
             ]}

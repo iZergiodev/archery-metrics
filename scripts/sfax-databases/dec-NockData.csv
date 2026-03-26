@@ -1,0 +1,473 @@
+*,2022 Nock
+=,MFG,MDL,GRS,GRSBP
+-,Accunock
+S,13.5,0
+X,13,0
+G,7.5,0
+PIN,5.5,0
+-,American
+BJ 7/32,6,0
+BJ 1/4,6.5,0
+BJ 9/32,8,0
+BJ 5/16,10.7,0
+BJ 21/64,12.5,0
+BJ 11/32,16,0
+-,AAE
+IP4,4,0
+IP5,5,0
+IP6,6,0
+HT1800,7.7,0
+HT1880,7.5,0
+HT1960,7,0
+HT2100,8.5,0
+HT2170,8.2,0
+HT2200,8,0
+HT2300,10.2,0
+HT2330,10.4,0
+HT2360,10,0
+HT2400,9.8,0
+HT2490,9.3,0
+Plastinock 1/4,5.5,0
+Plastinock 9/32,7,0
+Plastinock 5/16,10.5,0
+Plastinock 11/32,14,0
+Z-Nock 1/4,7,0
+Z-Nock 9/32,9.5,0
+Z-Nock 5/16,10.5,0
+Z-Nock 11/32,16.5,0
+-,Aurel
+STD Nock LG 0.098,6.8,0
+STD Nock SM 0.083,6.5,0
+Pin Nock LG 0.098,2.6,0
+Pin Nock SM 0.088,2.6,0
+-,Beiter
+Pin Nock #1,4.32,0
+Pin Nock #2,5.09,0
+Pin Nock Hunter,5.25,0
+OutPin-NB#1 Asym X10,4.46,0
+OutPin-NB#1 Asym NanoXR#1,5.23,0
+OutPin-NB#1 Asym NanoXR#2,5.08,0
+OutPin-NB#2 Asym X10,5.23,0
+OutPin-NB#2 Asym NanoXR#1,6.46,0
+OutPin-NB#2 Asym NanoXR#2,6.15,0
+OutPin-NB#2 Hunter X10,5.85,0
+OutPin-NB#2 Hunter X10PT,6.62,0
+OutPin-NB#2 Hunter NanoXR#1,6.69,0
+OutPin-NB#2 Hunter NanoXR#2,6.34,0
+Insert-NB#1 SmlGrv 3.98,5.85,0
+Insert-NB#1 SmlGrv 12,5.54,0
+Insert-NB#1 SmlGrv 12Heavy,6.62,0
+Insert-NB#1 SmlGrv 19,8.15,0
+Insert-NB#1 SmlGrv 19Heavy,9.54,0
+Insert-NB#1 SmlGrv 3-04,7.23,0
+Insert-NB#1 SmlGrv 3-18,8.77,0
+Insert-NB#1 SmlGrv 5.15,8.77,0
+Insert-NB#1 SmlGrv 3-28,8.77,0
+Insert-NB#1 SmlGrv 1413,5.69,0
+Insert-NB#1 SmlGrv 1416,5.54,0
+Insert-NB#1 SmlGrv 1516,7.69,0
+Insert-NB#1 SmlGrv 1614/16,9.23,0
+Insert-NB#1 SmlGrv 1616/75,9.69,0
+Insert-NB#1 SmlGrv 1714,10,0
+Insert-NB#1 SmlGrv 1716,10.15,0
+Insert-NB#1 SmlGrv 1716/75,9.85,0
+Insert-NB#2 LrgGrv 3.98,6.62,0
+Insert-NB#2 LrgGrv 12,6.46,0
+Insert-NB#2 LrgGrv 12Heavy,7.39,0
+Insert-NB#2 LrgGrv 19,9.23,0
+Insert-NB#2 LrgGrv 19Heavy,10.62,0
+Insert-NB#2 LrgGrv 3-04,8.15,0
+Insert-NB#2 LrgGrv 3-18,9.85,0
+Insert-NB#2 LrgGrv 5.15,9.85,0
+Insert-NB#2 LrgGrv 5.19,10,0
+Insert-NB#2 LrgGrv 3-28,9.85,0
+Insert-NB#2 LrgGrv 3-39,10.92,0
+Insert-NB#2 LrgGrv 3-49,12.46,0
+Insert-NB#2 LrgGrv 3-60,12.92,0
+Insert-NB#2 LrgGrv 19-620,13.39,0
+Insert-NB#2 LrgGrv 3-71,13.08,0
+Insert-NB#2 LrgGrv 1814,13.69,0
+Insert-NB#2 LrgGrv 1816,13.85,0
+Insert-NB#2 LrgGrv 1816/75,13.69,0
+Insert-NB#2 LrgGrv 1914,14.77,0
+Insert-NB#2 LrgGrv 1916,13.69,0
+Insert-NB#2 LrgGrv 1916/75,15.23,0
+Insert-NB#2 LrgGrv 2014,16.62,0
+Insert-NB#2 LrgGrv 2016/75,16.31,0
+Insert-NB#2 LrgGrv 2114,17.69,0
+Insert-NB#2 LrgGrv 23-808,17.85,0
+Insert-NB#2 LrgGrv 2212,18.92,0
+Insert-NB#2 LrgGrv 2312,20.15,0
+Insert-NB#2 LrgGrv 2413,21.23,0
+Insert-NB#2 LrgGrv 2512,21.69,0
+Insert-NB#2 LrgGrv 2613,20.77,0
+Insert-NB#3 XLgGrv 2213,19.69,0
+Insert-NB#3 XLgGrv 2216,19.69,0
+Insert-NB#3 XLgGrv 2219,20,0
+Insert-NB#3 XLgGrv 2312,21.23,0
+Insert-NB#3 XLgGrv 2314,19.85,0
+Insert-NB#3 XLgGrv 2413,22,0
+Insert-NB#3 XLgGrv 2419,21.54,0
+Insert-NB#3 XLgGrv 2512,22.92,0
+Insert-NB#3 XLgGrv 2613,24,0
+OutSert-NB#1 SmlGrv 1420,5.23,0
+OutSert-NB#1 SmlGrv 1581,5.1,0
+OutSert-NB#1 SmlGrv 1700,5.23,0
+OutSert-NB#1 SmlGrv 4.5,7.4,0
+OutSert-NB#1 SmlGrv 1800,7.54,0
+OutSert-NB#1 SmlGrv 4.7,7.1,0
+OutSert-NB#1 SmlGrv 1880,7.1,0
+OutSert-NB#1 SmlGrv 4.9,8.31,0
+OutSert-NB#1 SmlGrv 4.92,8.46,0
+OutSert-NB#1 SmlGrv 1960,8.15,0
+OutSert-NB#1 SmlGrv 5.0,8.15,0
+OutSert-NB#1 SmlGrv 5.1,9.1,0
+OutSert-NB#1 SmlGrv 2100,8.77,0
+OutSert-NB#1 SmlGrv 5.48,8.92,0
+OutSert-NB#1 SmlGrv 2200,8.46,0
+OutSert-NB#2 LrgGrv 4.5,8.46,0
+OutSert-NB#2 LrgGrv 1800,8.62,0
+OutSert-NB#2 LrgGrv 1880,8,0
+OutSert-NB#2 LrgGrv 4.92,9.39,0
+OutSert-NB#2 LrgGrv 1960,9.23,0
+OutSert-NB#2 LrgGrv 5.2,10.77,0
+OutSert-NB#2 LrgGrv 2100,10.31,0
+OutSert-NB#2 LrgGrv 5.4,10.31,0
+OutSert-NB#2 LrgGrv 5.48,10.31,0
+OutSert-NB#2 LrgGrv 5.5,10,0
+OutSert-NB#2 LrgGrv 2200,10.15,0
+OutSert-NB#2 LrgGrv 5.7,10.31,0
+OutSert-NB#2 LrgGrv 5.77,10,0
+OutSert-NB#2 LrgGrv 2300,10,0
+OutSert-NB#2 LrgGrv 5.0,9.69,0
+OutSert-NB#2 LrgGrv 2400,9.23,0
+OutSert-NB#2 LrgGrv 6.1,9.23,0
+OutSert-NB#2 LrgGrv 6.3,10.77,0
+OutSert-NB#2 LrgGrv 2540,10.46,0
+Hunter-NB#2 LrgGrv 3.98H,7.23,0
+Hunter-NB#2 LrgGrv 12,6.15,0
+Hunter-NB#2 LrgGrv 19,10.77,0
+Hunter-NB#2 LrgGrv 19-620,13.1,0
+Hunter-NB#2 LrgGrv 2114,17.14,0
+Hunter-NB#2 LrgGrv 2213,17.39,0
+Hunter-NB#2 LrgGrv 2216,17.69,0
+Hunter-NB#2 LrgGrv 23-808,18.31,0
+Hunter-NB#2 LrgGrv 2312,20.62,0
+Hunter-NB#2 LrgGrv 2314,19.39,0
+Hunter-NB#2 LrgGrv 2315,20.15,0
+Hunter-NB#2 LrgGrv 25-886,22.462,0
+In-Out-NB#1 SmlGrv 0X1,6.77,0
+In-Out-NB#1 SmlGrv 2X1S,6.62,0
+In-Out-NB#1 SmlGrv 2X1L,8.31,0
+In-Out-NB#1 SmlGrv 2-65X1,7.54,0
+In-Out-NB#1 SmlGrv 2-95X1,7.54,0
+In-Out-NB#2 LrgGrv 0X2,7.77,0
+In-Out-NB#2 LrgGrv 2X2S,7.69,0
+In-Out-NB#2 LrgGrv 2X2L,9.23,0
+In-Out-NB#2 LrgGrv 2-65X2,8.46,0
+In-Out-NB#2 LrgGrv 2-95X2,8.46,0
+In-Out-NB#2 Hunter 0X2H,7.54,0
+In-Out-NB#2 Hunter 2X2H,8.46,0
+-,Beman
+Flash Micro-S,20.5,0
+Flash S,26,0
+Flash X,20.5,0
+Flash H,20.5,0
+Flash Micro-S,20.5,0
+X-Nock,9,0
+ViBrake S,19,0
+ViBrake X,15,0
+OverNock 12/64,9,0
+OverNock 13/64,9,0
+OverNock 14/64,12,0
+ViBrake-07,20,0
+OverNock-07 13/64,8,0
+OverNock-07 14/64,10,0
+-,Big
+Gee,7,0
+Pin,2.8,0
+-,Black Eagle
+R-Nock,9,0
+Pin,4,0
+-,Blackhawk
+G-Nock,7,0
+VE-1,7,0
+V-Nock,8,0
+V-AC,10,0
+V-Maxx,13,0
+VMXL,10,0
+V-XL,15,0
+Speed23 w/o B,15,0
+Speed23 B,7,10
+CAA3280 Pin Nock,2.8,8.5
+CAA3390 Pin Nock,2.8,9
+CAA3490 Pin Nock,2.8,9.5
+CAA3600 Pin Nock,2.8,10
+CAA3710 Pin Nock,2.8,10.5
+23 Speed Pin Nock,2.9,14
+-,Bohning
+H.E. Nock,10,0
+Blazer DoubleLock-STD,10.3,0
+Blazer Blazer-F 0.098,6,0
+Blazer Blazer-F 0.088,6,0
+Blazer Blazer-A,7,0
+Blazer Blazer-Pin 0.120,3,0
+Blazer Blazer-Pin 0.088,3,0
+DoubleLock-STD Pre08,9,0
+DoubleLock-F Pre08,7,0
+DoubleLock-A Pre08,8,0
+DoubleLock-Pin Pre08,2,0
+Signature,12.7,0
+Signature Pre08,8,0
+T-Nock Pre08 1/4,5.5,0
+T-Nock Pre08 9/32,7,0
+T-Nock Pre08 5/16,10.1,0
+T-Nock Pre08 11/32,13,0
+T-Nock 1/4,6.2,0
+T-Nock 9/32,8.3,0
+T-Nock 5/16,14,0
+T-Nock 11/32,16,0
+Classic Pre08 5/16,10,0
+Classic Pre08 11/32,12.9,0
+Classic 5/16,10.4,0
+Classic 11/32,13.5,0
+Legend 5/16,8.5,0
+Legend 11/32,11.5,0
+-,Burt Coyote
+Lumenock S,16,0
+Lumenock GT,27,0
+Lumenock X,24,0
+Lumenock SL,27,0
+Lumenock 244,27,0
+Lumenock 246,27,0
+Lumenock H,24,0
+Lumenock Super-Uni,28,0
+-,Carbon Express
+TCX,8.7,0
+TCX 150-BC,8.7,3.6
+TCX 250-BC,8.7,3.8
+TCX 350-BC,8.7,4
+LAUNCHPAD-L,18.5,0
+LAUNCHPAD-NL,9.9,0
+LazerEye,18.5,0
+Amped-XS TCX,10.8,0
+TCX 203ID,10.4,0
+CX Pin Nock 3DS Adapter,3.4,17.6
+CX Pin Nock CXL Adapter,3.4,17.6
+CX Pin Nock LJ Adapter,3.4,17.6
+CX Pin Nock XJSS Adapter,3.4,18.8
+CX Pin Nock XJ27 Adapter,3.4,27.1
+CX Soma Pin Nock,3.4,0
+CX Pin Nock,3.4,0
+CX Pin Nock XR Adapter#1,3.4,8
+CX Pin Nock XR Adapter#2,3.4,7.7
+CX Pin Nock PRO Adapter#1,3.4,7.1
+CX Pin Nock PRO Adapter#2,3.4,6.9
+Nano XR Post Nock,11.1,0
+Nano PRO Post Nock,11,0
+CX META#1,8.9,0
+CX META#2,8.6,0
+Edge,10.2,0
+HyperTex LJ,22.6,5.2
+HyperTex XJ,25.3,4.9
+HyperTex CXL,17.6,4.6
+HyperTex,12.4,0
+Thunder Express,10.3,0
+ThunderStorm,9,0
+CXL,11,4.6
+SlimLine,8,0
+Heritage In-Line,5,7
+Medallion CX,2,8
+3D Select CX,2,7
+LineJammer In-Line,5,18
+LineJammer Beiter,22,0
+CX InLine,5,7
+CX Beiter-A,13,0
+CX Beiter-S,13,0
+3D Select CX Beiter-A,18,0
+3D Select CX Beiter-S,22,0
+3D Select CXL InLine,5,12
+3D Select CXL Beiter-A,18,0
+3D Select CXL Beiter-S,22,0
+Terminator InLine,5,7
+Terminator Beiter-A,18,0
+Terminator Beiter-S,22,0
+Terminator Hunter InLine,5,7
+Terminator Hunter Beiter-A,13,0
+Terminator Hunter Beiter-S,13,0
+-,Carbon Impact
+Press Fit,10.3,0
+RotoNock,4.5,6.5
+-,Carbon Tech
+McKinney Pin Nock,4.2,8
+Whitail Pin Nock,4.2,12.1
+Rhino Pin Nock,4.2,12.1
+Cheetah Pin Nock,4.2,12.1
+Panther Pin Nock,4.2,12.1
+Hippo Pin Nock,4.2,20.3
+-,Cartel
+Triple Pin,2.9,9.8
+Triple Slip-On,6.5,0
+X-Pert Pin,2.9,8
+-,Clean-Shot
+Contender,23.0,0
+Nock Out G,21.0,0
+Nock Out X,22.0,0
+Nock Out H,23.0,0
+Nock Out S/GT,24.0,0
+-,DoubleTake
+Nocturnal,20,0
+-,Easton
+ACE "G",7,0
+ACE 1206-STD,5,0
+ACE Pin,2,8
+ACE "G" Pin,4,0
+Deep Six,6,0
+Pin Nock,2,8
+X10 Pin,2,8
+X10 "G" Pin,4,8
+X10 Over Nock,8.5,0
+Super,13,0
+MicroLite 4mm,6,0
+MicroLite 6.5mm,8,0
+MicroLite Super,7.5,0
+3D Super,12,0
+ST 'X',9,0
+ST 'H',10,0
+Tracer Rli Super,29,0
+Tracer Rli X,25,0
+Tracer Rli MicroLite,23.5,0
+Tracer 'S',25,0
+Tracer 'X',22,0
+Tracer 'H',23,0
+-,FireNock
+G-SU 242,27,0
+G-AU 202,24,0
+G-EU 229,25,0
+G-GS 242,27,0
+G-GH 297,29,0
+G-GF 297,29,0
+G-GA 202,24,0
+G-GE 229,25,0
+G-S1 242,27,0
+G-A1 202,24,0
+G-E1 229,25,0
+G-C1 301,29,0
+G-F1 301,29,0
+G-ST 242,27,0
+G-AT 202,24,0
+G-ET 229,25,0
+G-LG 242,27,0
+-,G5
+GForce 204,24,0
+GForce 244-246,38,0
+META CE Nano#1,8.9,0
+META CE Nano#2,8.6,0
+META 204,9,0
+META 244,10.8,0
+META 246,11,0
+-,Game Tracker
+TCX,8.7,0
+-,GloryNock
+G,20.0,0
+204,21.0,0
+244,23.0,0
+246,24.0,0
+-,Gold Tip
+GTO Nock,5,0
+AccuTough Kinetic,11.6,0
+GT Nock,11.5,0
+GT-pre11 Nock,13.2,0
+AccuLite,8.3,0
+246 GT Pin,6.1,11.6
+246 HD Pin,2.8,11.6
+GT Series22 Nock,13.2,0
+GT Series22 GT Pin,2.8,13
+GT Series22 HD Pin,6.1,13
+X-Cutter GT Nock,15.8,0
+X-Cutter GT Pin,2.8,17.4
+X-Cutter HD Pin,6.1,17.4
+Triple-X GT Pin,2.8,19.6
+Triple-X HD Pin,6.1,19.6
+30X GT Nock,14.4,0
+30X GT Pin,2.8,18
+30X HD Pin,6.1,18
+Lock Nock,15,0
+GT Lock Nock,15,0
+Series22 Lock Nock,17,0
+X-Cutter Lock Nock,19,0
+-,Harvest Time
+HT-1 F-Nock,5.7,0
+HT-1 Vengeance,5.7,0
+HT-1 Pin,2.5,7.7
+HT-2 Std Nock,8.9,0
+HT-2 Harvester,8.9,0
+HT-2 Pin,2.5,13.3
+HT-3 Std Nock,12.3,0
+HT-3 Virtue,12.3,0
+HT-3 Pin,2.5,24.5
+HT-4 Pin,2.5,15.1
+HT-4 UBV,5.7,20
+HT-4 Std Nock,0,15.1
+HT-4 Redemption,0,15.1
+RugRatz,5.7,0
+-,High Country
+HCA Regular,8,0
+Speed Pro,4,0
+-,Magnock
+Size#1 SuperMagnumTi,4.8,19.1
+Size#2 MagnumTi,4.8,8.6
+Size#3 MagnumTi,4.8,12
+Size#4 Magnum,4.8,8.5
+-,NAP
+Thunderball SuperUni,27.5,0
+Thunderball X-Nock,27.5,0
+-,Nockturnal
+Helios,54,0
+S,20,0
+H,20,0
+X,20,0
+GT,20,0
+G,12.3,0
+-,NuFletch
+Ignitor,24.0,0
+204,20.0,0
+224,21.0,0
+233,22.0,0
+244,23.0,0
+-,PSE
+Carbon Force,13,0
+-,QAD
+Tune-A-Nock,4,0
+-,Turbo Nock
+Dead-X,44,0
+Dead-X Glow,44,0
+Hunter,54,0
+Hunter Glow,54,0
+HTX,37,0
+HTAX,39,0
+HTAX2,39,0
+T-4,11,0
+T-4 Glow,11,0
+-,TGB
+Lighted,24,0
+STD S-Type,12,0
+STD Weighted,24,0
+-,Tracer
+Magnetic,34,0
+Touch OnOff,35,0
+-,Victory
+IP,8,0
+PIN,3,0
+A-Nock,7,0
+F-Nock,6,0
+R-Nock,15,0
+V-Nock,15,0
+Blazer,9,0
+Lighted Spot,24,0
+Lighted SS Spot,26,0
+ACNPINR-12,5,12
+-,X-Spot
+PIN,4,8
+S,12,0
+-,EOF

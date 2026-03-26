@@ -77,25 +77,6 @@ export function analyzeSetupDifference(current: SetupSnapshot, compare: SetupSna
   }
 
   let driver: SetupComparisonAnalysis['driver'] = 'unknown'
-  if (
-    current.result.spineDynamic != null &&
-    compare.result.spineDynamic != null &&
-    current.result.spineRequired != null &&
-    compare.result.spineRequired != null &&
-    current.result.spineDynamic > 0 &&
-    current.result.spineRequired > 0
-  ) {
-    const dynamicShift = Math.abs(compare.result.spineDynamic / current.result.spineDynamic - 1)
-    const requiredShift = Math.abs(compare.result.spineRequired / current.result.spineRequired - 1)
-
-    if (dynamicShift > requiredShift * 1.2) {
-      driver = 'arrow'
-    } else if (requiredShift > dynamicShift * 1.2) {
-      driver = 'bow'
-    } else {
-      driver = 'balanced'
-    }
-  }
 
   const currentFrontWeight = toNumber(current.arrowSpecs.pointWeight) + toNumber(current.arrowSpecs.insertWeight)
   const compareFrontWeight = toNumber(compare.arrowSpecs.pointWeight) + toNumber(compare.arrowSpecs.insertWeight)
@@ -150,6 +131,24 @@ export function analyzeSetupDifference(current: SetupSnapshot, compare: SetupSna
       'length',
     ),
   ]
+
+  const arrowImpact = factorCandidates
+    .filter((factor) => factor.id === 'staticSpine' || factor.id === 'shaftLength' || factor.id === 'frontWeight')
+    .reduce((sum, factor) => sum + factor.normalizedImpact, 0)
+
+  const bowImpact = factorCandidates
+    .filter((factor) => factor.id === 'drawWeight' || factor.id === 'drawLength' || factor.id === 'braceHeight')
+    .reduce((sum, factor) => sum + factor.normalizedImpact, 0)
+
+  if (arrowImpact > 0 || bowImpact > 0) {
+    if (arrowImpact > bowImpact * 1.2) {
+      driver = 'arrow'
+    } else if (bowImpact > arrowImpact * 1.2) {
+      driver = 'bow'
+    } else {
+      driver = 'balanced'
+    }
+  }
 
   const factors = factorCandidates
     .filter((factor) => factor.currentValue > 0 || factor.compareValue > 0)

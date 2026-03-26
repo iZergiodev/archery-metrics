@@ -3,7 +3,10 @@
     "allow": [
       "WebFetch(domain:www.eastonarchery.com)",
       "WebFetch(domain:www.archeryfocus.com)",
-      "WebFetch(domain:www.outdoorlife.com)"
+      "WebFetch(domain:www.outdoorlife.com)",
+      "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/MetaData/**)",
+      "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/UserRecords/**)",
+      "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/Help/**)"
     ]
   }
 }

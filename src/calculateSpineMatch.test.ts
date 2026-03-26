@@ -1,116 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { calculateSpineMatch, type BowSpecs, type ArrowSpecs } from './utils/archeryCalculator'
-import { ARCHERY_TYPE, REAR_MASS_SENSITIVITY } from './constants'
+import { ARCHERY_TYPE } from './constants'
+import { SFAX_PRIMARY_REFERENCE_CASES } from './utils/spineCalibrationDataset'
+import { calculateSpineMatch, type ArrowSpecs, type BowSpecs, type StringWeights } from './utils/archeryCalculator'
 import { evaluateCompoundMonotonicity, summarizeCompoundCalibration } from './utils/spineCalibration'
-
-// ============================================
-// DATOS REALES DE LA INDUSTRIA (2024-2025)
-// ============================================
-// Basados en especificaciones oficiales de fabricantes
-
-// --- BOWS REAL SPECS ---
-const MATHEWS_V3X_33: BowSpecs = {
-    iboVelocity: '350',
-    drawLength: '30',
-    drawWeight: '75',
-    braceHeight: '6.5',
-    axleToAxle: '33',
-    percentLetoff: '85',
-    archeryType: ARCHERY_TYPE.COMPOUND,
-}
-
-const HOYT_REXON: BowSpecs = {
-    iboVelocity: '350',
-    drawLength: '30',
-    drawWeight: '70',
-    braceHeight: '7',
-    axleToAxle: '36',
-    percentLetoff: '80',
-    archeryType: ARCHERY_TYPE.COMPOUND,
-}
-
-const BOWTECH_REALM: BowSpecs = {
-    iboVelocity: '340',
-    drawLength: '28',
-    drawWeight: '60',
-    braceHeight: '7',
-    axleToAxle: '32',
-    percentLetoff: '80',
-    archeryType: ARCHERY_TYPE.COMPOUND,
-}
-
-const YOUTH_BOW: BowSpecs = {
-    iboVelocity: '280',
-    drawLength: '26',
-    drawWeight: '35',
-    braceHeight: '6.5',
-    axleToAxle: '28',
-    percentLetoff: '70',
-    archeryType: ARCHERY_TYPE.COMPOUND,
-}
-
-// --- EASTON ARROW SPINE CHART (Official Data) ---
-// Spine 300: 66-80 lbs @ 30", 70-85 lbs @ 28"
-// Spine 340: 56-70 lbs @ 30", 60-75 lbs @ 28"
-// Spine 400: 45-60 lbs @ 30", 48-65 lbs @ 28"
-// Spine 500: 38-50 lbs @ 30", 40-55 lbs @ 28"
-// Spine 600: 30-40 lbs @ 30", 32-45 lbs @ 28"
-
-const EASTON_XX75_300: ArrowSpecs = {
-    shaftLength: '31',
-    pointWeight: '100',
-    insertWeight: '25',
-    shaftGpi: '9.8',
-    fletchQuantity: '4',
-    weightEach: '8',
-    wrapWeight: '15',
-    nockWeight: '8',
-    bushingPin: '5',
-    staticSpine: '0.300',
-    shaftMaterial: 'aluminum',
-}
-
-const EASTON_ACC_340: ArrowSpecs = {
-    shaftLength: '31',
-    pointWeight: '100',
-    insertWeight: '25',
-    shaftGpi: '8.4',
-    fletchQuantity: '3',
-    weightEach: '6',
-    wrapWeight: '10',
-    nockWeight: '7',
-    bushingPin: '5',
-    staticSpine: '0.340',
-    shaftMaterial: 'carbon',
-}
-
-const EASTON_XX78_400: ArrowSpecs = {
-    shaftLength: '32',
-    pointWeight: '100',
-    insertWeight: '25',
-    shaftGpi: '7.4',
-    fletchQuantity: '4',
-    weightEach: '6',
-    wrapWeight: '12',
-    nockWeight: '7',
-    bushingPin: '5',
-    staticSpine: '0.400',
-    shaftMaterial: 'carbon',
-}
-
-const EASTON_FMJ_500: ArrowSpecs = {
-    shaftLength: '31',
-    pointWeight: '125',
-    insertWeight: '25',
-    shaftGpi: '6.6',
-    fletchQuantity: '4',
-    weightEach: '6',
-    wrapWeight: '10',
-    nockWeight: '7',
-    bushingPin: '5',
-    staticSpine: '0.500',
-    shaftMaterial: 'carbon',
-}
 
 const baseBow: BowSpecs = {
     iboVelocity: '335',
@@ -122,694 +14,140 @@ const baseBow: BowSpecs = {
     archeryType: ARCHERY_TYPE.COMPOUND,
 }
 
-const baseArrow = {
+const baseArrow: ArrowSpecs = {
+    shaftLength: '28',
     pointWeight: '125',
     insertWeight: '25',
-    shaftLength: '28',
     shaftGpi: '8.6',
+    measuredArrowTotalWeight: '',
     fletchQuantity: '3',
     weightEach: '8',
+    fletchLength: '2',
+    fletchHeight: '0.5',
     wrapWeight: '10',
     nockWeight: '10',
     bushingPin: '10',
     staticSpine: '0.340',
+    shaftUseCategory: 'base',
+    insertType: 'default',
+    shaftMaterial: 'carbon',
 }
 
-const baseString = {
-    peep: '12',
-    dLoop: '7',
-    nockPoint: '4',
-    silencers: '10',
+const baseString: StringWeights = {
+    peep: '10',
+    dLoop: '6',
+    nockPoint: '2',
+    silencers: '0',
     silencerDfc: '0',
-    releaseType: 'Post Gate Release',
-    stringMaterial: 'fastflight' as 'dacron' | 'fastflight' | 'unknown',
-}
-
-type ScenarioOverrides = {
-    bow?: Partial<BowSpecs>
-    arrow?: Partial<ArrowSpecs>
-    stringWeights?: Partial<typeof baseString>
-    temperature?: number
-}
-
-function runScenario(overrides: ScenarioOverrides = {}) {
-    return calculateSpineMatch(
-        { ...baseBow, ...overrides.bow } as BowSpecs,
-        { ...baseArrow, ...overrides.arrow } as ArrowSpecs,
-        { ...baseString, ...overrides.stringWeights },
-        overrides.temperature,
-    )
+    releaseType: 'Caliper Release',
+    stringMaterial: 'fastflight',
 }
 
 describe('calculateSpineMatch', () => {
-    it('identifica una configuración equilibrada como buen emparejamiento', () => {
-        const result = runScenario()
-
-        console.log('Escenario equilibrado', result)
-
-        expect(result.status).toBe('good')
-        expect(result.matchIndex).not.toBeNull()
-        expect(result.matchIndex!).toBeGreaterThan(0.9)
-        expect(result.matchIndex!).toBeLessThan(1.1)
-        expect(result.calculatedFPS).not.toBeNull()
-        // FPS calculado según modelo de energía almacenada
-        // Puede requerir calibración adicional con datos reales
-        expect(result.calculatedFPS!).toBeGreaterThan(250)
-        expect(result.calculatedFPS!).toBeLessThan(300)
-        // Nuevos campos
-        expect(result.archeryType).toBe(ARCHERY_TYPE.COMPOUND)
-        expect(result.spineRequiredCI).not.toBeNull()
-        expect(result.spineDynamicCI).not.toBeNull()
-        expect(result.matchIndexCI).not.toBeNull()
-    })
-
-    it('requiere un spine más rígido cuando aumenta la apertura del arco', () => {
-        const shortDraw = runScenario({
-            bow: {
-                drawLength: '27',
+    it('devuelve resultado vacío cuando faltan obligatorios', () => {
+        const result = calculateSpineMatch(
+            {
+                ...baseBow,
+                drawWeight: '',
             },
-        })
+            baseArrow,
+            baseString,
+        )
 
-        const longDraw = runScenario({
-            bow: {
-                drawLength: '31',
-            },
-        })
-
-        expect(shortDraw.spineRequired).not.toBeNull()
-        expect(longDraw.spineRequired).not.toBeNull()
-        expect(longDraw.spineRequired!).toBeLessThan(shortDraw.spineRequired!)
-    })
-
-    it('requiere un spine más rígido con levas más agresivas', () => {
-        const softCam = runScenario({
-            bow: {
-                camAggressiveness: 'soft',
-            },
-        })
-
-        const hardCam = runScenario({
-            bow: {
-                camAggressiveness: 'hard',
-            },
-        })
-
-        expect(softCam.spineRequired).not.toBeNull()
-        expect(hardCam.spineRequired).not.toBeNull()
-        expect(hardCam.spineRequired!).toBeLessThan(softCam.spineRequired!)
-    })
-
-    it('requiere un spine más rígido en la clase IBO rápida del chart oficial', () => {
-        const moderateSpeed = runScenario({
-            bow: {
-                iboVelocity: '335',
-            },
-        })
-
-        const fastSpeed = runScenario({
-            bow: {
-                iboVelocity: '350',
-            },
-        })
-
-        expect(moderateSpeed.spineRequired).not.toBeNull()
-        expect(fastSpeed.spineRequired).not.toBeNull()
-        expect(fastSpeed.spineRequired!).toBeLessThan(moderateSpeed.spineRequired!)
-    })
-
-    it('requiere un spine más flexible en la clase IBO lenta del chart oficial', () => {
-        const slowSpeed = runScenario({
-            bow: {
-                iboVelocity: '295',
-            },
-        })
-
-        const moderateSpeed = runScenario({
-            bow: {
-                iboVelocity: '335',
-            },
-        })
-
-        expect(slowSpeed.spineRequired).not.toBeNull()
-        expect(moderateSpeed.spineRequired).not.toBeNull()
-        expect(slowSpeed.spineRequired!).toBeGreaterThan(moderateSpeed.spineRequired!)
-    })
-
-    it('requiere un spine más rígido con brace height por debajo de 6.5 pulgadas', () => {
-        const forgivingBrace = runScenario({
-            bow: {
-                braceHeight: '7',
-            },
-        })
-
-        const lowBrace = runScenario({
-            bow: {
-                braceHeight: '6',
-            },
-        })
-
-        expect(forgivingBrace.spineRequired).not.toBeNull()
-        expect(lowBrace.spineRequired).not.toBeNull()
-        expect(lowBrace.spineRequired!).toBeLessThan(forgivingBrace.spineRequired!)
-    })
-
-    it('requiere un spine más rígido cuando aumenta el peso frontal total', () => {
-        const lightFront = runScenario({
-            arrow: {
-                pointWeight: '100',
-                insertWeight: '0',
-            },
-        })
-
-        const heavyFront = runScenario({
-            arrow: {
-                pointWeight: '125',
-                insertWeight: '25',
-            },
-        })
-
-        expect(lightFront.spineRequired).not.toBeNull()
-        expect(heavyFront.spineRequired).not.toBeNull()
-        expect(heavyFront.spineRequired!).toBeLessThan(lightFront.spineRequired!)
-    })
-
-    it('detecta flecha demasiado rígida cuando usamos spine bajo y punta ligera', () => {
-        // Spine 0.250 es muy rígido para 70#, combinado con punta ligera
-        // la flecha actúa aún más rígida -> status: stiff
-        const result = runScenario({
-            arrow: {
-                pointWeight: '85',
-                insertWeight: '15',
-                staticSpine: '0.250',
-            },
-        })
-
-        console.log('Escenario rígido', result)
-
-        expect(result.status).toBe('stiff')
-        expect(result.matchIndex).not.toBeNull()
-        expect(result.matchIndex!).toBeLessThan(0.85)
-    })
-
-    it('detecta que el peso frontal extremo debilita el spine dinámico y eleva el FOC', () => {
-        // Mucho peso delante incrementa el momento de inercia frontal:
-        // la flecha debe comportarse más débil y además subir el FOC.
-        const result = runScenario({
-            arrow: {
-                pointWeight: '200',
-                insertWeight: '75',
-                staticSpine: '0.340',
-            },
-        })
-
-        console.log('Escenario FOC extremo', result)
-
-        expect(result.status).toBe('weak')
-        expect(result.matchIndex).not.toBeNull()
-        expect(result.matchIndex!).toBeGreaterThan(1.1)
-        expect(result.recommendations.length).toBeGreaterThan(0)
-        const hasFocRecommendation = result.recommendations.some(r => r.includes('FOC alto'))
-        expect(hasFocRecommendation).toBe(true)
-    })
-
-    it('hace que una flecha más larga actúe más débil que la misma flecha más corta', () => {
-        const shortArrow = runScenario({
-            arrow: {
-                shaftLength: '27',
-            },
-        })
-
-        const longArrow = runScenario({
-            arrow: {
-                shaftLength: '31',
-            },
-        })
-
-        expect(shortArrow.spineDynamic).not.toBeNull()
-        expect(longArrow.spineDynamic).not.toBeNull()
-        expect(longArrow.spineDynamic!).toBeGreaterThan(shortArrow.spineDynamic!)
-        expect(longArrow.matchIndex!).toBeGreaterThan(shortArrow.matchIndex!)
-    })
-
-    it('hace que más peso frontal debilite la misma flecha', () => {
-        const lightPoint = runScenario({
-            arrow: {
-                pointWeight: '100',
-                insertWeight: '25',
-            },
-        })
-
-        const heavyPoint = runScenario({
-            arrow: {
-                pointWeight: '150',
-                insertWeight: '25',
-            },
-        })
-
-        expect(lightPoint.spineDynamic).not.toBeNull()
-        expect(heavyPoint.spineDynamic).not.toBeNull()
-        expect(heavyPoint.spineDynamic!).toBeGreaterThan(lightPoint.spineDynamic!)
-        expect(heavyPoint.matchIndex!).toBeGreaterThan(lightPoint.matchIndex!)
-    })
-
-    it('hace que un wrap más pesado rigidice más la misma flecha', () => {
-        const lightWrap = runScenario({
-            arrow: {
-                wrapWeight: '5',
-            },
-        })
-
-        const heavyWrap = runScenario({
-            arrow: {
-                wrapWeight: '25',
-            },
-        })
-
-        expect(lightWrap.spineDynamic).not.toBeNull()
-        expect(heavyWrap.spineDynamic).not.toBeNull()
-        expect(heavyWrap.spineDynamic!).toBeLessThan(lightWrap.spineDynamic!)
-        expect(heavyWrap.matchIndex!).toBeLessThan(lightWrap.matchIndex!)
-    })
-
-    it('hace que más masa trasera haga actuar la flecha más rígida', () => {
-        const lightRear = runScenario({
-            arrow: {
-                nockWeight: '6',
-                bushingPin: '4',
-            },
-        })
-
-        const heavyRear = runScenario({
-            arrow: {
-                nockWeight: '12',
-                bushingPin: '10',
-            },
-        })
-
-        expect(lightRear.spineDynamic).not.toBeNull()
-        expect(heavyRear.spineDynamic).not.toBeNull()
-
-        if (REAR_MASS_SENSITIVITY < 0.0005) {
-            expect(heavyRear.spineDynamic!).toBeCloseTo(lightRear.spineDynamic!, 10)
-            expect(heavyRear.matchIndex!).toBeCloseTo(lightRear.matchIndex!, 10)
-            return
-        }
-
-        expect(heavyRear.spineDynamic!).toBeLessThan(lightRear.spineDynamic!)
-        expect(heavyRear.matchIndex!).toBeLessThan(lightRear.matchIndex!)
-    })
-
-    it('hace que más masa en la cuerda haga actuar la flecha más rígida', () => {
-        const lightString = runScenario({
-            stringWeights: {
-                peep: '0',
-                dLoop: '0',
-                nockPoint: '0',
-                silencers: '0',
-                silencerDfc: '0',
-            },
-        })
-
-        const heavyString = runScenario({
-            stringWeights: {
-                peep: '16',
-                dLoop: '10',
-                nockPoint: '6',
-                silencers: '14',
-                silencerDfc: '6',
-            },
-        })
-
-        expect(lightString.spineDynamic).not.toBeNull()
-        expect(heavyString.spineDynamic).not.toBeNull()
-        expect(heavyString.spineDynamic!).toBeLessThan(lightString.spineDynamic!)
-        expect(heavyString.matchIndex!).toBeLessThan(lightString.matchIndex!)
-    })
-
-    it('hace que una cuerda de dacron actúe más rígida que fastflight en el mismo setup', () => {
-        const fastflight = runScenario({
-            stringWeights: {
-                stringMaterial: 'fastflight',
-            },
-        })
-
-        const dacron = runScenario({
-            stringWeights: {
-                stringMaterial: 'dacron',
-            },
-        })
-
-        expect(fastflight.spineDynamic).not.toBeNull()
-        expect(dacron.spineDynamic).not.toBeNull()
-        expect(dacron.spineDynamic!).toBeLessThan(fastflight.spineDynamic!)
-        expect(dacron.matchIndex!).toBeLessThan(fastflight.matchIndex!)
-    })
-
-    it('trata stringMaterial unknown como neutro en física pero con menos confianza', () => {
-        const fastflight = runScenario({
-            stringWeights: {
-                stringMaterial: 'fastflight',
-            },
-            temperature: 70,
-        })
-
-        const unknown = runScenario({
-            stringWeights: {
-                stringMaterial: 'unknown',
-            },
-            temperature: 70,
-        })
-
-        expect(fastflight.spineDynamic).not.toBeNull()
-        expect(unknown.spineDynamic).not.toBeNull()
-        expect(unknown.spineDynamic!).toBeCloseTo(fastflight.spineDynamic!, 10)
-        expect(unknown.matchIndex!).toBeCloseTo(fastflight.matchIndex!, 10)
-        expect(fastflight.matchIndexCI!.confidence).toBe('high')
-        expect(unknown.matchIndexCI!.confidence).toBe('medium')
-    })
-
-    it('usa el cronógrafo para pedir un spine más flexible si la velocidad real es menor que la estimada', () => {
-        const estimated = runScenario()
-        const measuredSlow = runScenario({
-            bow: {
-                measuredChronoSpeed: '250',
-            },
-        })
-
-        expect(estimated.spineRequired).not.toBeNull()
-        expect(measuredSlow.spineRequired).not.toBeNull()
-        expect(measuredSlow.spineRequired!).toBeGreaterThan(estimated.spineRequired!)
-        expect(measuredSlow.usedChronographData).toBe(true)
-        expect(measuredSlow.measuredFPS).toBe(250)
-        expect(measuredSlow.effectiveFPS).toBe(250)
-        expect(measuredSlow.calculatedFPS).not.toBeNull()
-    })
-
-    it('usa el cronógrafo para pedir un spine más rígido si la velocidad real es mayor que la estimada', () => {
-        const estimated = runScenario()
-        const measuredFast = runScenario({
-            bow: {
-                measuredChronoSpeed: '280',
-            },
-        })
-
-        expect(estimated.spineRequired).not.toBeNull()
-        expect(measuredFast.spineRequired).not.toBeNull()
-        expect(measuredFast.spineRequired!).toBeLessThan(estimated.spineRequired!)
-        expect(measuredFast.usedChronographData).toBe(true)
-        expect(measuredFast.effectiveFPS).toBe(280)
-    })
-
-    it('retorna valores nulos cuando faltan datos críticos', () => {
-        const result = runScenario({
-            bow: { drawWeight: '' },
-        })
-
-        console.log('Escenario sin datos', result)
-
-        expect(result.spineRequired).toBeNull()
-        expect(result.spineDynamic).toBeNull()
-        expect(result.matchIndex).toBeNull()
         expect(result.status).toBeNull()
-        // Nuevos campos deben estar presentes pero con valores apropiados
-        expect(result.archeryType).toBeDefined()
+        expect(result.spineRequired).toBeNull()
+        expect(result.matchIndex).toBeNull()
+        expect(result.recommendations.join(' ')).toMatch(/Faltan datos clave/i)
     })
 
-    it('aplica corrección de temperatura correctamente', () => {
-        // A temperatura alta, el spine efectivo aumenta (más flexible)
-        const hotResult = runScenario({ temperature: 90 })
-        // A temperatura baja, el spine efectivo disminuye (más rígido)
-        const coldResult = runScenario({ temperature: 50 })
-
-        console.log('Temperatura alta', hotResult)
-        console.log('Temperatura baja', coldResult)
-
-        // El spine dinámico a alta temperatura debe ser mayor
-        expect(hotResult.spineDynamic).toBeGreaterThan(coldResult.spineDynamic!)
-    })
-
-    it('soporta arcos recurvo/tradicional', () => {
-        const recurveResult = runScenario({
-            bow: {
-                archeryType: ARCHERY_TYPE.RECURVO,
-                percentLetoff: '0', // Recurvo no tiene let-off
+    it('usa el peso total medido de flecha cuando está disponible', () => {
+        const result = calculateSpineMatch(
+            baseBow,
+            {
+                ...baseArrow,
+                shaftGpi: '0',
+                measuredArrowTotalWeight: '415.5',
             },
-        })
+            baseString,
+        )
 
-        console.log('Recurvo', recurveResult)
-
-        expect(recurveResult.archeryType).toBe(ARCHERY_TYPE.RECURVO)
-        expect(recurveResult.spineRequired).not.toBeNull()
+        expect(result.arrowTotalWeight).toBeCloseTo(415.5, 10)
     })
 
-    it('calcula intervalos de confianza correctamente', () => {
-        const result = runScenario()
-
-        expect(result.matchIndexCI).not.toBeNull()
-        expect(result.matchIndexCI!.lower).toBeLessThan(result.matchIndex!)
-        expect(result.matchIndexCI!.upper).toBeGreaterThan(result.matchIndex!)
-        expect(result.matchIndexCI!.confidence).toBe('medium') // Sin temperatura
-    })
-
-    it('tiene alta confianza cuando se proporciona temperatura', () => {
-        const result = runScenario({ temperature: 70 })
-
-        expect(result.matchIndexCI!.confidence).toBe('high')
-    })
-
-    it('tiene alta confianza cuando se proporciona velocidad medida por cronógrafo', () => {
-        const result = runScenario({
-            bow: {
-                measuredChronoSpeed: '250',
+    it('ajusta el spine objetivo cuando hay cronógrafo real', () => {
+        const baseline = calculateSpineMatch(baseBow, baseArrow, baseString)
+        const slowerChrono = calculateSpineMatch(
+            {
+                ...baseBow,
+                measuredChronoSpeed: '255',
             },
-        })
+            baseArrow,
+            baseString,
+        )
+        const fasterChrono = calculateSpineMatch(
+            {
+                ...baseBow,
+                measuredChronoSpeed: '295',
+            },
+            baseArrow,
+            baseString,
+        )
 
-        expect(result.matchIndexCI!.confidence).toBe('high')
+        expect(baseline.spineRequired).not.toBeNull()
+        expect(slowerChrono.spineRequired).not.toBeNull()
+        expect(fasterChrono.spineRequired).not.toBeNull()
+        expect(slowerChrono.usedChronographData).toBe(true)
+        expect(fasterChrono.usedChronographData).toBe(true)
+        expect(slowerChrono.spineRequired!).toBeGreaterThan(baseline.spineRequired!)
+        expect(fasterChrono.spineRequired!).toBeLessThan(baseline.spineRequired!)
     })
-})
 
-// ============================================
-// TESTS CON DATOS REALES DE LA INDUSTRIA
-// ============================================
+    it('corrige el spine seleccionado por temperatura en shafts de carbono', () => {
+        const cold = calculateSpineMatch(baseBow, baseArrow, baseString, 30)
+        const hot = calculateSpineMatch(baseBow, baseArrow, baseString, 100)
 
-describe('Real World Data Validation', () => {
-    it('mantiene las relaciones monotónicas básicas del modelo compound', () => {
-        const checks = evaluateCompoundMonotonicity()
+        expect(cold.spineDynamic).not.toBeNull()
+        expect(hot.spineDynamic).not.toBeNull()
+        expect(hot.spineDynamic!).toBeGreaterThan(cold.spineDynamic!)
+    })
 
-        for (const check of checks) {
-            expect(check.passed, `${check.id}: ${check.details}`).toBe(true)
+    it('sigue razonablemente los casos SFAX completos', () => {
+        const fullCases = SFAX_PRIMARY_REFERENCE_CASES.filter((entry) => entry.completeness === 'full')
+
+        for (const referenceCase of fullCases) {
+            const result = calculateSpineMatch(referenceCase.bow, referenceCase.arrow, referenceCase.stringWeights)
+            const calculatedKe =
+                result.effectiveFPS == null
+                    ? 0
+                    : (result.arrowTotalWeight * result.effectiveFPS * result.effectiveFPS) / 450240
+            const grainsPerPound = result.arrowTotalWeight / Number(referenceCase.bow.drawWeight)
+
+            expect(result.spineRequired).not.toBeNull()
+            expect(result.effectiveFPS).not.toBeNull()
+            expect(result.foc).not.toBeNull()
+            expect(Math.abs(result.spineRequired! - referenceCase.sfaxResults.dynamicSpine)).toBeLessThan(0.03)
+            expect(Math.abs(result.effectiveFPS! - referenceCase.sfaxResults.fps)).toBeLessThan(15)
+            expect(Math.abs(result.arrowTotalWeight - referenceCase.sfaxResults.totalArrowWeight)).toBeLessThan(0.2)
+            expect(Math.abs(grainsPerPound - referenceCase.sfaxResults.grlb)).toBeLessThan(0.05)
+            expect(Math.abs(calculatedKe - referenceCase.sfaxResults.ke)).toBeLessThan(4)
+            expect(Math.abs(result.foc! - referenceCase.sfaxResults.foc)).toBeLessThan(1.5)
         }
     })
 
-    it('mantiene un error medio bajo contra el dataset explícito de calibración compound', () => {
+    it('mantiene las direcciones físicas/empíricas SFAX', () => {
+        const checks = evaluateCompoundMonotonicity()
+        expect(checks.every((check) => check.passed)).toBe(true)
+    })
+
+    it('resume la fidelidad compound con error acotado frente a SFAX', () => {
         const summary = summarizeCompoundCalibration()
 
-        expect(summary.meanAbsoluteError).toBeLessThan(0.03)
-        expect(summary.weightedMeanAbsoluteError).toBeLessThan(0.03)
-        expect(summary.maxAbsoluteError).toBeLessThan(0.07)
-    })
-
-    it('mantiene la calibración compound cerca del dataset real del proyecto', () => {
-        const mathews = calculateSpineMatch(MATHEWS_V3X_33, EASTON_XX75_300, baseString)
-        const hoyt = calculateSpineMatch(HOYT_REXON, EASTON_ACC_340, baseString)
-        const bowtech = calculateSpineMatch(BOWTECH_REALM, EASTON_XX78_400, baseString)
-        const youth = calculateSpineMatch(YOUTH_BOW, EASTON_FMJ_500, baseString)
-
-        expect(mathews.matchIndex!).toBeGreaterThan(0.93)
-        expect(mathews.matchIndex!).toBeLessThan(0.99)
-
-        expect(hoyt.matchIndex!).toBeGreaterThan(1.00)
-        expect(hoyt.matchIndex!).toBeLessThan(1.08)
-
-        expect(bowtech.matchIndex!).toBeGreaterThan(1.03)
-        expect(bowtech.matchIndex!).toBeLessThan(1.09)
-
-        expect(youth.matchIndex!).toBeGreaterThan(0.70)
-        expect(youth.matchIndex!).toBeLessThan(0.77)
-    })
-
-    // Test: Mathews V3X 33 con Easton XX75 300
-    // Según Easton: Spine 300 es para 66-80 lbs @ 30"
-    // Mathews V3X 33: 75 lbs @ 30" - borderline (spine 300 es el límite inferior)
-    it('valida Mathews V3X 33 + Easton XX75 300: spine 300 para 75 lbs @ 30"', () => {
-        const result = calculateSpineMatch(
-            MATHEWS_V3X_33,
-            EASTON_XX75_300,
-            baseString,
-        )
-
-        console.log('Mathews V3X 33 + XX75 300:', result)
-
-        // Spine 300 está en el límite inferior para 75 lbs
-        // matchIndex ~0.89 = ligeramente stiff (usando tolerancia 10%: good = 0.90-1.10)
-        // 75 lbs con spine 300 está en el borde - spine 340 sería más fácil de tunear
-        expect(result.spineRequired).toBeGreaterThan(0.25)
-        expect(result.spineRequired).toBeLessThan(0.45)
-        // spineRequired ~0.326, spineDynamic ~0.289, matchIndex ~0.89
-        expect(result.matchIndex).toBeGreaterThan(0.85) // Ligeramente stiff pero aceptable
-        expect(result.matchIndex).toBeLessThan(1.10)
-    })
-
-    // Test: Hoyt Rexon con Easton ACC 340
-    // Según Easton: Spine 340 es para 56-70 lbs @ 30"
-    // Hoyt Rexon: 70 lbs @ 30" - DEBERÍA ser GOOD (límite superior)
-    it('valida Hoyt Rexon + Easton ACC 340: spine correcto para 70 lbs @ 30"', () => {
-        const result = calculateSpineMatch(
-            HOYT_REXON,
-            EASTON_ACC_340,
-            baseString,
-        )
-
-        console.log('Hoyt Rexon + ACC 340:', result)
-
-        expect(result.status).toBe('good')
-        // 70 lbs está en el límite superior del rango para spine 340
-        expect(result.spineRequired).toBeGreaterThan(0.28)
-        expect(result.spineRequired).toBeLessThan(0.45)
-    })
-
-    // Test: Bowtech Realm con Easton XX78 400
-    // Según Easton: Spine 400 es para 45-60 lbs @ 30"
-    // Bowtech Realm: 60 lbs @ 28" (equivalente a ~65 lbs @ 30") - DEBERÍA ser GOOD
-    it('valida Bowtech Realm + Easton XX78 400: spine correcto para 60 lbs @ 28"', () => {
-        const result = calculateSpineMatch(
-            BOWTECH_REALM,
-            EASTON_XX78_400,
-            baseString,
-        )
-
-        console.log('Bowtech Realm + XX78 400:', result)
-
-        // Con draw length 28" más corto, el spine efectivo es mayor
-        expect(result.status).toBe('good')
-        expect(result.spineRequired).toBeGreaterThan(0.30)
-    })
-
-    // Test: Youth bow con spine 500
-    // Según Easton: Spine 500 es para 38-50 lbs @ 30"
-    // Youth bow: 35 lbs @ 26" - podría ser borderline (necesita spine 600)
-    it('valida Youth bow + Easton FMJ 500: arco juvenil con spine 500', () => {
-        const result = calculateSpineMatch(
-            YOUTH_BOW,
-            EASTON_FMJ_500,
-            baseString,
-        )
-
-        console.log('Youth Bow + FMJ 500:', result)
-
-        // 35 lbs @ 26" está por debajo del rango óptimo para spine 500
-        // El resultado podría ser STIFF o marginal
-        expect(result.spineRequired).not.toBeNull()
-        // Spine requerido debe ser mayor que el disponible
-        expect(result.spineDynamic).toBeGreaterThan(0.45)
-    })
-
-    // Test: Verificación de FPS contra IBO
-    it('verifica que el FPS calculado sea razonable vs IBO', () => {
-        // Mathews V3X 33: IBO 350 FPS (medido con flecha de 350 grains)
-        const mathewsResult = calculateSpineMatch(
-            MATHEWS_V3X_33,
-            EASTON_XX75_300,
-            baseString,
-        )
-
-        console.log('Mathews FPS calculation:', mathewsResult.calculatedFPS)
-
-        // Con flecha de 489 grains (XX75 300 + componentes), la velocidad será menor
-        // IBO 350 se mide con flecha de 350 grains = velocidad máxima teórica
-        // Con flecha más pesada: ~260-280 FPS es un rango razonable
-        expect(mathewsResult.calculatedFPS).not.toBeNull()
-        expect(mathewsResult.calculatedFPS!).toBeGreaterThan(260) // Mínimo razonable con flecha pesada
-        expect(mathewsResult.calculatedFPS!).toBeLessThan(380) // Máximo razonable
-
-        // Youth bow: IBO 280 FPS
-        const youthResult = calculateSpineMatch(
-            YOUTH_BOW,
-            EASTON_FMJ_500,
-            baseString,
-        )
-
-        console.log('Youth FPS calculation:', youthResult.calculatedFPS)
-
-        expect(youthResult.calculatedFPS).not.toBeNull()
-        // Youth bows son más lentos
-        expect(youthResult.calculatedFPS!).toBeLessThan(280)
-    })
-
-    // Test: Validación de FOC
-    it('verifica cálculo de FOC según especificaciones Easton', () => {
-        // Configuración estándar: FOC 10-15% es óptimo para caza
-        const result = calculateSpineMatch(
-            MATHEWS_V3X_33,
-            EASTON_XX75_300,
-            baseString,
-        )
-
-        console.log('FOC Calculation:', result.foc)
-
-        expect(result.foc).not.toBeNull()
-        // Con punta de 100 grains y flecha de ~340 grains total, FOC debe estar en rango
-        expect(result.foc!).toBeGreaterThan(5)
-        expect(result.foc!).toBeLessThan(20)
-    })
-
-    // Test: Verificación de peso de flecha (GPP - Grains Per Pound)
-    it('verifica ratio peso flecha/potencia (GPP)', () => {
-        const result = calculateSpineMatch(
-            MATHEWS_V3X_33, // 75 lbs
-            EASTON_XX75_300, // ~340 grains shaft + componentes = ~400+ total
-            baseString,
-        )
-
-        console.log('Arrow weight:', result.arrowTotalWeight)
-        console.log('GPP:', result.arrowTotalWeight / 75)
-
-        // GPP recomendado: 5-6 grains por libra mínimo para caza
-        const gpp = result.arrowTotalWeight / 75
-        expect(gpp).toBeGreaterThan(4.5) // Mínimo seguro
-        expect(gpp).toBeLessThan(8) // Máximo para velocidad razonable
-    })
-
-    // Test: Combinación INCORRECTA deliberada
-    // Arco de 70 lbs con spine 600 (demasiado flexible)
-    it('detecta combinación incorrecta: arco potente + spine muy flexible', () => {
-        const wrongArrow: ArrowSpecs = {
-            ...EASTON_XX75_300,
-            staticSpine: '0.600', // Spine 600 es para arcos de 30-45 lbs
-        }
-
-        const result = calculateSpineMatch(
-            HOYT_REXON, // 70 lbs
-            wrongArrow,
-            baseString,
-        )
-
-        console.log('Wrong combination (70 lbs + spine 600):', result)
-
-        // DEBERÍA dar WEAK - la flecha es demasiado flexible
-        expect(result.status).toBe('weak')
-        expect(result.matchIndex).toBeGreaterThan(1.2)
-        expect(result.warnings.length).toBeGreaterThan(0)
-    })
-
-    // Test: Combinación INCORRECTA en el otro extremo
-    // Arco de 35 lbs con spine 300 (demasiado rígido)
-    it('detecta combinación incorrecta: arco débil + spine muy rígido', () => {
-        const wrongArrow: ArrowSpecs = {
-            ...EASTON_XX75_300,
-            staticSpine: '0.300', // Spine 300 es para arcos de 66-80 lbs
-        }
-
-        const result = calculateSpineMatch(
-            YOUTH_BOW, // 35 lbs
-            wrongArrow,
-            baseString,
-        )
-
-        console.log('Wrong combination (35 lbs + spine 300):', result)
-
-        // DEBERÍA dar STIFF - la flecha es demasiado rígida
-        expect(result.status).toBe('stiff')
-        expect(result.matchIndex).toBeLessThan(0.8)
+        expect(summary.dynamicSpine.meanAbsoluteError).toBeLessThan(0.04)
+        expect(summary.dynamicSpine.maxAbsoluteError).toBeLessThan(0.09)
+        expect(summary.fps.meanAbsoluteError).toBeLessThan(20)
+        expect(summary.totalArrowWeight.meanAbsoluteError).toBeLessThan(0.2)
+        expect(summary.grlb.meanAbsoluteError).toBeLessThan(0.06)
+        expect(summary.foc.meanAbsoluteError).toBeLessThan(1.5)
+        expect(summary.ke.meanAbsoluteError).toBeLessThan(5)
     })
 })

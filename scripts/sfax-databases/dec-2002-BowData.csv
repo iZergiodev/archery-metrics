@@ -1,0 +1,199 @@
+*,2002 Bows
+=,MFG,MDL,IBO,A2A,BH,DL,DW,PLO,CAM,STR,CBL,CTL
+-,BowTech
+Pro 38-6,330,37.5,6,25-30,50-70,80/65,Single,0,0,0
+Pro 38-7,318,37.5,7,26-31,50-70,80/65,Single,0,0,0
+Pro 40-6,318,39,6.75,25-30,50-70,80/65,Single,0,0,0
+Pro 40-7,308,39,7.75,27-32,50-70,80/65,Single,0,0,0
+Extreme Solo-6,333,35,6,25-30,60-70,80/65,Single,0,0,0
+Extreme Solo-7,319,35,7,26-31,60-70,80/65,Single,0,0,0
+Extreme Solo Sampson-5,335,35,5.625,25-30,80-100,80/65,Single,0,0,0
+Extreme Solo Sampson-6,322,35,6.625,26-31,80-100,80/65,Single,0,0,0
+Stalker,306,33.5,7.75,27-32,40-70,80/65,Single,0,0,0
+Stalker Lite,295,33.5,6.875,23-29,30-60,80/65,Single,0,0,0
+Generation 3-5,332,36,5.6,25-30,60-70,80/65,Single,0,0,0
+Generation 3-6,318,36,6.6,26-31,60-70,80/65,Single,0,0,0
+Generation 3-7,320,37.375,7,26-31,50-70,80/65,Single,0,0,0
+Extreme SD-6,322,32.5,6,24-29,40-70,80/65,Single,0,0,0
+Extreme SD-7,318,32.5,7,25-30,40-70,80/65,Single,0,0,0
+Black Knight2-55,350,35.6,5.25,26-30,60-70,80/65,Twin,0,0,0
+Black Knight2-56,339,35.6,6.25,27-31,60-70,80/65,Twin,0,0,0
+Black Knight2-75,350,37.5,5.5,26-30,50-70,65,Twin,0,0,0
+Black Knight2-76,339,37.5,6.5,27-31,50-70,65,Twin,0,0,0
+Mighty Mite,324,31.25,7.2,25-30,60-70,80/65,Single,0,0,0
+Tech 29,320,29.5,6.5,24-29,50-70,80/65,Single,0,0,0
+Rascal,262,24.5,7.25,19-25,20-40,80,Single,0,0,0
+Patriot,320,33.75,7.25,25-30,40-70,80/65,Single,0,0,0
+Predator Tomcat,292,31.0,9.125,27-32,60-70,80/65,Single,0,0,0
+Predator Blackhawk,298,28.5,9.125,26-31,60-70,80/65,Single,0,0,0
+-,HoytUSA
+HavocTec XT2000 AW,270,31.5,7.5,21-28,30-80,65,Twin,0,0,0
+HavocTec XT2000 CC,302,31.5,7.5,21-31,30-80,75/65,Twin,0,0,0
+HavocTec XT2000 EC,295,31.5,7.5,24-30,30-80,75/60,Single,0,0,0
+HavocTec XT2000 VC,300,31.5,7.5,24-31,30-80,80/65,Single,0,0,0
+HavocTec ZR200 CC,293,31.5,7.5,22-32,30-80,75/65,Twin,0,0,0
+HavocTec ZR200 VC,288,31.5,7.5,25-33,30-80,80/65,Single,0,0,0
+CyberTec XT2000 CC,309,36.0,6.5,21-31,30-80,75/65,Twin,0,0,0
+CyberTec XT2000 EC,303,36.0,6.5,24-30,30-80,75/60,Single,0,0,0
+CyberTec XT2000 VC,304,36.0,6.5,24-31,30-80,80/65,Single,0,0,0
+HyperTec XT2000 RC,320,33.0,6,24-30,30-80,80/65,Single,0,0,0
+UltraTec XT3000 AW,273,38.0,7,22-30,30-80,65,Twin,0,0,0
+UltraTec XT3000 CC,293,41.25,7.75,23-33,30-80,75/65,Twin,0,0,0
+UltraTec XT3000 EC,288,38.0,7,26-33,30-80,75/60,Single,0,0,0
+UltraTec XT2000 CC,305,39.0,6.75,21-32,30-80,75/65,Twin,0,0,0
+UltraTec XT2000 EC,298,38.0,7,25-32,30-80,75/60,Single,0,0,0
+UltraTec XT2000 VC,300,38.0,7,25-32,30-80,80/65,Single,0,0,0
+UltraTec XT2000 RL,300,39.0,7.0,25-32,30-80,80/65,Single,0,0,0
+ProTec LX Pro AW,255,46.0,8.25,25-33,30-80,65,Twin,0,0,0
+ProTec LX Pro CC,277,46.0,8.25,25-34,30-80,75/65,Twin,0,0,0
+ProTec XT3000 AW,265,41.0,8.25,24-34,30-80,65,Twin,0,0,0
+ProTec XT3000 CC,285,41.0,8.25,24-34,30-80,75/65,Twin,0,0,0
+ProTec XT3000 EC,278,41.0,8.25,29-34,30-80,75/60,Single,0,0,0
+ProTec XT2000 CC,297,38.0,7.75,23-33,30-80,75/65,Twin,0,0,0
+ProTec XT2000 EC,290,38.0,8.25,26-33,30-80,75/60,Single,0,0,0
+ProTec XT2000 VC,292,40.25,8.125,26-34,30-80,80/65,Single,0,0,0
+VorTec ZR200 CC,300,36.0,7.5,22-32,40-80,75/65,Twin,0,0,0
+VorTec ZR200 VC,295,36.0,7.5,25-33,40-80,80/65,Single,0,0,0
+Saphire ZR200 AW,254,34.5,6.5,21-28,30-60,65,Twin,0,0,0
+Saphire ZR200 CC,277,34.5,6.5,21-28,30-60,75/65,Twin,0,0,0
+Saphire ZR200 VC,273,34.5,6.5,25-28,30-60,80/65,Twin,0,0,0
+MagnaTec XT2000 CC,305,35.5,7,21-31,40-80,75/65,Twin,0,0,0
+MagnaTec XT2000 VC,300,35.5,7,24-32,40-80,80/65,Single,0,0,0
+MagnaTec ZR200 CC,300,35.5,7,22-33,40-80,75/65,Twin,0,0,0
+MagnaTec ZR200 VC,283,35.5,7,25-33,40-80,80/65,Single,0,0,0
+MT Sport XT200 AW,271,34.5,8.5,22-29,40-80,65,Twin,0,0,0
+MT Sport XT200 CC,286,34.5,8.5,22-33,40-80,75/65,Twin,0,0,0
+MT Sport XT200 VC,275,34.5,8.5,26-34,40-80,80/65,Single,0,0,0
+Banshee,235,32,6.75,16-23,20-50,65,Single,0,0,0
+Havoc,308,33.25,7.25,22-32,30-80,75/65,Single,0,0,0
+ProTec,300,43.0,8.25,27-32,40-80,65,Single,0,0,0
+-,Martin
+Bobcat,294,37.875,6,25-31,40-80,75/65,Single,0,0,0
+Altitude Fuzion,301,30.375,6.875,24-29,50-70,75/65,Single,0,0,0
+MV2 Elite Fury,293,39.875,7.25,25-33,40-70,75/65,Twin,0,0,0
+MV2 Elite Fury-X,293,39.875,7.25,25-33,40-70,75/65,Twin,0,0,0
+MV2 Magnum Fuzion,302,34.375,7,26-30,50-70,75/65,Single,0,0,0
+Phantom Fuzion,301,37.5,7.125,27-32,50-70,75/65,Single,0,0,0
+Phantom  Z,285,37.25,6.75,25-32,50-70,75/65,Single,0,0,0
+Phantom Magnum Fuzion,310,33,6.25,25-30,50-70,75/65,Single,0,0,0
+Jaguar Z,291,36.375,7.75,25-31,40-70,75/65,Single,0,0,0
+Jaguar Magnum Fuzion,310,33.25,6.75,25-30,50-70,75/65,Single,0,0,0
+Scepter,290,42.875,7.25,26-34,40-80,75/65,Single,0,0,0
+Scepter II Elite Fury,290,42.875,7.875,26-34,40-80,75/65,Twin,0,0,0
+Phantom Elite Fury,305,38,7,24-32,40-70,75/65,Twin,0,0,0
+Phantom Elite Fury-X,305,38,7,24-32,40-70,75/65,Twin,0,0,0
+SpeedFire SL Magnum Fuzion,301,32,7,25-30,50-70,75/65,Single,0,0,0
+Cougar Fury,310,40.125,6.625,24-32,40-70,75/65,Twin,0,0,0
+Cougar Elite Fury,308,42,6.875,25-33,40-80,75/65,Twin,0,0,0
+Cougar Elite Fury-X,308,42,6.875,25-33,40-80,75/65,Twin,0,0,0
+Cougar Fuzion,294,40.5,7.125,27-32,40-70,75/65,Single,0,0,0
+Cougar Magnum Fuzion,315,36.5,6.875,26.32,50-70,75/65,Single,0,0,0
+Panther Magnum Fuzion,300,33.0625,7.25,26-31,50-70,75/65,Single,0,0,0
+Tiger Mini-Z,220,31.5,5.375,17-23,20-40,65,Single,0,0,0
+-,Mathews
+Q2,308,34,7.5,23-30,40-70,70,Single,0,0,0
+Q2XL,308,38,7.5,24-31,40-70,70,Single,0,0,0
+FX,308,34,7.5,23-31,40-70,80/65,Single,0,0,0
+SQ2,305,31,8.5,23-30,40-70,70,Single,0,0,0
+MQ32,303,32,8.25,24-30,40-70,80/70,Single,0,0,0
+MQ1,308,37,7.5,24-30,40-70,80/70,Single,0,0,0
+Black Max,330,36,5.5,25-30,40-70,65,Single,0,0,0
+Rival Pro,308,40,8.0,25-30,40-70,65,Single,0,0,0
+Legacy,308,34,7.5,24-30,40-70,70,Single,0,0,0
+Icon,300,37,7.5,24-30,40-70,70,Single,0,0,0
+Ultra2,320,36,6.125,22-30,40-70,80/65,Single,0,0,0
+Conquest2,310,41,7.0,28-32,40-70,80/60,Single,0,0,0
+Sportsman,280,34,7.5,20-32,40-70,70,Single,0,0,0
+-,Merlin
+Max2000,290,41.25,7.5,23-33,30-70,65,Twin,0,0,0
+Lite Storm Solo,305,38,7,26-30,30-70,70,Single,0,0,0
+Lite Storm Twin,315,38,6.25,21-31,30-70,65,Twin,0,0,0
+Hunter's Quest Solo,305,31.5,7.25,26-30,30-70,70,Single,0,0,0
+Hunter's Quest Twin,270,31.5,7,20-26,30-70,75,Twin,0,0,0
+-,North American
+GrandMaster,300,40.5,7.5,26-33,50-70,70/65,Single,0,0,0
+TrophyMaster,308,35.375,7.5,24-31,50-70,70,Single,0,0,0
+RackMaster,302,34.375,7.5,24-31,50-70,70,Single,0,0,0
+RackMaster Lite,255,31.25,6.25,24-26,30-50,75,Single,0,0,0
+CarbonMaster Xtreme,294,35.375,6.875,24-31,50-70,75,Single,0,0,0
+TRX,305,35.875,6.625,24-31,50-70,75,Single,0,0,0
+Badge,240,34.875,7.125,21-25,15-45,65,Single,0,0,0
+Vapor 300,302,34.25,7.25,28-30,50-70,75,Single,0,0,0
+Epic Xtreme,303,32,7.5,28-30,60-70,75,Single,0,0,0
+Whitetail Pinnacle,298,38,7,28-31,50-70,65,Single,0,0,0
+T-Master Xtreme,311,33.5,5.5,24-31,60-70,70,Single,0,0,0
+Borsalino Takedown,321,38.25,7,25-32,60-70,65,Single,0,0,0
+Splitfire 32 XTR,284,32.75,8.375,28-30,60-70,75,Single,0,0,0
+Splitfire 36,290,36,8,28-30,60-70,70,Single,0,0,0
+Evolution XTR,290,35.125,6.75,28-30,60-70,65,Single,0,0,0
+Sparrowhawk,281,36.5,7.875,25-30,40-50,75,Single,0,0,0
+Custom Z-Fire,288,34.5,7,28-31,60-70,65,Single,0,0,0
+Titan Express,303,42.5,8,29-32,65-75,65,Single,0,0,0
+Hypertech,298,34,7.375,27-31,60-70,75/65,Single,0,0,0
+Buckmaster G2,309,21,7.5,28-30,50-70,70/65,Single,0,0,0
+Buckmaster 2000,292,39.5,7.375,28-30,60-70,75/65,Single,0,0,0
+Young Bucks,160,30,7,20-22,17-22,65,Single,0,0,0
+Little Delta,220,34.625,7.125,25-27,35-50,65,Single,0,0,0
+Brave Warrior,200,33,7.625,23-25,40,80,Single,0,0,0
+Brave Scout,160,30,7,20-22,17-22,65,Single,0,0,0
+-,Oneida Eagle
+Black Eagle SS,290,44.0,6.25,25-28,35-80,40-80,Hybrid,0,0,0
+Black Eagle S,295,44.75,7.25,27-30,35-80,40-80,Hybrid,0,0,0
+Black Eagle MLF,300,44.0,6.25,27-30,35-80,40-80,Hybrid,0,0,0
+Black Eagle M,305,45.5,6.5,28-31.5,35-80,40-80,Hybrid,0,0,0
+Black Eagle L,300,46.75,8.25,32-33,35-80,40-80,Hybrid,0,0,0
+Pro Eagle S,295,46.5,7.5,27-30.5,35-80,40-80,Hybrid,0,0,0
+Pro Eagle M,305,46.5,7.5,28-32.5,35-80,40-80,Hybrid,0,0,0
+-,Parker
+Ultra-Lite 31,310,31,7,23-30,50-70,80/65,Single,0,0,0
+Ultra-Lite 35,300,35,7,25-32,50-70,80/65,Single,0,0,0
+Ultra-Lite Pro,306,38,7.5,25-32,50-70,80/65,Single,0,0,0
+Feather-Mag II,298,37,7.875,26-33,50-70,80/65,Single,0,0,0
+Stealth-Hunter,305,37,7.125,25-32,50-70,80/65,Single,0,0,0
+Hunter-Mag,305,37,7,25-32,50-70,80/65,Single,0,0,0
+Challenger,270,32.5,6.25,23-27,30-50,80/65,Single,0,0,0
+Junior-Mag,250,31.5,6,19-24,20-40,80,Single,0,0,0
+Force-Multiplier II,325,35,6,25-30,50-70,80/65,Single,0,0,0
+Force-Multiplier II Comp,325,35,6,25-30,50-70,80/65,Single,0,0,0
+Ultra-Lite 31 Comp,310,31,7,23-30,50-70,80/65,Single,0,0,0
+Ultra-Lite 35 Comp,300,35,7,25-32,50-70,80/65,Single,0,0,0
+Ultra-Lite Pro Comp,306,38,7.5,25-32,50-70,80/65,Single,0,0,0
+Challenger Comp,270,32.5,6.25,23-27,30-50,80/65,Single,0,0,0
+-,PSE
+Nitro Ultimate 1Cam,314,36,6.00,25-30,60-70,80/65,Single,0,0,0
+Quantum Ultimate 1Cam,305,39,7.50,27-32,60-70,80/65,Single,0,0,0
+Monarch Vector5,277,41,6.75,27-31,50-60,65,Twin,0,0,0
+Monarch Ultimate 1Cam,310,39,6.75,26-31,60-70,80/65,Single,0,0,0
+Silhouette Vector5,272,41,7.75,26-30,40-60,65,Twin,0,0,0
+Silhouette Stinger,285,39.5,7.875,25-29,50-60,75,Single,0,0,0
+Firestorm LC,300,30,8.0,27-30,50-70,80/65,Single,0,0,0
+Thunderbolt Maxis HL,300,38,7.0,26-30,50-70,75,Twin,0,0,0
+Thunderbolt LC,300,36,7.0,27-31,50-70,80/65,Single,0,0,0
+Thunderbolt Stinger,278,37.5,6.5,23-27,40-60,75,Single,0,0,0
+Dakota SynergyPro 65,300,41,7.25,28-30,60-70,65,Twin,0,0,0
+Dakota SynergyPro 75,297,40.5,7.25,28-31,60-70,75,Twin,0,0,0
+Dakota Inferno,300,39,6.75,27-31,60-70,75,Single,0,0,0
+Nova Vector5,275,39,7.25,26-30,50-70,65,Twin,0,0,0
+Nova VectorPro,280,38,7.75,24-30,30-70,75,Twin,0,0,0
+Nova Arson,295,36.5,7.50,27-31,60-70,70,Single,0,0,0
+Spyder Stinger,275,35,6.75,23-27,40-60,75,Single,0,0,0
+Spyder Synergy4,240,32,5.75,19-23,20-40,65,Twin,0,0,0
+Bandit Stage3,215,33,6.25,18-24,20-40,60,Single,0,0,0
+Nova Stage3,265,38,7.75,24-29,40-65,65,Single,0,0,0
+Mach-10 Ultimate 1Cam,311,38,6.5,26-31,60-70,80/65,Single,0,0,0
+Mach-10 MN,307,39,6.25,27-30,60-70,65,Single,0,0,0
+Mach-10 Maxis HL,307,39,6.25,27-30,60-70,75,Twin,0,0,0
+Mach-11 Vector5,268,41,8.50,26-30,50-60,65,Twin,0,0,0
+Mach-11 Stinger,292,39,8.875,25-29,50-70,75,Single,0,0,0
+Avenger Ultimate 1Cam,305,37,6.75,26-31,60-70,80/65,Single,0,0,0
+Enforcer Ultimate 1Cam,300,34,8.0,26-31,60-70,80-65,Single,0,0,0
+Xcellerator Ultimate 1Cam,302,32.5,7.75,25-30,60-70,80/65,Single,0,0,0
+Team Primos Ultimate 1Cam,308,38,7.5,27-32,60-70,80/65,Single,0,0,0
+Carrera Ultimate 1Cam,307,37,6.25,26-30,50-70,65,Single,0,0,0
+Stingray LC,305,32,7.25,26-30,60-70,80/65,Single,0,0,0
+Diamondback II,305,36.5,6.75,27-31,60-70,80/65,Single,0,0,0
+Beast SynergyPro 65,295,39,7.0,26-30,40-70,65,Twin,0,0,0
+Beast SynergyPro 75,290,39,7.0,26-30,40-70,75,Twin,0,0,0
+Beast Inferno,290,36.5,7.0,27-31,60-70,75,Single,0,0,0
+Outlaw Synergy4,210,32.5,6.5,20,25,70,Twin,0,0,0
+-,EOF

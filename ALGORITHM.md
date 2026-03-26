@@ -2,189 +2,182 @@
 
 ## Scope
 
-This document describes the current model implemented in [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts) and calibrated through [src/utils/spineCalibrationDataset.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibrationDataset.ts).
+The compound path in [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts) is now an `SFAX-first` port based on the reverse engineering work documented in [scripts/sfax-databases/SFAX-REVERSE-ENGINEERING.md](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/sfax-databases/SFAX-REVERSE-ENGINEERING.md) and benchmarked with [src/data/sfax/compoundReference.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/sfax/compoundReference.ts).
 
-The official source database that feeds those calibration inputs lives in [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts).
+Official charts from Easton, Gold Tip, Victory, and Black Eagle remain in the repo as secondary sanity checks through [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts). They no longer define the core compound equation.
 
-The app computes three primary values:
+## Result Semantics
 
-- `spineRequired`: how stiff the arrow needs to be for the bow.
-- `spineDynamic`: how the selected arrow behaves dynamically.
+The app exposes three main values:
+
+- `spineRequired`: the reverse-engineered SFAX dynamic-spine target for the current bow + arrow build.
+- `spineDynamic`: the selected static spine from the shaft, with optional temperature correction for carbon.
 - `matchIndex = spineDynamic / spineRequired`
 
-Target interpretation:
+Interpretation:
 
 - `< 0.90`: stiff
 - `0.90 - 1.10`: good
 - `> 1.10`: weak
 
+This means the calculator compares the shaft you selected against the SFAX target that the rest of the setup demands.
+
 ## Unit Model
 
-- Internal calculations use imperial canonical units.
+- Internal math runs in canonical imperial units.
 - The UI converts globally between imperial and metric.
-- Speed can come from the model or from an optional chronograph reading.
+- Speed can come from the SFAX model or from an optional chronograph reading.
 
-## Bow-Side Model
+## Compound Pipeline
 
-### 1. Stored and available energy
+### 1. Total Arrow Weight
 
-For compound bows:
+The calculator first builds `TAW` from:
 
-```text
-storedEnergy = drawWeight * (drawLength - braceHeight) * camEfficiency * letOffRatio / 12
-availableEnergy = storedEnergy * bowEfficiency
-```
+- measured total arrow weight, if provided
+- otherwise shaft GPI + shaft length + point + insert + fletch + wrap + nock + bushing
 
-Key inputs:
+This same weight is then reused by the velocity model, `gr/lb`, `KE`, and match evaluation.
 
-- `drawWeight`
-- `drawLength`
-- `braceHeight`
-- `percentLetoff`
-- `camAggressiveness`
-- `iboVelocity`
+### 2. SFAX Velocity Model
 
-For recurve/traditional, the model uses a simpler linear stored-energy approximation and a fixed efficiency baseline.
-
-### 2. Chronograph correction
-
-If the user enters measured FPS, available energy is recalibrated with the squared speed ratio:
+The compound velocity path follows the reverse-engineered `FUN_0047bf60` / `FUN_0047c410` / `FUN_0046e540` flow:
 
 ```text
-energyRatio = clamp((measuredFPS / estimatedFPS)^2, 0.65, 1.5)
-calibratedAvailableEnergy = availableEnergy * energyRatio
+adjustedVelocity = IBO + (DW - 70) * 0.325 + (BH - 7) * 10.2
+efficiency = ((adjustedVelocity - 325) / 5.35 + 82) / 100
 ```
 
-This makes the bow-side severity depend on measured launch performance instead of relying only on catalog specs.
+Then:
 
-### 3. Compound required spine
+- apply the SFAX weight-class decay by 10-grain buckets from `300gr`
+- derive `drawWeightFactor` and `drawLengthFactor`
+- compute the 350-grain reference speed
+- derive the weight-correction factor
+- subtract the SFAX drag bundle for string-side mass and fletch geometry
+
+The final model output is:
+
+- `calculatedFPS`
+- `effectiveFPS`
+- `KE = TAW * FPS² / 450240`
+
+### 3. SFAX Dynamic-Spine Target
+
+Compound target spine comes from the reverse-engineered `FUN_0046da20` branch.
+
+In simplified form:
 
 ```text
-spineRequired =
-  K
-  * (adjustedDrawWeight / 70)^drawWeightExponent
-  * (arrowLength / 28)^lengthExponent
-  * (availableEnergy / referenceEnergy)^energyExponent
+base = (IBO / 290) * (drawCurve(DW) + DW)
+base -= a2aCurve(A2A)
+
+lengthFactor = (2.75 / 80) * (base - 50) + 20.75
+velocityRatio = (BH / powerStroke) * IBO * (powerStroke / lengthFactor)
+
+adjusted = base + (velocityRatio / 30) * (powerStroke - lengthFactor)
+adjusted += letoffAdjustment
+adjusted += releaseAdjustment
 ```
 
-Where `adjustedDrawWeight` injects smooth chart-style corrections:
+Then both compound and non-compound paths share the same post-processing:
 
 ```text
-adjustedDrawWeight =
-  drawWeight
-  + blend * (
-      iboAdjustment
-      + shortBraceAdjustment
-      + frontWeightAdjustment
-    )
+adjusted
+  - (75 - frontMass) * 0.12
+  - ((wrap + totalFletchWeight) - 30) * 0.12
+  - ((bushing + nock) - 12) * 0.12
+  - fletchLength * 0.12
+  - (stringAccessoryWeight + stringOffset + fletchHeight) * 0.12
+  - dacronAdjustment?
 ```
 
-Current chart-side corrections are continuous, not bucketed:
-
-- higher `IBO` pushes required spine stiffer
-- lower `brace height` pushes required spine stiffer
-- higher total front weight pushes required spine stiffer
-
-Recurve/traditional required spine uses a simpler calibrated power law:
+Final conversion:
 
 ```text
-spineRequired =
-  K_recurve
-  * (drawWeight / 40)^(-0.85)
-  * sqrt(arrowLength / 28)
-  / (drawLength / 28)^0.3
+dynamicSpineTarget = (28 / adjusted) * (28 / shaftLength) + shaftCategoryConstant
 ```
 
-## Arrow-Side Model
+Where `shaftCategoryConstant` is one of:
 
-Dynamic spine is built multiplicatively:
+- `0.00421875` base
+- `0.01265625` hunting
+- `0.02109375` target
+
+### 4. Exact Directional Behavior
+
+With the exact SFAX port, these are the expected directions:
+
+- faster bows -> smaller target spine number
+- lower brace height -> smaller target spine number
+- more front mass -> smaller target spine number
+- finger release -> smaller target spine number
+- more rear mass -> larger target spine number
+- longer fletch -> larger target spine number
+- more string-side mass -> larger target spine number
+- dacron -> larger target spine number
+
+Those directions are enforced in [src/utils/spineCalibration.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibration.ts).
+
+## FOC
+
+`FOC` uses the SFAX moment model:
+
+- total length = `shaftLength + 0.5`
+- front CG depends on insert depth
+- fletch CG = `shaftLength - fletchLength / 3 - 1`
+- wrap CG = `shaftLength - 3`
+
+Implementation: [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts)
+
+## Chronograph Correction
+
+If the user enters measured FPS:
 
 ```text
-spineDynamic =
-  staticSpine
-  * lengthFactor
-  * frontMassFactor
-  * fletchingFactor
-  * releaseFactor
-  * wrapFactor
-  * rearMassFactor
-  * stringDynamicFactor
-  * temperatureFactor?
+targetSpine = targetSpine / clamp(measuredFPS / calculatedFPS, 0.85, 1.15)
 ```
 
-### Dynamic factors
+This does not replace SFAX. It refines the target with real launch speed from the actual bow.
 
-- `lengthFactor`: longer shafts behave weaker.
-- `frontMassFactor`: more total front mass behaves weaker.
-- `fletchingFactor`: more or heavier vanes slightly stiffen the dynamic reaction.
-- `releaseFactor`: finger release weakens dynamic spine; pre-gate release slightly stiffens it.
-- `wrapFactor`: wrap weight is proportional, not binary.
-- `rearMassFactor`: extra nock-side mass slightly stiffens the dynamic reaction.
-- `stringDynamicFactor`: heavier string-side accessories and `dacron` make the arrow act dynamically stiffer.
-- `temperatureFactor`: only applied to carbon shafts.
+## Datasets and Validation
 
-FOC is computed from component moments and used for feedback, not as a direct multiplicative spine factor.
+Primary benchmark:
 
-## Velocity Model
+- [src/data/sfax/compoundReference.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/sfax/compoundReference.ts)
 
-The app returns:
-
-- `calculatedFPS`: model-estimated speed after bow and string adjustments
-- `measuredFPS`: chronograph speed provided by the user
-- `effectiveFPS`: the value actually used by the final result
-
-If a chronograph value is present, `effectiveFPS = measuredFPS`; otherwise it uses the model estimate.
-
-## Safety and Guidance
-
-The final result also emits:
-
-- confidence intervals for required spine, dynamic spine, and match index
-- warnings for unsafe `GPP`, extreme speed, and severe weak/stiff setups
-- recommendations for low speed, heavy/light arrows, FOC issues, temperature drift, and edge cases
-
-## Calibration Workflow
-
-Calibration lives in three files:
+Secondary sanity dataset:
 
 - [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts)
+
+Analysis helpers:
+
 - [src/utils/spineCalibrationDataset.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibrationDataset.ts)
 - [src/utils/spineCalibration.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibration.ts)
 - [scripts/calibrate-compound.mjs](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/calibrate-compound.mjs)
+- [scripts/analyze-compound-calibration.mjs](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/analyze-compound-calibration.mjs)
 
-The current workflow:
+`pnpm run calibrate:compound` is now an audit script, not a grid search. It reports:
 
-1. Evaluate a weighted compound dataset of exact and chart-style cases.
-2. Penalize solutions that break physical monotonicity.
-3. Run a grid search over the compound calibration constants.
+- SFAX fidelity
+- official-chart sanity
+- monotonicity checks
 
-Monotonicity checks currently enforce:
+`pnpm run analyze:compound` breaks error down by buckets and worst cases.
 
-- faster bows require stiffer spine
-- lower brace height requires stiffer spine
-- heavier front weight requires stiffer spine and weakens dynamic spine
-- finger release weakens dynamic spine
-- heavier rear mass slightly stiffens dynamic spine
+## Current Validation Targets
 
-Run the calibrator with:
+The repo currently expects compound to stay roughly within:
 
-```bash
-pnpm run calibrate:compound
-```
+- SFAX dynamic spine MAE well below `0.02`
+- SFAX FPS MAE below about `5 fps`
+- FOC very close to the SFAX reference outputs
 
-## Source References
-
-The code is contrasted primarily against:
-
-- Easton selector logic and hunting spine charts
-- Gold Tip selection charts and front-weight semantics
-- Hoyt safety guidance
-
-The model is still an inference layer built on top of those references, not a manufacturer-published continuous equation.
+Use the commands above instead of hard-coding those numbers elsewhere.
 
 ## Limitations
 
-- Compound is the most calibrated path; recurve/traditional remain simpler.
-- The model still depends heavily on input quality.
-- Real chronograph FPS improves the result more than any extra heuristic.
-- Paper tune, bareshaft and broadhead feedback are not yet fed back into the model.
+- Compound has real SFAX benchmark coverage; recurve/traditional are ported from the same function family but have much less reference data.
+- Bow-reference values used by the SFAX velocity sub-function fall back to the current UI brace height and letoff when extra metadata is unavailable.
+- The app still does not auto-populate all SFAX database fields from a bow/shaft selector.
+- Paper tune, bareshaft, and broadhead feedback are still not fed back into the model.

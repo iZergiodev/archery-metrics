@@ -2,14 +2,16 @@
 
 ## Alcance
 
-Este documento describe el modelo actual implementado en [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts) y calibrado mediante [src/utils/spineCalibrationDataset.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibrationDataset.ts).
+La ruta `compound` de [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts) ahora sigue un modelo `SFAX-first`, basado en la ingeniería inversa documentada en [scripts/sfax-databases/SFAX-REVERSE-ENGINEERING.md](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/sfax-databases/SFAX-REVERSE-ENGINEERING.md) y contrastado con [src/data/sfax/compoundReference.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/sfax/compoundReference.ts).
 
-La base de fuentes oficiales que alimenta esa calibración vive en [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts).
+Los charts oficiales de Easton, Gold Tip, Victory y Black Eagle se conservan como comprobación secundaria en [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts). Ya no gobiernan la ecuación principal de compound.
 
-La app calcula tres valores principales:
+## Semántica del resultado
 
-- `spineRequired`: la rigidez que exige el arco.
-- `spineDynamic`: cómo actúa realmente la flecha.
+La app expone tres valores principales:
+
+- `spineRequired`: el objetivo de spine dinámico que devuelve SFAX para la configuración actual de arco + flecha.
+- `spineDynamic`: el spine estático seleccionado en el shaft, con corrección opcional por temperatura para carbono.
 - `matchIndex = spineDynamic / spineRequired`
 
 Interpretación:
@@ -18,173 +20,164 @@ Interpretación:
 - `0.90 - 1.10`: buena zona
 - `> 1.10`: blanda
 
+Es decir: la app compara la flecha que has elegido contra el objetivo que el resto del setup está pidiendo.
+
 ## Modelo de unidades
 
 - Internamente todo se calcula en unidades imperiales canónicas.
 - La UI convierte globalmente entre imperial y métrico.
-- La velocidad puede venir del modelo o de una lectura opcional de cronógrafo.
+- La velocidad puede venir del modelo SFAX o de un cronógrafo opcional.
 
-## Modelo del arco
+## Pipeline Compound
 
-### 1. Energía almacenada y disponible
+### 1. Peso total de flecha
 
-Para compound:
+Primero se construye `TAW` a partir de:
 
-```text
-storedEnergy = drawWeight * (drawLength - braceHeight) * camEfficiency * letOffRatio / 12
-availableEnergy = storedEnergy * bowEfficiency
-```
+- peso total medido, si el usuario lo aporta
+- si no, GPI del shaft + longitud + punta + inserto + plumas + wrap + nock + bushing
 
-Entradas clave:
+Ese mismo peso se reutiliza luego en velocidad, `gr/lb`, `KE` y match.
 
-- `drawWeight`
-- `drawLength`
-- `braceHeight`
-- `percentLetoff`
-- `camAggressiveness`
-- `iboVelocity`
+### 2. Modelo de velocidad SFAX
 
-Para recurvo/tradicional se usa una aproximación lineal más simple y una eficiencia base fija.
-
-### 2. Corrección por cronógrafo
-
-Si el usuario introduce FPS medidos, la energía disponible se recalibra con el cuadrado de la relación de velocidades:
+La ruta de velocidad compound sigue `FUN_0047bf60` / `FUN_0047c410` / `FUN_0046e540`:
 
 ```text
-energyRatio = clamp((measuredFPS / estimatedFPS)^2, 0.65, 1.5)
-calibratedAvailableEnergy = availableEnergy * energyRatio
+adjustedVelocity = IBO + (DW - 70) * 0.325 + (BH - 7) * 10.2
+efficiency = ((adjustedVelocity - 325) / 5.35 + 82) / 100
 ```
 
-Eso hace que la severidad del arco dependa del rendimiento real medido y no solo de la ficha técnica.
+Después:
 
-### 3. Spine requerido en compound
+- aplica la caída SFAX por clases de peso desde `300gr`
+- deriva `drawWeightFactor` y `drawLengthFactor`
+- calcula la velocidad de referencia a `350gr`
+- deriva el factor de corrección por peso
+- resta el bundle SFAX de drag por cuerda y emplumado
+
+El resultado final de esa rama es:
+
+- `calculatedFPS`
+- `effectiveFPS`
+- `KE = TAW * FPS² / 450240`
+
+### 3. Objetivo de spine dinámico SFAX
+
+El objetivo compound sale de la rama correspondiente de `FUN_0046da20`.
+
+En forma resumida:
 
 ```text
-spineRequired =
-  K
-  * (adjustedDrawWeight / 70)^drawWeightExponent
-  * (arrowLength / 28)^lengthExponent
-  * (availableEnergy / referenceEnergy)^energyExponent
+base = (IBO / 290) * (drawCurve(DW) + DW)
+base -= a2aCurve(A2A)
+
+lengthFactor = (2.75 / 80) * (base - 50) + 20.75
+velocityRatio = (BH / powerStroke) * IBO * (powerStroke / lengthFactor)
+
+adjusted = base + (velocityRatio / 30) * (powerStroke - lengthFactor)
+adjusted += letoffAdjustment
+adjusted += releaseAdjustment
 ```
 
-Donde `adjustedDrawWeight` añade correcciones suaves de tipo chart:
+Luego compound y non-compound comparten el mismo post-procesado:
 
 ```text
-adjustedDrawWeight =
-  drawWeight
-  + blend * (
-      iboAdjustment
-      + shortBraceAdjustment
-      + frontWeightAdjustment
-    )
+adjusted
+  - (75 - frontMass) * 0.12
+  - ((wrap + totalFletchWeight) - 30) * 0.12
+  - ((bushing + nock) - 12) * 0.12
+  - fletchLength * 0.12
+  - (stringAccessoryWeight + stringOffset + fletchHeight) * 0.12
+  - dacronAdjustment?
 ```
 
-Las correcciones actuales son continuas, no por buckets:
-
-- más `IBO` pide spine más rígido
-- menos `brace height` pide spine más rígido
-- más peso frontal total pide spine más rígido
-
-Para recurvo/tradicional el spine requerido usa una ley de potencias calibrada:
+Conversión final:
 
 ```text
-spineRequired =
-  K_recurve
-  * (drawWeight / 40)^(-0.85)
-  * sqrt(arrowLength / 28)
-  / (drawLength / 28)^0.3
+dynamicSpineTarget = (28 / adjusted) * (28 / shaftLength) + shaftCategoryConstant
 ```
 
-## Modelo de la flecha
+Donde `shaftCategoryConstant` es:
 
-El spine dinámico se construye multiplicando factores:
+- `0.00421875` base
+- `0.01265625` caza
+- `0.02109375` target
+
+### 4. Direcciones exactas del modelo
+
+Con el port exacto de SFAX, estas son las direcciones esperadas:
+
+- un arco más rápido -> objetivo de spine más pequeño
+- menos brace height -> objetivo de spine más pequeño
+- más peso frontal -> objetivo de spine más pequeño
+- `finger release` -> objetivo de spine más pequeño
+- más masa trasera -> objetivo de spine más grande
+- pluma más larga -> objetivo de spine más grande
+- más masa en cuerda -> objetivo de spine más grande
+- `dacron` -> objetivo de spine más grande
+
+Estas relaciones se validan en [src/utils/spineCalibration.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibration.ts).
+
+## FOC
+
+`FOC` usa el modelo de momentos de SFAX:
+
+- longitud total = `shaftLength + 0.5`
+- el CG frontal depende de la profundidad del inserto
+- CG de plumas = `shaftLength - fletchLength / 3 - 1`
+- CG del wrap = `shaftLength - 3`
+
+Implementación: [src/utils/archeryCalculator.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/archeryCalculator.ts)
+
+## Corrección por cronógrafo
+
+Si el usuario introduce FPS medidos:
 
 ```text
-spineDynamic =
-  staticSpine
-  * lengthFactor
-  * frontMassFactor
-  * fletchingFactor
-  * releaseFactor
-  * wrapFactor
-  * rearMassFactor
-  * stringDynamicFactor
-  * temperatureFactor?
+targetSpine = targetSpine / clamp(measuredFPS / calculatedFPS, 0.85, 1.15)
 ```
 
-### Factores dinámicos
+Esto no sustituye SFAX. Solo afina el objetivo con la velocidad real de salida.
 
-- `lengthFactor`: un shaft más largo actúa más blando.
-- `frontMassFactor`: más masa frontal actúa más blando.
-- `fletchingFactor`: más pluma o más peso atrás endurece ligeramente la reacción.
-- `releaseFactor`: soltar con dedos debilita el spine dinámico; `pre-gate` lo endurece un poco.
-- `wrapFactor`: el wrap escala por peso, ya no es binario.
-- `rearMassFactor`: más masa en el nock endurece ligeramente la reacción.
-- `stringDynamicFactor`: más masa en cuerda y `dacron` hacen que la flecha actúe más rígida.
-- `temperatureFactor`: solo se aplica a shafts de carbono.
+## Datasets y validación
 
-El `FOC` se calcula con momentos de masa y se usa para feedback, no como multiplicador directo del spine.
+Benchmark principal:
 
-## Modelo de velocidad
+- [src/data/sfax/compoundReference.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/sfax/compoundReference.ts)
 
-La app devuelve:
-
-- `calculatedFPS`: velocidad estimada por el modelo
-- `measuredFPS`: velocidad introducida desde cronógrafo
-- `effectiveFPS`: velocidad usada realmente por el resultado
-
-Si hay cronógrafo, `effectiveFPS = measuredFPS`; si no, usa la estimación del modelo.
-
-## Seguridad y feedback
-
-El resultado final también emite:
-
-- intervalos de confianza para `spineRequired`, `spineDynamic` y `matchIndex`
-- advertencias por `GPP`, velocidad extrema y casos severos de rigidez/blandura
-- recomendaciones por baja velocidad, peso de flecha, FOC, temperatura y casos límite
-
-## Flujo de calibración
-
-La calibración vive en:
+Dataset secundario de sanity check:
 
 - [src/data/official/compoundDatabase.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/data/official/compoundDatabase.ts)
+
+Herramientas de análisis:
+
 - [src/utils/spineCalibrationDataset.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibrationDataset.ts)
 - [src/utils/spineCalibration.ts](/mnt/c/users/izerg/desktop/personal/archery-metrics/src/utils/spineCalibration.ts)
 - [scripts/calibrate-compound.mjs](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/calibrate-compound.mjs)
+- [scripts/analyze-compound-calibration.mjs](/mnt/c/users/izerg/desktop/personal/archery-metrics/scripts/analyze-compound-calibration.mjs)
 
-Flujo actual:
+`pnpm run calibrate:compound` ahora es un script de auditoría, no una búsqueda en rejilla. Informa de:
 
-1. evaluar un dataset compound ponderado con casos exactos y casos tipo chart
-2. penalizar soluciones que rompan monotonicidad física
-3. ejecutar una búsqueda en rejilla sobre las constantes compound
+- fidelidad frente a SFAX
+- compatibilidad secundaria con charts oficiales
+- checks de monotonicidad
 
-Las checks de monotonicidad exigen:
+`pnpm run analyze:compound` desglosa error por buckets y peores casos.
 
-- un arco más rápido debe pedir más rigidez
-- menos brace height debe pedir más rigidez
-- más peso frontal debe pedir más rigidez y debilitar la flecha
-- finger release debe debilitar la flecha
-- más masa trasera debe endurecer ligeramente la flecha
+## Objetivos actuales de validación
 
-Para ejecutar la calibración:
+Ahora mismo el repo intenta mantenerse aproximadamente dentro de:
 
-```bash
-pnpm run calibrate:compound
-```
+- MAE de spine dinámico SFAX claramente por debajo de `0.02`
+- MAE de FPS SFAX por debajo de `5 fps`
+- FOC muy cerca de las salidas de referencia SFAX
 
-## Referencias de contraste
-
-El código se contrasta sobre todo con:
-
-- lógica del selector y charts de Easton
-- charts de Gold Tip y semántica de peso frontal total
-- guías de seguridad de Hoyt
-
-El modelo sigue siendo una inferencia continua construida encima de esas referencias; no es una ecuación oficial publicada por los fabricantes.
+Usa esos scripts para ver el estado real actual en vez de repetir números a mano en otros sitios.
 
 ## Limitaciones
 
-- Compound es la vía mejor calibrada; recurvo/tradicional siguen siendo más simples.
-- La calidad del input sigue mandando mucho sobre la precisión final.
-- Un FPS real de cronógrafo mejora más el resultado que otra heurística pequeña.
-- Aún no se incorpora feedback de paper tune, bareshaft o broadhead tune al modelo.
+- Compound tiene benchmark real de SFAX; recurvo/tradicional están portados de la misma familia de funciones pero con menos datos de referencia.
+- Los valores de referencia de brace height y letoff que usa la subrutina de velocidad SFAX se degradan al valor actual de UI cuando no hay metadatos extra del arco.
+- La app todavía no autocompleta todos los campos internos de SFAX desde un selector de bows/shafts.
+- Aún no se retroalimenta el modelo con paper tune, bareshaft o broadhead tune.

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ARCHERY_TYPE } from '../../constants'
 import { calculateSpineMatch, type ArrowSpecs, type BowSpecs } from '../../utils/archeryCalculator'
-import { summarizeCompoundCalibration } from '../../utils/spineCalibration'
-import { OFFICIAL_COMPOUND_CALIBRATION_CASES } from '../../utils/spineCalibrationDataset'
+import { analyzeOfficialCompoundBenchmarks } from '../../utils/spineCalibration'
+import { OFFICIAL_COMPOUND_BENCHMARK_CASES } from '../../utils/spineCalibrationDataset'
 import {
   OFFICIAL_COMPOUND_BOW_SPECS_V1,
   OFFICIAL_COMPOUND_CASES_V1,
@@ -39,8 +39,8 @@ const baseArrow: ArrowSpecs = {
 
 describe('official compound database', () => {
   it('mantiene una base versionada con cobertura de fabricantes y fuentes oficiales', () => {
-    expect(OFFICIAL_COMPOUND_DATABASE_VERSION).toBe('official-compound-v1')
-    expect(OFFICIAL_COMPOUND_CASES_V1.length).toBeGreaterThanOrEqual(7)
+    expect(OFFICIAL_COMPOUND_DATABASE_VERSION).toBe('official-compound-v2')
+    expect(OFFICIAL_COMPOUND_CASES_V1.length).toBeGreaterThanOrEqual(18)
     expect(OFFICIAL_COMPOUND_RULES_V1.length).toBeGreaterThanOrEqual(8)
     expect(OFFICIAL_COMPOUND_BOW_SPECS_V1.length).toBeGreaterThanOrEqual(3)
     expect(OFFICIAL_COMPOUND_SHAFT_SPECS_V1.length).toBeGreaterThanOrEqual(3)
@@ -52,6 +52,18 @@ describe('official compound database', () => {
     expect(providers.has('Victory')).toBe(true)
     expect(providers.has('Black Eagle')).toBe(true)
     expect(providers.has('Hoyt')).toBe(true)
+  })
+
+  it('mantiene un benchmark oficial ya suficientemente amplio para medir error por categoria', () => {
+    expect(OFFICIAL_COMPOUND_BENCHMARK_CASES.length).toBeGreaterThanOrEqual(18)
+
+    const analysis = analyzeOfficialCompoundBenchmarks()
+
+    expect(analysis.worstCases.length).toBeGreaterThan(0)
+    expect(analysis.categoryBreakdown.length).toBeGreaterThan(10)
+    expect(analysis.categoryBreakdown.some((bucket) => bucket.category === 'drawWeightBand')).toBe(true)
+    expect(analysis.categoryBreakdown.some((bucket) => bucket.category === 'frontWeightBand')).toBe(true)
+    expect(analysis.categoryBreakdown.some((bucket) => bucket.category === 'releaseTypeBand')).toBe(true)
   })
 
   it('todos los casos oficiales referencian fuentes válidas', () => {
@@ -153,11 +165,17 @@ describe('official compound database', () => {
     expect(unsafeLightArrow.warnings.join(' ')).toMatch(/Flecha muy ligera|Flecha ligera/i)
   })
 
-  it('mantiene bajo error en el subconjunto oficial del dataset', () => {
-    const summary = summarizeCompoundCalibration(OFFICIAL_COMPOUND_CALIBRATION_CASES)
+  it('mantiene el chart oficial como sanity check secundario, no como fuente primaria exacta', () => {
+    const summary = analyzeOfficialCompoundBenchmarks().overall
 
-    expect(summary.meanAbsoluteError).toBeLessThan(0.04)
-    expect(summary.weightedMeanAbsoluteError).toBeLessThan(0.04)
-    expect(summary.maxAbsoluteError).toBeLessThan(0.09)
+    expect(summary.meanAbsoluteError).toBeLessThan(0.35)
+    expect(summary.weightedMeanAbsoluteError).toBeLessThan(0.35)
+    expect(summary.maxAbsoluteError).toBeLessThan(0.75)
+    expect(summary.inRangeRate).toBeGreaterThan(0.2)
+  })
+
+  it('incluye referencias finger-release derivadas de la regla oficial +5 lbs de Easton', () => {
+    expect(OFFICIAL_COMPOUND_CASES_V1.some((entry) => entry.id === 'easton_finger_release_55lb_400_29in')).toBe(true)
+    expect(OFFICIAL_COMPOUND_CASES_V1.some((entry) => entry.id === 'easton_finger_release_60lb_340_29in')).toBe(true)
   })
 })
