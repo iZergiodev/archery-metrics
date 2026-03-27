@@ -1,5 +1,6 @@
 import {
     ARCHERY_TYPE,
+    CAM_FDR,
     FOC_MAX_RECOMMENDED,
     FOC_MIN_RECOMMENDED,
     GPP_MAX_RECOMMENDED,
@@ -25,6 +26,66 @@ import {
     VELOCITY_MAX_SAFE,
     VELOCITY_MIN_TARGET,
     VELOCITY_OPTIMAL_MAX,
+    SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR,
+    SFAX_DYNAMIC_A2A_REF_NON_COMPOUND,
+    SFAX_DYNAMIC_A2A_SENSITIVITY_NON_COMPOUND,
+    SFAX_DYNAMIC_A2A_DIVISOR_NON_COMPOUND,
+    SFAX_DYNAMIC_DRAW_CURVE_AMPLITUDE_NON_COMPOUND,
+    SFAX_DYNAMIC_NON_COMPOUND_CURVE_DIVISOR,
+    SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK,
+    SFAX_REFERENCE_DRAW_WEIGHT as SFAX_DRAW_WEIGHT_REFERENCE,
+    SFAX_REFERENCE_DRAW_LENGTH as SFAX_DRAW_LENGTH_REFERENCE,
+    SFAX_REFERENCE_BRACE_HEIGHT as SFAX_BRACE_HEIGHT_REFERENCE,
+    SFAX_REFERENCE_ARROW_WEIGHT as SFAX_ARROW_WEIGHT_REFERENCE,
+    SFAX_REFERENCE_PERCENT as SFAX_PERCENT_REFERENCE,
+    SFAX_REFERENCE_HOLDING_PERCENT as SFAX_HOLDING_PERCENT_REFERENCE,
+    SFAX_SPINE_TEST_LENGTH as SFAX_DYNAMIC_AMO_TEST_LENGTH,
+    SFAX_VELOCITY_DRAW_WEIGHT_FPS as SFAX_SPEED_ADJUST_DRAW_WEIGHT,
+    SFAX_VELOCITY_BRACE_HEIGHT_FPS as SFAX_SPEED_ADJUST_BRACE_HEIGHT,
+    SFAX_VELOCITY_COMPOUND_BASE_OFFSET as SFAX_SPEED_COMPOUND_BASE_OFFSET,
+    SFAX_VELOCITY_NON_COMPOUND_BASE_OFFSET as SFAX_SPEED_NON_COMPOUND_BASE_OFFSET,
+    SFAX_VELOCITY_COMPOUND_BASE_EFFICIENCY as SFAX_SPEED_COMPOUND_BASE_EFFICIENCY,
+    SFAX_VELOCITY_NON_COMPOUND_BASE_EFFICIENCY as SFAX_SPEED_NON_COMPOUND_BASE_EFFICIENCY,
+    SFAX_VELOCITY_DIVISOR as SFAX_SPEED_EFFICIENCY_DIVISOR,
+    SFAX_VELOCITY_SCALING_FACTOR as SFAX_SPEED_EFFICIENCY_SCALE,
+    SFAX_VELOCITY_WEIGHT_CLASS_SIZE as SFAX_ARROW_WEIGHT_CLASS_STEP,
+    SFAX_VELOCITY_WEIGHT_CLASS_START as SFAX_ARROW_WEIGHT_CLASS_BASE,
+    SFAX_VELOCITY_DECAY_MID as SFAX_SPEED_DECAY_LOW,
+    SFAX_VELOCITY_DECAY_HIGH as SFAX_SPEED_DECAY_HIGH,
+    SFAX_VELOCITY_DEFAULT_DW_FACTOR as SFAX_SPEED_DEFAULT_DRAW_WEIGHT_FACTOR,
+    SFAX_VELOCITY_DEFAULT_DL_FACTOR as SFAX_SPEED_DEFAULT_DRAW_LENGTH_FACTOR,
+    SFAX_VELOCITY_DW_MICRO_FACTOR as SFAX_SPEED_DRAW_WEIGHT_MICRO_FACTOR,
+    SFAX_VELOCITY_DL_MICRO_FACTOR as SFAX_SPEED_DRAW_LENGTH_MICRO_FACTOR,
+    SFAX_VELOCITY_LOW_IBO_THRESHOLD as SFAX_SPEED_LOW_IBO_THRESHOLD,
+    SFAX_DYNAMIC_DRAW_CURVE_START as SFAX_DYNAMIC_DRAW_START,
+    SFAX_DYNAMIC_DRAW_CURVE_END as SFAX_DYNAMIC_DRAW_END,
+    SFAX_DYNAMIC_DRAW_CURVE_AMPLITUDE as SFAX_DYNAMIC_DRAW_DELTA_COMPOUND,
+    SFAX_DYNAMIC_A2A_CURVE_START as SFAX_DYNAMIC_A2A_START,
+    SFAX_DYNAMIC_A2A_CURVE_END as SFAX_DYNAMIC_A2A_END,
+    SFAX_DYNAMIC_A2A_CURVE_AMPLITUDE as SFAX_DYNAMIC_A2A_DELTA,
+    SFAX_RELEASE_FACTOR_FINGER as SFAX_DYNAMIC_RELEASE_FINGER,
+    SFAX_RELEASE_FACTOR_ROPE as SFAX_DYNAMIC_RELEASE_ROPE,
+    SFAX_RELEASE_FACTOR_POST as SFAX_DYNAMIC_RELEASE_POST,
+    SFAX_RELEASE_FACTOR_UNKNOWN as SFAX_DYNAMIC_RELEASE_UNKNOWN,
+    SFAX_DYNAMIC_FINGER_START,
+    SFAX_DYNAMIC_FINGER_END,
+    SFAX_DYNAMIC_FINGER_BASE,
+    SFAX_DYNAMIC_FINGER_DELTA,
+    SFAX_DYNAMIC_LENGTH_MULTIPLIER,
+    SFAX_DYNAMIC_LENGTH_DIVISOR,
+    SFAX_DYNAMIC_LENGTH_REFERENCE as SFAX_DYNAMIC_INTERMEDIATE_REFERENCE,
+    SFAX_DYNAMIC_LENGTH_BASE,
+    SFAX_COMPONENT_SENSITIVITY as SFAX_DYNAMIC_COMPONENT_SENSITIVITY,
+    SFAX_FRONT_MASS_REFERENCE as SFAX_DYNAMIC_FRONT_MASS_REFERENCE,
+    SFAX_FLETCH_WEIGHT_REFERENCE as SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE,
+    SFAX_REAR_MASS_REFERENCE as SFAX_DYNAMIC_REAR_MASS_REFERENCE,
+    SFAX_MIN_INTERMEDIATE_SPINE as SFAX_DYNAMIC_MIN_INTERMEDIATE,
+    SFAX_DACRON_BASE_ADJUSTMENT as SFAX_DACRON_BASE,
+    SFAX_DACRON_MAX_ADJUSTMENT as SFAX_DACRON_MAX,
+    SFAX_DACRON_DRAW_LENGTH_FLOOR as SFAX_DACRON_START_DRAW_LENGTH,
+    SFAX_DACRON_DRAW_LENGTH_CEILING as SFAX_DACRON_END_DRAW_LENGTH,
+    SFAX_DACRON_CURVE_DIVISOR as SFAX_DACRON_DIVISOR,
+    SFAX_VELOCITY_LOW_IBO_EFFICIENCY as SFAX_SPEED_LOW_IBO_EFFICIENCY,
     type ArcheryType,
 } from '../constants'
 
@@ -126,64 +187,12 @@ type ArrowComponentWeight = {
 
 const DEFAULT_FLETCH_LENGTH = 2
 const DEFAULT_FLETCH_HEIGHT = 0.5
-const DEFAULT_FLETCH_OFFSET = 0
-const SFAX_DRAW_WEIGHT_REFERENCE = 70
-const SFAX_DRAW_LENGTH_REFERENCE = 30
-const SFAX_BRACE_HEIGHT_REFERENCE = 7
-const SFAX_ARROW_WEIGHT_REFERENCE = 350
-const SFAX_ARROW_WEIGHT_CLASS_BASE = 300
-const SFAX_ARROW_WEIGHT_CLASS_STEP = 10
-const SFAX_PERCENT_REFERENCE = 100
-const SFAX_HOLDING_PERCENT_REFERENCE = 65
-const SFAX_SPEED_ADJUST_DRAW_WEIGHT = 0.325
-const SFAX_SPEED_ADJUST_BRACE_HEIGHT = 10.2
-const SFAX_SPEED_COMPOUND_BASE_OFFSET = 325
-const SFAX_SPEED_NON_COMPOUND_BASE_OFFSET = 220
-const SFAX_SPEED_COMPOUND_BASE_EFFICIENCY = 82
-const SFAX_SPEED_NON_COMPOUND_BASE_EFFICIENCY = 76
-const SFAX_SPEED_EFFICIENCY_DIVISOR = 5.35
-const SFAX_SPEED_EFFICIENCY_SCALE = 1.5
-const SFAX_SPEED_DECAY_LOW = 0.55
-const SFAX_SPEED_DECAY_HIGH = 0.45
-const SFAX_SPEED_DEFAULT_DRAW_WEIGHT_FACTOR = 2
-const SFAX_SPEED_DEFAULT_DRAW_LENGTH_FACTOR = 10.2
-const SFAX_SPEED_DRAW_WEIGHT_MICRO_FACTOR = 0.01
-const SFAX_SPEED_DRAW_LENGTH_MICRO_FACTOR = 0.03175
+const DEFAULT_FLETCH_OFFSET = 2
+
 const SFAX_SPEED_WEIGHT_CORRECTION_OFFSET = 0.04
 const SFAX_SPEED_WEIGHT_CORRECTION_SCALE = 1.05
 const SFAX_SPEED_DRAG_MULTIPLIER = 0.33
-const SFAX_SPEED_LOW_IBO_THRESHOLD = 200
-const SFAX_DYNAMIC_DRAW_START = -70
-const SFAX_DYNAMIC_DRAW_END = 110
-const SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND = 22
-const SFAX_DYNAMIC_DRAW_DELTA_COMPOUND = 15
-const SFAX_DYNAMIC_A2A_START = 24
-const SFAX_DYNAMIC_A2A_END = 45
-const SFAX_DYNAMIC_A2A_DELTA = 2
-const SFAX_DYNAMIC_FINGER_START = 10
-const SFAX_DYNAMIC_FINGER_END = 60
-const SFAX_DYNAMIC_FINGER_BASE = 1.25
-const SFAX_DYNAMIC_FINGER_DELTA = 2.5
-const SFAX_DYNAMIC_INTERMEDIATE_REFERENCE = 50
-const SFAX_DYNAMIC_LENGTH_MULTIPLIER = 2.75
-const SFAX_DYNAMIC_LENGTH_DIVISOR = 80
-const SFAX_DYNAMIC_LENGTH_BASE = 20.75
-const SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK = 20
-const SFAX_DYNAMIC_COMPONENT_SENSITIVITY = 0.12
-const SFAX_DYNAMIC_FRONT_MASS_REFERENCE = 75
-const SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE = 30
-const SFAX_DYNAMIC_REAR_MASS_REFERENCE = 12
-const SFAX_DYNAMIC_MIN_INTERMEDIATE = 15
-const SFAX_DYNAMIC_AMO_TEST_LENGTH = 28
-const SFAX_DYNAMIC_RELEASE_UNKNOWN = 0.25
-const SFAX_DYNAMIC_RELEASE_POST = 1
-const SFAX_DYNAMIC_RELEASE_ROPE = 1.75
-const SFAX_DYNAMIC_RELEASE_FINGER = 5
-const SFAX_DACRON_BASE = 3
-const SFAX_DACRON_MAX = 5
-const SFAX_DACRON_START_DRAW_LENGTH = 14
-const SFAX_DACRON_END_DRAW_LENGTH = 35
-const SFAX_DACRON_DIVISOR = 21
+const SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND = SFAX_DYNAMIC_DRAW_CURVE_AMPLITUDE_NON_COMPOUND
 const SFAX_PI = Math.PI
 const SFAX_ENERGY_FLETCH_DRAG_COEFFICIENT = 0.65
 const SFAX_ENERGY_FLETCH_DRAG_FACTOR = 15.25
@@ -193,7 +202,6 @@ const SFAX_ENERGY_LETOFF_FACTOR = 9.5
 const SFAX_ENERGY_SHAFT_AERO_FACTOR = 0.000000385
 const SFAX_ENERGY_SHAFT_LENGTH_FACTOR = 23.45
 const SFAX_DEFAULT_SHAFT_VELOCITY_FACTOR = 0.000015
-const SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR = 0.00000104
 
 const toNumber = (value: string | undefined) => (value == null || value.trim() === '' ? 0 : Number(value.replace(',', '.')))
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
@@ -398,7 +406,7 @@ function buildVelocityModel(
         weightCorrectionFactor = Math.abs(speedAt350 - projectedSpeed) / Math.abs(arrowTotalWeight - SFAX_ARROW_WEIGHT_REFERENCE)
     }
     if (iboVelocity <= SFAX_SPEED_LOW_IBO_THRESHOLD) {
-        weightCorrectionFactor = 0.2
+        weightCorrectionFactor = SFAX_SPEED_LOW_IBO_EFFICIENCY
     }
 
     return {
@@ -420,19 +428,21 @@ function calculateStringOffsetEffect(axleToAxle: number, nockPeepWeight: number,
 
 function calculateVelocityDragBundle(
     axleToAxle: number,
-    nockPeepWeight: number,
-    fletchOffset: number,
-    stringAccessoryWeight: number,
-    fletchHeight: number,
-    fletchLength: number,
+    silencerDfc: number,
+    silencerWeight: number,
+    nockPointWeight: number,
+    peepWeight: number,
+    dLoopWeight: number,
 ): number {
-    return calculateStringOffsetEffect(axleToAxle, nockPeepWeight, fletchOffset) + stringAccessoryWeight + fletchHeight + fletchLength
+    const halfA2A = axleToAxle * 0.5
+    if (halfA2A === 0) return 0
+    return (1 - (halfA2A - silencerDfc) / halfA2A) * silencerWeight + nockPointWeight + peepWeight + dLoopWeight
 }
 
 function calculateSfaxStoredDrag(
     shaftUseCategory: ShaftUseCategory | undefined,
     camAggressiveness: string | undefined,
-    pointHoldingWeight: number,
+    percentLetoff: number,
     shaftLength: number,
     fletchQuantity: number,
     fletchLength: number,
@@ -450,8 +460,8 @@ function calculateSfaxStoredDrag(
             SFAX_ENERGY_FLETCH_DRAG_FACTOR *
             (fletchOffset + SFAX_ENERGY_FLETCH_OFFSET_BASE) *
             SFAX_ENERGY_SCALE +
-        pointHoldingWeight * pointHoldingWeight * shaftTypeFactor * SFAX_ENERGY_LETOFF_FACTOR +
-        SFAX_PI * 2 * pointHoldingWeight * 0.5 * shaftLength * SFAX_ENERGY_SHAFT_AERO_FACTOR * SFAX_ENERGY_SHAFT_LENGTH_FACTOR
+        percentLetoff * percentLetoff * shaftTypeFactor * SFAX_ENERGY_LETOFF_FACTOR +
+        SFAX_PI * 2 * percentLetoff * 0.5 * shaftLength * SFAX_ENERGY_SHAFT_AERO_FACTOR * SFAX_ENERGY_SHAFT_LENGTH_FACTOR
     )
 }
 
@@ -473,14 +483,17 @@ function calculateArrowSpeed(
         fletchLength: number
         fletchHeight: number
         fletchOffset: number
+        weightEach: number
         shaftUseCategory?: ShaftUseCategory
     },
     stringSide: {
-        stringAccessoryWeight: number
-        nockPeepWeight: number
+        peepWeight: number
+        dLoopWeight: number
+        nockPointWeight: number
+        silencerWeight: number
+        silencerDfc: number
     },
 ): { fps: number; model: VelocityModel; storedDrag: number } {
-    const holdingWeight = calculateHoldingWeight(bow.drawWeight, bow.percentLetoff)
     const model = buildVelocityModel(
         bow.archeryType,
         bow.iboVelocity,
@@ -504,17 +517,17 @@ function calculateArrowSpeed(
     const weightCorrection = (SFAX_ARROW_WEIGHT_REFERENCE - arrow.arrowTotalWeight) * model.weightCorrectionFactor
     const dragBundle = calculateVelocityDragBundle(
         bow.axleToAxle,
-        stringSide.nockPeepWeight,
-        arrow.fletchOffset,
-        stringSide.stringAccessoryWeight,
-        arrow.fletchHeight,
-        arrow.fletchLength,
+        stringSide.silencerDfc,
+        stringSide.silencerWeight,
+        stringSide.nockPointWeight,
+        stringSide.peepWeight,
+        stringSide.dLoopWeight,
     )
     const fps = baseVelocity + weightCorrection - dragBundle * SFAX_SPEED_DRAG_MULTIPLIER * model.totalEfficiency
     const storedDrag = calculateSfaxStoredDrag(
         arrow.shaftUseCategory,
         bow.camAggressiveness,
-        holdingWeight,
+        bow.percentLetoff,
         arrow.shaftLength,
         arrow.fletchQuantity,
         arrow.fletchLength,
@@ -565,11 +578,12 @@ function calculateCompoundTargetSpine(
         (SFAX_DYNAMIC_LENGTH_MULTIPLIER / sfaxAbs(SFAX_DYNAMIC_LENGTH_DIVISOR)) *
             (intermediate - SFAX_DYNAMIC_INTERMEDIATE_REFERENCE) +
         SFAX_DYNAMIC_LENGTH_BASE
-    const velocityRatio = (bow.braceHeight / powerStroke) * bow.iboVelocity * (powerStroke / lengthFactor)
 
     if (lengthFactor === 0) {
         lengthFactor = SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK
     }
+
+    const velocityRatio = (bow.braceHeight / powerStroke) * bow.iboVelocity * (powerStroke / lengthFactor)
 
     intermediate = (velocityRatio / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) * (powerStroke - lengthFactor) + intermediate
 
@@ -648,14 +662,24 @@ function calculateNonCompoundTargetSpine(
 ): number {
     let intermediate =
         (bow.iboVelocity / 290) *
-        (sfaxSignedCurve(bow.drawWeight, SFAX_DYNAMIC_DRAW_START, SFAX_DYNAMIC_DRAW_END, 0, SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND) +
+        (sfaxSignedCurve(
+            bow.drawWeight,
+            SFAX_DYNAMIC_DRAW_START,
+            SFAX_DYNAMIC_DRAW_END,
+            0,
+            SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND,
+        ) +
             bow.drawWeight)
+
+    intermediate -=
+        (SFAX_DYNAMIC_A2A_SENSITIVITY_NON_COMPOUND / SFAX_DYNAMIC_A2A_DIVISOR_NON_COMPOUND) *
+        (bow.axleToAxle - SFAX_DYNAMIC_A2A_REF_NON_COMPOUND)
 
     let nonCompoundCurveBase = SFAX_DACRON_BASE
     if (intermediate <= SFAX_HOLDING_PERCENT_REFERENCE) {
         nonCompoundCurveBase =
             intermediate >= 25
-                ? (SFAX_DACRON_BASE / sfaxAbs(SFAX_DYNAMIC_A2A_END - SFAX_DYNAMIC_FINGER_START)) *
+                ? (SFAX_DACRON_BASE / SFAX_DYNAMIC_NON_COMPOUND_CURVE_DIVISOR) *
                   sfaxAbs(SFAX_HOLDING_PERCENT_REFERENCE - intermediate)
                 : 0
     }
@@ -667,11 +691,12 @@ function calculateNonCompoundTargetSpine(
         (SFAX_DYNAMIC_LENGTH_MULTIPLIER / sfaxAbs(SFAX_DYNAMIC_LENGTH_DIVISOR)) *
             (intermediate - SFAX_DYNAMIC_INTERMEDIATE_REFERENCE) +
         SFAX_DYNAMIC_LENGTH_BASE
-    const velocityRatio = (bow.braceHeight / powerStroke) * SFAX_SPEED_LOW_IBO_THRESHOLD * (powerStroke / lengthFactor)
 
     if (lengthFactor === 0) {
         lengthFactor = SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK
     }
+
+    const velocityRatio = (bow.braceHeight / powerStroke) * SFAX_SPEED_LOW_IBO_THRESHOLD * (powerStroke / lengthFactor)
 
     intermediate = (velocityRatio / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) * (powerStroke - lengthFactor) + intermediate
 
@@ -758,7 +783,7 @@ function calculateFOC(
             (shaftLength - SFAX_FOC_WRAP_OFFSET) * wrapWeight) /
         totalWeight
 
-    return ((midpoint - weightedDistanceFromFront) / totalLength) * SFAX_PERCENT_REFERENCE
+    return ((midpoint - weightedDistanceFromFront) / totalLength) * 100
 }
 
 function temperatureCorrection(spine: number, temperatureF: number, shaftMaterial: string = 'carbon'): number {
@@ -872,11 +897,15 @@ export function calculateSpineMatch(
             fletchLength,
             fletchHeight,
             fletchOffset,
+            weightEach: componentWeights.weightEach,
             shaftUseCategory: arrow.shaftUseCategory,
         },
         {
-            stringAccessoryWeight,
-            nockPeepWeight,
+            peepWeight,
+            dLoopWeight,
+            nockPointWeight,
+            silencerWeight: silencersWeight,
+            silencerDfc: silencerDfcWeight,
         },
     )
 

@@ -18,7 +18,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           {label}
         </label>
 
-        <div className="relative rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] px-3 transition-colors focus-within:border-[var(--ring-gold)] hover:border-[var(--border-hover)]">
+        <div className="focus-glow relative rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] px-3 transition-colors focus-within:border-[var(--ring-gold)] hover:border-[var(--border-hover)]">
           <select
             ref={ref}
             id={id}

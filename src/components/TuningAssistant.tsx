@@ -23,7 +23,8 @@ export function TuningAssistant({ actions, status, t }: TuningAssistantProps) {
           {actions.map((action, index) => (
             <article
               key={action.id}
-              className="rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-4"
+              className="rounded-[14px] border border-[var(--border)] card-surface px-4 py-4 animate-fade-slide-up"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-start gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--gold)] font-mono text-[12px] text-[var(--bg-primary)]">
@@ -38,7 +39,7 @@ export function TuningAssistant({ actions, status, t }: TuningAssistantProps) {
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-4">
+        <div className="mt-4 rounded-[14px] border border-[var(--border)] card-surface px-4 py-4 animate-fade-slide-up">
           <div className="text-[14px] font-medium text-[var(--text-primary)]">{t('tuning.goodTitle')}</div>
           <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">{t('tuning.goodBody')}</p>
         </div>

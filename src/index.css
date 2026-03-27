@@ -22,6 +22,7 @@
     font-size: 16px;
     font-family: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
     background-color: var(--bg-primary);
+    background-image: radial-gradient(ellipse at 50% 30%, rgba(212, 160, 23, 0.02) 0%, transparent 70%);
     color: var(--text-primary);
   }
 
@@ -75,6 +76,53 @@
   }
 }
 
+/* === ANIMATIONS === */
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUpEntry {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(212, 160, 23, 0.15);
+  }
+}
+
+@keyframes flashGold {
+  0% {
+    background-color: rgba(212, 160, 23, 0.18);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @layer utilities {
   /* Safe area insets for notched phones */
   .safe-top {
@@ -83,5 +131,94 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Entry animations */
+  .animate-fade-slide-up {
+    animation: fadeSlideUp 0.4s ease-out both;
+  }
+
+  .animate-slide-up-entry {
+    animation: slideUpEntry 0.3s ease-out both;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out both;
+  }
+
+  .animate-flash-gold {
+    animation: flashGold 0.6s ease-out both;
+  }
+
+  /* Focus glow for inputs */
+  .focus-glow:focus-within {
+    animation: pulseGlow 1.5s ease-in-out infinite;
+  }
+
+  /* Card depth + hover lift */
+  .card-surface {
+    background-color: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(4px);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.12);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+
+  .card-surface:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.35),
+      0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Press feedback */
+  .press-scale:active {
+    transform: scale(0.97);
+  }
+
+  /* Gold glow on active elements */
+  .glow-gold {
+    box-shadow:
+      0 0 0 1px rgba(212, 160, 23, 0.2),
+      0 0 12px rgba(212, 160, 23, 0.08);
+  }
+
+  /* Header accent line */
+  .header-accent {
+    background: linear-gradient(90deg, transparent 5%, var(--gold) 50%, transparent 95%);
+    height: 1px;
+    opacity: 0.3;
+  }
+
+  /* Grid expand/collapse for collapsible sections */
+  .grid-expand {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 250ms ease;
+  }
+
+  .grid-expand[data-collapsed="true"] {
+    grid-template-rows: 0fr;
+  }
+
+  .grid-expand > * {
+    overflow: hidden;
+  }
+
+  /* Stagger delays (CSS custom property driven) */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -49,7 +49,7 @@ export function SetupComparator({
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-4 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+        <div className="mt-4 rounded-[14px] border border-[var(--border)] card-surface px-4 py-4 text-[13px] leading-relaxed text-[var(--text-secondary)]">
           {t('compare.empty')}
         </div>
       )}
@@ -75,7 +75,7 @@ function ComparisonCard({
   const analysis = !entry.isCurrent && currentEntry ? analyzeSetupDifference(currentEntry.setup, entry.setup) : null
 
   return (
-    <article className="rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-4">
+    <article className="rounded-[14px] border border-[var(--border)] card-surface px-4 py-4 animate-fade-slide-up">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -92,7 +92,7 @@ function ComparisonCard({
         {!entry.isCurrent && entry.slot != null && (
           <button
             onClick={() => onLoadSlot(entry.slot!)}
-            className="shrink-0 rounded-[10px] border border-[var(--border)] px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+            className="shrink-0 rounded-[10px] border border-[var(--border)] px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
           >
             {t('compare.load')}
           </button>

@@ -6,8 +6,10 @@ import { createRequire } from 'node:module'
 const repoRoot = process.cwd()
 const outDir = path.join(os.tmpdir(), 'archery-metrics-calibration-cjs')
 
+const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+
 execFileSync(
-  'pnpm',
+  pnpmCmd,
   [
     'exec',
     'tsc',

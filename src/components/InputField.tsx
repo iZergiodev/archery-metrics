@@ -64,7 +64,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           )}
         </div>
 
-        <div className="relative rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] px-3 transition-colors focus-within:border-[var(--ring-gold)] hover:border-[var(--border-hover)]">
+        <div className="focus-glow relative rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] px-3 transition-colors focus-within:border-[var(--ring-gold)] hover:border-[var(--border-hover)]">
           <input
             ref={ref}
             id={id}

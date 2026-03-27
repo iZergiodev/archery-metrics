@@ -17,7 +17,7 @@ export function FormSection({
 }: FormSectionProps) {
   return (
     <section
-      className={`rounded-[14px] border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-5 ${className}`}
+      className={`card-surface rounded-[14px] border border-[var(--border)] px-4 py-5 animate-fade-slide-up ${className}`}
     >
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="min-w-0">

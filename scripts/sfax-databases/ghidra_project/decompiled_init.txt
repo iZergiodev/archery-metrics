@@ -1,0 +1,807 @@
+=== SFA.exe Init Functions ===
+Focus: bow struct field initialization, helpers
+
+========================================
+FUNCTION: FUN_0047c570
+ADDRESS: 0047c570
+SIZE: 685 bytes
+========================================
+
+void FUN_0047c570(QTypedArrayData<unsigned_short> **param_1)
+
+{
+  QString *pQVar1;
+  double dVar2;
+  QTypedArrayData<unsigned_short> *local_40;
+  bool *pbVar3;
+  QString local_1c [4];
+  QString local_18 [4];
+  int local_14;
+  void *local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_004d529a;
+  local_10 = ExceptionList;
+  ExceptionList = &local_10;
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("9.7",3);
+  local_8 = 0;
+  QString::fromAscii_helper("lebTillerUpper",0xe);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_18);
+  local_8 = 1;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47c5ff;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xe8) = dVar2;
+  QString::~QString(local_18);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("9.8",3);
+  local_8 = 2;
+  QString::fromAscii_helper("lebTillerLower",0xe);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 3;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47c67d;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xf0) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("105.25",6);
+  local_8 = 4;
+  QString::fromAscii_helper("lebStringLength",0xf);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 5;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47c6fb;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xf8) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("42.75",5);
+  local_8 = 6;
+  QString::fromAscii_helper("lebCable1Length",0xf);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 7;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47c779;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x100) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  param_1 = &local_40;
+  local_40 = QString::fromAscii_helper("0.0",3);
+  local_8 = 8;
+  QString::fromAscii_helper("lebCable2Length",0xf);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_1c);
+  local_8 = 9;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47c7f7;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  *(double *)(local_14 + 0x108) = dVar2;
+  QString::~QString(local_1c);
+  ExceptionList = local_10;
+  return;
+}
+
+
+
+========================================
+FUNCTION: FUN_0047c820
+ADDRESS: 0047c820
+SIZE: 549 bytes
+========================================
+
+void FUN_0047c820(undefined1 *param_1)
+
+{
+  QString *pQVar1;
+  QString local_1c [4];
+  QString local_18 [4];
+  QString *local_14;
+  void *local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_004d52ed;
+  local_10 = ExceptionList;
+  ExceptionList = &local_10;
+  QString::fromAscii_helper("2010",4);
+  local_8 = 0;
+  QString::fromAscii_helper("htlBowYear",10);
+  QString::QString((QString *)&stack0xffffffc0,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_18);
+  QString::operator=(local_14,pQVar1);
+  QString::~QString(local_18);
+  QString::fromAscii_helper("Mathews",7);
+  local_8 = 1;
+  QString::fromAscii_helper("htlBowMfg",9);
+  QString::QString((QString *)&stack0xffffffc0,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  QString::operator=(local_14 + 4,pQVar1);
+  QString::~QString((QString *)&param_1);
+  QString::fromAscii_helper("DrenQuestXT",0xb);
+  local_8 = 2;
+  QString::fromAscii_helper("htlBowMdl",9);
+  QString::QString((QString *)&stack0xffffffc0,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  QString::operator=(local_14 + 8,pQVar1);
+  QString::~QString((QString *)&param_1);
+  QString::fromAscii_helper("Compound",8);
+  local_8 = 3;
+  QString::fromAscii_helper("cbBowType",9);
+  QString::QString((QString *)&stack0xffffffc0,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  QString::operator=(local_14 + 0xc,pQVar1);
+  QString::~QString((QString *)&param_1);
+  param_1 = &stack0xffffffc8;
+  QString::fromAscii_helper("Post Gate Release",0x11);
+  local_8 = 4;
+  QString::fromAscii_helper("cbReleaseType",0xd);
+  QString::QString((QString *)&stack0xffffffc0,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_1c);
+  QString::operator=(local_14 + 0x10,pQVar1);
+  QString::~QString(local_1c);
+  ExceptionList = local_10;
+  return;
+}
+
+
+
+========================================
+FUNCTION: FUN_0047cb00
+ADDRESS: 0047cb00
+SIZE: 922 bytes
+========================================
+
+void FUN_0047cb00(QTypedArrayData<unsigned_short> **param_1)
+
+{
+  QString *pQVar1;
+  double dVar2;
+  QTypedArrayData<unsigned_short> *local_40;
+  bool *pbVar3;
+  QString local_1c [4];
+  QString local_18 [4];
+  int local_14;
+  void *local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_004d53be;
+  local_10 = ExceptionList;
+  ExceptionList = &local_10;
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("312.0",5);
+  local_8 = 0;
+  QString::fromAscii_helper("dsbIBOVelocity",0xe);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_18);
+  local_8 = 1;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47cb8f;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x30) = dVar2;
+  QString::~QString(local_18);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("53.0",4);
+  local_8 = 2;
+  QString::fromAscii_helper("dsbDrawWeight",0xd);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 3;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47cc0a;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x60) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("29.75",5);
+  local_8 = 4;
+  QString::fromAscii_helper("dsbDrawLength",0xd);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 5;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47cc85;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x68) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("40.25",5);
+  local_8 = 6;
+  QString::fromAscii_helper("dsbAxleToAxle",0xd);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 7;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47cd00;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x70) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("7.785",5);
+  local_8 = 8;
+  QString::fromAscii_helper("dsbBraceHeight",0xe);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 9;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47cd7b;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x78) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  local_40 = QString::fromAscii_helper("65.0",4);
+  local_8 = 10;
+  QString::fromAscii_helper("dsbPercentLetoff",0x10);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 0xb;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47cdf6;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0x80) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  param_1 = &local_40;
+  local_40 = QString::fromAscii_helper("18.55",5);
+  local_8 = 0xc;
+  QString::fromAscii_helper("lebHoldingWeight",0x10);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_1c);
+  local_8 = 0xd;
+  local_40 = (QTypedArrayData<unsigned_short> *)0x47ce74;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  *(double *)(local_14 + 0x88) = dVar2;
+  QString::~QString(local_1c);
+  ExceptionList = local_10;
+  return;
+}
+
+
+
+========================================
+FUNCTION: FUN_0047cea0
+ADDRESS: 0047cea0
+SIZE: 801 bytes
+========================================
+
+void FUN_0047cea0(undefined1 *param_1)
+
+{
+  QString *pQVar1;
+  double dVar2;
+  bool *pbVar3;
+  QString local_1c [4];
+  QString local_18 [4];
+  int local_14;
+  void *local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_004d5443;
+  local_10 = ExceptionList;
+  ExceptionList = &local_10;
+  pbVar3 = (bool *)0x0;
+  QString::fromAscii_helper("10.0",4);
+  local_8 = 0;
+  QString::fromAscii_helper("dsbPeep",7);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(local_18);
+  local_8 = 1;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xb8) = dVar2;
+  QString::~QString(local_18);
+  pbVar3 = (bool *)0x0;
+  QString::fromAscii_helper("6.0",3);
+  local_8 = 2;
+  QString::fromAscii_helper("dsbDLoop",8);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 3;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xc0) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  QString::fromAscii_helper("2.0",3);
+  local_8 = 4;
+  QString::fromAscii_helper("dsbNockPoint",0xc);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 5;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 200) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  QString::fromAscii_helper("0.0",3);
+  local_8 = 6;
+  QString::fromAscii_helper("dsbSilencers",0xc);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 7;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xd0) = dVar2;
+  QString::~QString((QString *)&param_1);
+  pbVar3 = (bool *)0x0;
+  QString::fromAscii_helper("0.0",3);
+  local_8 = 8;
+  QString::fromAscii_helper("dsbSilencerDFC",0xe);
+  QString::QString((QString *)&stack0xffffffb8,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0(&param_1);
+  local_8 = 9;
+  dVar2 = QString::toDouble(pQVar1,pbVar3);
+  local_8 = 0xffffffff;
+  *(double *)(local_14 + 0xd8) = dVar2;
+  QString::~QString((QString *)&param_1);
+  param_1 = &stack0xffffffc4;
+  QString::fromAscii_helper("FastFlight",10);
+  local_8 = 10;
+  QString::fromAscii_helper("cbStringType",0xc);
+  QString::QString((QString *)&stack0xffffffbc,(QString *)&DAT_00668910);
+  local_8 = 0xffffffff;
+  pQVar1 = (QString *)FUN_00478cb0();
+  QString::operator=((QString *)(local_14 + 0xe0),pQVar1);
+  QString::~QString(local_1c);
+  ExceptionList = local_10;
+  return;
+}
+
+
+
+========================================
+FUNCTION: FUN_00478cb0
+ADDRESS: 00478cb0
+SIZE: 955 bytes
+========================================
+
+QString * FUN_00478cb0(QString *param_1)
+
+{
+  code *pcVar1;
+  QMapDataBase *pQVar2;
+  bool bVar3;
+  QTypedArrayData<unsigned_short> *pQVar4;
+  int iVar5;
+  QString *pQVar6;
+  uint uVar7;
+  uint uVar8;
+  code *pcVar9;
+  QString local_48 [4];
+  QString local_44 [4];
+  QString local_40 [4];
+  QString local_3c [4];
+  QLocale local_38 [4];
+  undefined4 local_34;
+  undefined4 local_30;
+  undefined4 local_2c;
+  QMapDataBase *local_28;
+  QString local_24 [4];
+  QMapDataBase *local_20;
+  uint local_18;
+  bool local_12;
+  char local_11;
+  void *local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  pcVar9 = fromAscii_helper_exref;
+  puStack_c = &LAB_004d494e;
+  local_10 = ExceptionList;
+  ExceptionList = &local_10;
+  local_18 = 0;
+  local_8._0_1_ = 3;
+  local_8._1_3_ = 0;
+  pQVar4 = QString::fromAscii_helper("",0);
+  *(QTypedArrayData<unsigned_short> **)param_1 = pQVar4;
+  uVar7 = 1;
+  local_18 = 1;
+  iVar5 = FUN_0041d370();
+  pcVar1 = shared_null_exref;
+  if (iVar5 == 0) {
+    QString::QString((QString *)&stack0xffffffa4,(QString *)&stack0x00000008);
+    FUN_00478a10();
+    QString::QString((QString *)&stack0xffffffa4,(QString *)&stack0x00000010);
+    QString::QString((QString *)&stack0xffffffa0,(QString *)&stack0x0000000c);
+    QString::QString((QString *)&stack0xffffff9c,(QString *)&stack0x00000008);
+    FUN_00478940();
+    QString::operator=(param_1,(QString *)&stack0x00000010);
+  }
+  else {
+    local_20 = (QMapDataBase *)shared_null_exref;
+    local_8._0_1_ = 4;
+    FUN_0041d370();
+    FUN_0046ffe0();
+    pQVar2 = local_20;
+    local_18 = 0x11;
+    local_8._0_1_ = 7;
+    if (*(int *)pcVar1 == 0) {
+LAB_00478d7b:
+      if (*(int *)(local_20 + 0xc) != 0) {
+        FUN_0041ce40();
+        QMapDataBase::freeTree(pQVar2,*(QMapNodeBase **)(pQVar2 + 0xc),4);
+      }
+      QMapDataBase::freeData(pQVar2);
+    }
+    else if (*(int *)pcVar1 != -1) {
+      LOCK();
+      iVar5 = *(int *)local_20;
+      *(int *)local_20 = *(int *)local_20 + -1;
+      UNLOCK();
+      if (iVar5 == 1) goto LAB_00478d7b;
+    }
+    pQVar2 = local_28;
+    local_8 = CONCAT31(local_8._1_3_,6);
+    iVar5 = FUN_0041d370();
+    if (iVar5 == 0) {
+      QString::QString((QString *)&stack0xffffffa4,(QString *)&stack0x00000010);
+      QString::QString((QString *)&stack0xffffffa0,(QString *)&stack0x0000000c);
+      QString::QString((QString *)&stack0xffffff9c,(QString *)&stack0x00000008);
+      FUN_00478940();
+      QString::operator=(param_1,(QString *)&stack0x00000010);
+    }
+    else {
+      local_20 = (QMapDataBase *)QString::QString(local_44);
+      iVar5 = FUN_0041d370();
+      pQVar6 = (QString *)local_20;
+      if (iVar5 != 0) {
+        pQVar6 = (QString *)(iVar5 + 0x10);
+      }
+      QString::QString(local_24,pQVar6);
+      QString::operator=(param_1,local_24);
+      QString::~QString(local_24);
+      QString::~QString(local_44);
+    }
+    local_8._0_1_ = 8;
+    if (*(int *)pQVar2 == 0) {
+LAB_00478e5c:
+      if (*(int *)(local_28 + 0xc) != 0) {
+        FUN_0041ce40();
+        QMapDataBase::freeTree(local_28,*(QMapNodeBase **)(local_28 + 0xc),4);
+      }
+      QMapDataBase::freeData(local_28);
+    }
+    else if (*(int *)pQVar2 != -1) {
+      LOCK();
+      iVar5 = *(int *)local_28;
+      *(int *)local_28 = *(int *)local_28 + -1;
+      UNLOCK();
+      if (iVar5 == 1) goto LAB_00478e5c;
+    }
+    local_8._0_1_ = 3;
+    uVar7 = local_18;
+    pcVar9 = fromAscii_helper_exref;
+  }
+  local_34 = (*pcVar9)();
+  local_8 = CONCAT31(local_8._1_3_,9);
+  uVar8 = uVar7 | 2;
+  local_18 = uVar8;
+  bVar3 = QString::startsWith((QString *)&stack0x0000000c,(QString *)&local_34,1);
+  if (bVar3) {
+    local_30 = (*pcVar9)();
+    local_8 = 10;
+    uVar8 = uVar7 | 6;
+    local_18 = uVar8;
+    iVar5 = QString::indexOf(param_1,(QString *)&local_30,0,0);
+    if (iVar5 != -1) goto LAB_00478f3b;
+  }
+  else {
+LAB_00478f3b:
+    local_2c = (*pcVar9)();
+    local_8 = 0xb;
+    uVar8 = uVar8 | 8;
+    local_18 = uVar8;
+    bVar3 = QString::startsWith((QString *)&stack0x0000000c,(QString *)&local_2c,1);
+    local_11 = '\0';
+    if (!bVar3) goto LAB_00478f72;
+  }
+  local_11 = '\x01';
+LAB_00478f72:
+  if ((uVar8 & 8) != 0) {
+    uVar8 = uVar8 & 0xfffffff7;
+    QString::~QString((QString *)&local_2c);
+  }
+  if ((uVar8 & 4) != 0) {
+    uVar8 = uVar8 & 0xfffffffb;
+    QString::~QString((QString *)&local_30);
+  }
+  local_18 = uVar8 & 0xfffffffd;
+  local_8 = 3;
+  QString::~QString((QString *)&local_34);
+  if (local_11 != '\0') {
+    QString::QString(local_40,param_1);
+    QString::QString(local_3c,param_1);
+    local_8._0_1_ = 0xd;
+    QLocale::QLocale(local_38,1,0);
+    local_8._0_1_ = 0xe;
+    QLocale::toDouble(local_38,local_3c,&local_12);
+    QLocale::~QLocale(local_38);
+    local_8 = CONCAT31(local_8._1_3_,0xc);
+    QString::~QString(local_3c);
+    QString::QString((QString *)&stack0xffffffa4,local_40);
+    pQVar6 = (QString *)FUN_00478b60();
+    QString::operator=(param_1,pQVar6);
+    QString::~QString(local_48);
+    QString::~QString(local_40);
+  }
+  QString::~QString((QString *)&stack0x00000008);
+  QString::~QString((QString *)&stack0x0000000c);
+  QString::~QString((QString *)&stack0x00000010);
+  ExceptionList = local_10;
+  return param_1;
+}
+
+
+
+========================================
+FUNCTION: FUN_004783a0
+ADDRESS: 004783a0
+SIZE: 3 bytes
+========================================
+
+float10 __fastcall FUN_004783a0(double *param_1)
+
+{
+  return (float10)*param_1;
+}
+
+
+
+========================================
+FUNCTION: FUN_004784d0
+ADDRESS: 004784d0
+SIZE: 30 bytes
+========================================
+
+float10 FUN_004784d0(double param_1)
+
+{
+  libm_sse2_pow_precise();
+  return (float10)param_1;
+}
+
+
+
+========================================
+FUNCTION: FUN_004785c0
+ADDRESS: 004785c0
+SIZE: 33 bytes
+========================================
+
+float10 FUN_004785c0(double param_1)
+
+{
+  libm_sse2_sqrt_precise();
+  return (float10)param_1;
+}
+
+
+
+========================================
+FUNCTION: FUN_00478220
+ADDRESS: 00478220
+SIZE: 26 bytes
+========================================
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+float10 FUN_00478220(undefined8 param_1)
+
+{
+  return (float10)(double)CONCAT44((uint)((ulonglong)param_1 >> 0x20) & _UNK_004f9be4,
+                                   (uint)param_1 & _DAT_004f9be0);
+}
+
+
+
+========================================
+FUNCTION: FUN_004784c0
+ADDRESS: 004784c0
+SIZE: 7 bytes
+========================================
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+float10 FUN_004784c0(void)
+
+{
+  return (float10)_DAT_004f9bc8;
+}
+
+
+
+========================================
+FUNCTION: FUN_0046fd90
+ADDRESS: 0046fd90
+SIZE: 131 bytes
+========================================
+
+float10 __thiscall FUN_0046fd90(int *param_1,QString *param_2,double *param_3)
+
+{
+  bool bVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  
+  if (*(int *)(*param_1 + 0xc) != 0) {
+    iVar4 = 0;
+    iVar2 = *(int *)(*param_1 + 0xc);
+    do {
+      bVar1 = operator<((QString *)(iVar2 + 0xc),param_2);
+      if (bVar1) {
+        iVar3 = *(int *)(iVar2 + 8);
+      }
+      else {
+        iVar3 = *(int *)(iVar2 + 4);
+        iVar4 = iVar2;
+      }
+      iVar2 = iVar3;
+    } while (iVar3 != 0);
+    if (iVar4 != 0) {
+      bVar1 = operator<(param_2,(QString *)(iVar4 + 0xc));
+      if (!bVar1) {
+        return (float10)*(double *)(iVar4 + 0x10);
+      }
+    }
+  }
+  return (float10)*param_3;
+}
+
+
+
+========================================
+FUNCTION: FUN_0046f910
+ADDRESS: 0046f910
+SIZE: 129 bytes
+========================================
+
+float10 __fastcall FUN_0046f910(int param_1)
+
+{
+  QString *this;
+  undefined4 uVar1;
+  float10 fVar2;
+  QString local_18 [4];
+  QString local_14 [4];
+  void *local_10;
+  undefined1 *puStack_c;
+  undefined4 local_8;
+  
+  local_8 = 0xffffffff;
+  puStack_c = &LAB_004d34d9;
+  local_10 = ExceptionList;
+  ExceptionList = &local_10;
+  this = (QString *)QString::trimmed((QString *)(param_1 + 0x50));
+  local_8 = 0;
+  uVar1 = QString::toLower(this);
+  fVar2 = (float10)FUN_0046fd90(uVar1,&DAT_004f8d00);
+  QString::~QString(local_14);
+  QString::~QString(local_18);
+  ExceptionList = local_10;
+  return (float10)(double)fVar2;
+}
+
+
+
+========================================
+FUNCTION: FUN_0046f9a0
+ADDRESS: 0046f9a0
+SIZE: 229 bytes
+========================================
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+float10 FUN_0046f9a0(double param_1,double param_2,double param_3,double param_4,undefined8 param_5,
+                    double param_6)
+
+{
+  float10 fVar1;
+  float10 fVar2;
+  
+  if (param_1 <= 0.0) {
+    fVar1 = (float10)0.0;
+  }
+  else {
+    fVar1 = (float10)FUN_004784b0((int)param_5,(int)((ulonglong)param_5 >> 0x20));
+    fVar1 = (float10)FUN_00478500((param_2 - param_1 / param_3) * (double)fVar1 *
+                                  (param_4 + _DAT_004f8fa8),4);
+    fVar1 = (float10)FUN_00478220((double)fVar1);
+    if (param_6 != DAT_004f8fd8) {
+      fVar2 = (float10)FUN_004782a0(SUB84(param_6,0),(int)((ulonglong)param_6 >> 0x20));
+      fVar2 = (float10)FUN_004785a0((double)fVar2);
+      return fVar2 * (float10)(double)fVar1;
+    }
+  }
+  return fVar1;
+}
+
+
+
+========================================
+FUNCTION: FUN_0046fa90
+ADDRESS: 0046fa90
+SIZE: 109 bytes
+========================================
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+float10 FUN_0046fa90(double param_1,double param_2,double param_3,double param_4,double param_5)
+
+{
+  float10 fVar1;
+  float10 fVar2;
+  double dVar3;
+  
+  dVar3 = (param_3 - param_2) * DAT_004f2f58 + param_2;
+  if (param_3 < param_1) {
+    return (float10)(double)CONCAT44((uint)((ulonglong)(param_4 + param_5) >> 0x20) ^ _UNK_004f9034,
+                                     SUB84(param_4 + param_5,0) ^ _DAT_004f9030);
+  }
+  if (param_1 < param_2) {
+    return (float10)param_4;
+  }
+  fVar1 = (float10)FUN_00478220(param_3 - param_2);
+  fVar2 = (float10)FUN_00478220(dVar3 - param_1);
+  return fVar2 * (float10)(double)((float10)param_5 / fVar1) *
+         (float10)(int)((uint)(dVar3 <= param_1) * 2 + -1);
+}
+
+
+
+========================================
+FUNCTION: FUN_0046fafd
+ADDRESS: 0046fafd
+SIZE: 105 bytes
+========================================
+
+float10 FUN_0046fafd(double param_1,undefined4 param_2,undefined4 param_3,double param_4,
+                    undefined4 param_5,undefined4 param_6,double param_7)
+
+{
+  float10 fVar1;
+  float10 fVar2;
+  undefined8 in_XMM2_Qa;
+  
+  fVar1 = (float10)FUN_00478220(in_XMM2_Qa);
+  fVar2 = (float10)FUN_00478220(param_4 - param_1);
+  return fVar2 * (float10)(double)((float10)param_7 / fVar1) *
+         (float10)(int)((uint)(param_4 <= param_1) * 2 + -1);
+}
+
+
+

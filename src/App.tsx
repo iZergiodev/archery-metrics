@@ -607,7 +607,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--border)] safe-top" style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(12px)' }}>
+      <header className="sticky top-0 z-40 safe-top" style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(12px)' }}>
         <div className="mx-auto max-w-[560px] px-4 py-3">
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-3">
@@ -632,6 +632,7 @@ function App() {
             />
           </div>
         </div>
+        <div className="header-accent" />
       </header>
 
       <main className="mx-auto max-w-[560px] px-4 py-4" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
@@ -639,7 +640,7 @@ function App() {
         <TabNavigation tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as ActiveTab)} />
 
         {/* Form content - primary interaction area */}
-        <div>
+        <div key={activeTab} className="animate-fade-in">
           {activeTab === 'bow' && renderBowSection()}
           {activeTab === 'arrow' && renderArrowSection()}
           {activeTab === 'string' && renderStringSection()}
@@ -682,7 +683,7 @@ function App() {
       {/* Sticky bottom match indicator */}
       {spineMatch.status != null && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+          className="fixed bottom-0 left-0 right-0 z-50 safe-bottom animate-slide-up-entry"
           style={{ backgroundColor: 'rgba(11,11,11,0.92)', backdropFilter: 'blur(12px)' }}
         >
           <div
@@ -717,7 +718,7 @@ function AlertPanel({
   const titleColor = tone === 'warning' ? 'text-[var(--target-red)]' : 'text-[var(--target-blue)]'
 
   return (
-    <section className="border-t border-[var(--border)] pt-4">
+    <section className="border-t border-[var(--border)] pt-4 animate-fade-slide-up">
       <h3 className={`text-[10px] uppercase tracking-[0.28em] ${titleColor}`}>{title}</h3>
       <ul className="mt-3 space-y-2">
         {items.map((item, index) => (

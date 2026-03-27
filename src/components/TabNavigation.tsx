@@ -23,9 +23,9 @@ export function TabNavigation({ tabs, activeTab, onChange }: TabNavigationProps)
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`min-w-0 rounded-[14px] border px-2.5 py-3 text-left transition-colors ${
+              className={`min-w-0 rounded-[14px] border px-2.5 py-3 text-left transition-all duration-150 press-scale ${
                 isActive
-                  ? 'border-[var(--gold)]/45 bg-[var(--bg-elevated)] text-[var(--text-primary)]'
+                  ? 'border-[var(--gold)]/45 bg-[var(--bg-elevated)] text-[var(--text-primary)] glow-gold'
                   : 'border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
               }`}
             >

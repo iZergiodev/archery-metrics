@@ -19,7 +19,7 @@ export function FieldGroup({ title, description, children, collapsible, defaultC
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className="flex w-full items-center justify-between gap-2 text-left"
+            className="flex w-full items-center justify-between gap-2 text-left press-scale"
           >
             <h3 className="text-[10px] uppercase tracking-[0.28em] text-[var(--text-muted)]">{title}</h3>
             <span className="text-[10px] text-[var(--text-muted)] transition-transform duration-200" style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
@@ -31,7 +31,15 @@ export function FieldGroup({ title, description, children, collapsible, defaultC
         )}
         {description && <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-muted)]">{description}</p>}
       </div>
-      {!collapsed && children}
+      {collapsible ? (
+        <div className="grid-expand" data-collapsed={collapsed}>
+          <div>
+            <div className="space-y-5">{children}</div>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </div>
   )
 }
