@@ -1,6 +1,5 @@
 import {
     ARCHERY_TYPE,
-    CAM_FDR,
     FOC_MAX_RECOMMENDED,
     FOC_MIN_RECOMMENDED,
     GPP_MAX_RECOMMENDED,
@@ -302,10 +301,6 @@ function calculateArrowComponentWeight(arrow: ArrowSpecs): ArrowComponentWeight 
         nockWeight,
         bushingPin,
     }
-}
-
-function calculateHoldingWeight(drawWeight: number, percentLetoff: number): number {
-    return ((SFAX_PERCENT_REFERENCE - percentLetoff) / SFAX_PERCENT_REFERENCE) * drawWeight
 }
 
 function sfaxSignedCurve(value: number, start: number, end: number, base: number, delta: number): number {
