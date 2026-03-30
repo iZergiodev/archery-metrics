@@ -10,6 +10,8 @@ import { FormSection } from './components/FormSection'
 import { FieldGroup } from './components/FieldGroup'
 import { InputField } from './components/InputField'
 import { SelectField } from './components/SelectField'
+import { DatabasePanel, type DatabaseSelection } from './components/DatabasePanel'
+import { Search } from 'lucide-react'
 import { buildTuningActions } from './utils/tuningAssistant'
 import {
   formatInputDisplayValue,
@@ -96,6 +98,7 @@ function App() {
   const [bowSpecs, setBowSpecs] = useState(initialBowSpecs)
   const [arrowSpecs, setArrowSpecs] = useState(initialArrowSpecs)
   const [stringWeights, setStringWeights] = useState(initialStringWeights)
+  const [dbPanelOpen, setDbPanelOpen] = useState(false)
 
   const spineMatch = useMemo(() => {
     console.log('%c── ARCHERY CONFIG ──', 'color:#D4A017;font-weight:bold')
@@ -158,6 +161,42 @@ function App() {
     setBowSpecs(initialBowSpecs)
     setArrowSpecs(initialArrowSpecs)
     setStringWeights(initialStringWeights)
+  }
+
+  // Database entries are in imperial (canonical) units — write directly to state
+  const applyDatabaseSelection = (selection: DatabaseSelection) => {
+    if (selection.shaft) {
+      const s = selection.shaft
+      setArrowSpecs((current) => ({
+        ...current,
+        staticSpine: s.spine.toString(),
+        shaftGpi: s.gpi.toString(),
+        shaftLength: s.stockLength.toString(),
+        shaftUseCategory: s.useCategory,
+        ...(s.nockWeight > 0 ? { nockWeight: s.nockWeight.toString() } : {}),
+        ...(s.bushingPin > 0 ? { bushingPin: s.bushingPin.toString() } : {}),
+        ...(s.pointInsert > 0 ? { insertWeight: s.pointInsert.toString() } : {}),
+      }))
+    }
+    if (selection.fletch) {
+      const f = selection.fletch
+      setArrowSpecs((current) => ({
+        ...current,
+        weightEach: f.weight.toString(),
+        fletchLength: f.length.toString(),
+        fletchHeight: f.height.toString(),
+        ...(current.fletchQuantity.trim() === '' ? { fletchQuantity: '3' } : {}),
+      }))
+    }
+    if (selection.nock) {
+      // Nock weight/bushing intentionally overrides shaft-bundled values
+      const n = selection.nock
+      setArrowSpecs((current) => ({
+        ...current,
+        nockWeight: n.weight.toString(),
+        ...(n.bushingPin > 0 ? { bushingPin: n.bushingPin.toString() } : {}),
+      }))
+    }
   }
 
   const setGlobalUnitSystem = (nextUnitSystem: UnitSystem) => {
@@ -410,6 +449,13 @@ function App() {
       eyebrow={`${arrowProgress}/${ARROW_CORE_FIELDS.length} ${t('app.progress')}`}
       description={t('section.arrowSpecs.description')}
     >
+      <button
+        onClick={() => setDbPanelOpen(true)}
+        className="mb-4 flex w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[var(--gold)]/30 bg-[var(--gold)]/5 py-3 text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--gold)] transition-all duration-150 press-scale hover:border-[var(--gold)]/50 hover:bg-[var(--gold)]/10"
+      >
+        <Search size={14} />
+        {t('db.button')}
+      </button>
       <FieldGroup title={t('group.core')}>
         <div className="space-y-5">
           <InputField
@@ -650,7 +696,7 @@ function App() {
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--gold)]">{t('app.kicker')}</p>
                 <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-[var(--text-primary)]">{t('app.title')}</h1>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <p className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   {totalProgress}/{totalCoreFields} {t('app.progress')}
                 </p>
               </div>
@@ -716,22 +762,30 @@ function App() {
         />
       </main>
 
+      <DatabasePanel
+        open={dbPanelOpen}
+        onClose={() => setDbPanelOpen(false)}
+        onApply={applyDatabaseSelection}
+        hasExistingData={arrowSpecs.staticSpine.trim() !== '' || arrowSpecs.shaftGpi.trim() !== '' || arrowSpecs.shaftLength.trim() !== ''}
+        t={t}
+      />
+
       {/* Sticky bottom match indicator */}
       {spineMatch.status != null && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-50 safe-bottom animate-slide-up-entry"
-          style={{ backgroundColor: 'rgba(11,11,11,0.92)', backdropFilter: 'blur(12px)' }}
+          className="fixed bottom-0 left-0 right-0 z-50 safe-bottom animate-slide-up-entry border-t border-[var(--border)]"
+          style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(16px)' }}
         >
           <div
-            className="mx-auto flex h-12 max-w-[560px] items-center gap-4 px-4"
+            className="mx-auto flex h-14 max-w-[560px] items-center gap-4 px-4"
             style={{ borderLeft: `3px solid ${stickyBarBorderColor}` }}
           >
-            <span className={`text-[13px] font-semibold ${matchColor}`}>{matchLabel}</span>
-            <span className="font-mono text-[14px] text-[var(--text-primary)]">
+            <span className={`text-[14px] font-semibold ${matchColor}`}>{matchLabel}</span>
+            <span className="font-mono text-[15px] text-[var(--text-primary)]">
               {spineMatch.matchIndex?.toFixed(3) ?? '--'}
             </span>
             {fitPercent != null && (
-              <span className="ml-auto text-[12px] text-[var(--text-secondary)]">
+              <span className="ml-auto text-[13px] font-medium text-[var(--text-secondary)]">
                 {fitPercent}% fit
               </span>
             )}
