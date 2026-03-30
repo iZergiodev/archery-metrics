@@ -50,7 +50,7 @@ export function Toolbar({
           <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-transparent select-none">.</div>
           <button
             onClick={() => setShowMenu((current) => !current)}
-            className="inline-flex h-10 w-10 items-center justify-center self-end rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-10 w-10 items-center justify-center self-end rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--gold)]/40 hover:text-[var(--text-primary)]"
             aria-label={t('toolbar.actions')}
           >
             <MoreHorizontal size={18} />
@@ -116,13 +116,13 @@ function ToggleGroup({
 }) {
   return (
     <div className="min-w-0">
-      <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
+      <div className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--text-secondary)]">{label}</div>
       <div className="grid min-w-0 grid-cols-2 gap-1 rounded-[12px] border border-[var(--border)] bg-[var(--bg-primary)] p-1">
         {options.map((option) => (
           <div key={option.label} className="min-w-0">
             <button
               onClick={option.onClick}
-              className={`min-h-9 w-full min-w-0 rounded-[9px] px-2 text-[11px] font-medium uppercase tracking-[0.08em] transition-all duration-150 press-scale ${
+              className={`min-h-9 w-full min-w-0 rounded-[9px] px-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-150 press-scale ${
                 option.active
                   ? 'bg-[var(--gold)] text-[var(--bg-primary)]'
                   : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
@@ -150,7 +150,7 @@ function MenuButton({ onClick, children }: { onClick: () => void; children: Reac
   return (
     <button
       onClick={onClick}
-      className="rounded-[10px] border border-[var(--border)] px-0 py-2 text-[12px] text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+      className="rounded-[10px] border border-[var(--border)] px-0 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--gold)]/40 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
     >
       {children}
     </button>

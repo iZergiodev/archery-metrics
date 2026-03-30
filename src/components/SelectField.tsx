@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 interface SelectFieldProps {
   label: string
@@ -18,14 +19,14 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           {label}
         </label>
 
-        <div className="focus-glow relative rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] px-3 transition-colors focus-within:border-[var(--ring-gold)] hover:border-[var(--border-hover)]">
+        <div className="focus-glow relative cursor-pointer rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] px-3 transition-colors focus-within:border-[var(--ring-gold)] hover:border-[var(--gold)]/40 hover:bg-[var(--bg-elevated)]/80">
           <select
             ref={ref}
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             style={{ colorScheme: 'dark' }}
-            className="w-full appearance-none bg-transparent px-0 py-3 pr-8 text-[16px] text-[var(--text-primary)] focus:outline-none"
+            className="w-full cursor-pointer appearance-none bg-transparent px-0 py-3 pr-10 text-[16px] text-[var(--text-primary)] focus:outline-none"
           >
             {options.map((option) => (
               <option key={option.value} value={option.value} className="bg-[var(--bg-elevated)] text-[var(--text-primary)]">
@@ -33,8 +34,8 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-secondary)]">
-            ▼
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
+            <ChevronDown size={18} strokeWidth={2} />
           </span>
         </div>
       </div>

@@ -53,11 +53,11 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               <button
                 type="button"
                 aria-label={tooltip}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--border-hover)] text-[10px] text-[var(--text-secondary)] transition-colors hover:border-[var(--ring-gold)] hover:text-[var(--gold)] focus:border-[var(--ring-gold)] focus:outline-none"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--border-hover)] text-[10px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--gold)]/50 hover:text-[var(--gold)] focus:border-[var(--gold)]/50 focus:text-[var(--gold)] focus:outline-none"
               >
                 i
               </button>
-              <div className="pointer-events-none absolute right-0 top-6 z-50 hidden w-60 rounded-[12px] border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-[11px] leading-relaxed text-[var(--text-secondary)] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 md:block">
+              <div className="pointer-events-none absolute right-0 top-7 z-50 hidden w-60 rounded-[12px] border border-[var(--border-hover)] bg-[var(--bg-surface)] p-3 text-[12px] leading-relaxed text-[var(--text-secondary)] opacity-0 shadow-2xl transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 md:block">
                 {tooltip}
               </div>
             </div>

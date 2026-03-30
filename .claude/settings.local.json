@@ -6,7 +6,8 @@
       "WebFetch(domain:www.outdoorlife.com)",
       "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/MetaData/**)",
       "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/UserRecords/**)",
-      "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/Help/**)"
+      "Read(//c/PinwheelSoftware/OnTarget2!-SFAX/resources/Help/**)",
+      "Bash(npx vite:*)"
     ]
   }
 }

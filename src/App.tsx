@@ -10,7 +10,8 @@ import { FormSection } from './components/FormSection'
 import { FieldGroup } from './components/FieldGroup'
 import { InputField } from './components/InputField'
 import { SelectField } from './components/SelectField'
-import { DatabasePanel, type DatabaseSelection } from './components/DatabasePanel'
+import { DatabasePanel } from './components/DatabasePanel'
+import type { ShaftEntry } from './data/equipment/types'
 import { Search } from 'lucide-react'
 import { buildTuningActions } from './utils/tuningAssistant'
 import {
@@ -53,7 +54,7 @@ const initialArrowSpecs = {
   nockWeight: '',
   bushingPin: '',
   staticSpine: '',
-  shaftUseCategory: 'base' as const,
+  shaftUseCategory: 'base' as 'base' | 'hunting' | 'target',
   insertType: 'default' as const,
 }
 
@@ -164,39 +165,17 @@ function App() {
   }
 
   // Database entries are in imperial (canonical) units — write directly to state
-  const applyDatabaseSelection = (selection: DatabaseSelection) => {
-    if (selection.shaft) {
-      const s = selection.shaft
-      setArrowSpecs((current) => ({
-        ...current,
-        staticSpine: s.spine.toString(),
-        shaftGpi: s.gpi.toString(),
-        shaftLength: s.stockLength.toString(),
-        shaftUseCategory: s.useCategory,
-        ...(s.nockWeight > 0 ? { nockWeight: s.nockWeight.toString() } : {}),
-        ...(s.bushingPin > 0 ? { bushingPin: s.bushingPin.toString() } : {}),
-        ...(s.pointInsert > 0 ? { insertWeight: s.pointInsert.toString() } : {}),
-      }))
-    }
-    if (selection.fletch) {
-      const f = selection.fletch
-      setArrowSpecs((current) => ({
-        ...current,
-        weightEach: f.weight.toString(),
-        fletchLength: f.length.toString(),
-        fletchHeight: f.height.toString(),
-        ...(current.fletchQuantity.trim() === '' ? { fletchQuantity: '3' } : {}),
-      }))
-    }
-    if (selection.nock) {
-      // Nock weight/bushing intentionally overrides shaft-bundled values
-      const n = selection.nock
-      setArrowSpecs((current) => ({
-        ...current,
-        nockWeight: n.weight.toString(),
-        ...(n.bushingPin > 0 ? { bushingPin: n.bushingPin.toString() } : {}),
-      }))
-    }
+  const applyDatabaseSelection = (shaft: ShaftEntry) => {
+    setArrowSpecs((current) => ({
+      ...current,
+      staticSpine: shaft.spine.toString(),
+      shaftGpi: shaft.gpi.toString(),
+      shaftLength: shaft.stockLength.toString(),
+      shaftUseCategory: shaft.useCategory,
+      ...(shaft.nockWeight > 0 ? { nockWeight: shaft.nockWeight.toString() } : {}),
+      ...(shaft.bushingPin > 0 ? { bushingPin: shaft.bushingPin.toString() } : {}),
+      ...(shaft.pointInsert > 0 ? { insertWeight: shaft.pointInsert.toString() } : {}),
+    }))
   }
 
   const setGlobalUnitSystem = (nextUnitSystem: UnitSystem) => {
