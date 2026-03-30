@@ -97,10 +97,46 @@ function App() {
   const [arrowSpecs, setArrowSpecs] = useState(initialArrowSpecs)
   const [stringWeights, setStringWeights] = useState(initialStringWeights)
 
-  const spineMatch = useMemo(
-    () => calculateSpineMatch(bowSpecs, arrowSpecs, stringWeights),
-    [bowSpecs, arrowSpecs, stringWeights],
-  )
+  const spineMatch = useMemo(() => {
+    console.log('%c── ARCHERY CONFIG ──', 'color:#D4A017;font-weight:bold')
+    console.log('%cBOW', 'color:#60a5fa;font-weight:bold', {
+      iboVelocity: bowSpecs.iboVelocity,
+      drawWeight: bowSpecs.drawWeight,
+      drawLength: bowSpecs.drawLength,
+      braceHeight: bowSpecs.braceHeight,
+      axleToAxle: bowSpecs.axleToAxle,
+      percentLetoff: bowSpecs.percentLetoff,
+      measuredChronoSpeed: bowSpecs.measuredChronoSpeed,
+    })
+    console.log('%cARROW', 'color:#34d399;font-weight:bold', {
+      staticSpine: arrowSpecs.staticSpine,
+      shaftLength: arrowSpecs.shaftLength,
+      shaftGpi: arrowSpecs.shaftGpi,
+      measuredArrowTotalWeight: arrowSpecs.measuredArrowTotalWeight,
+      pointWeight: arrowSpecs.pointWeight,
+      insertWeight: arrowSpecs.insertWeight,
+      insertType: arrowSpecs.insertType,
+      fletchQuantity: arrowSpecs.fletchQuantity,
+      weightEach: arrowSpecs.weightEach,
+      fletchLength: arrowSpecs.fletchLength,
+      fletchHeight: arrowSpecs.fletchHeight,
+      fletchOffset: arrowSpecs.fletchOffset,
+      wrapWeight: arrowSpecs.wrapWeight,
+      nockWeight: arrowSpecs.nockWeight,
+      bushingPin: arrowSpecs.bushingPin,
+      shaftUseCategory: arrowSpecs.shaftUseCategory,
+    })
+    console.log('%cSTRING', 'color:#f472b6;font-weight:bold', {
+      peep: stringWeights.peep,
+      dLoop: stringWeights.dLoop,
+      nockPoint: stringWeights.nockPoint,
+      silencers: stringWeights.silencers,
+      silencerDfc: stringWeights.silencerDfc,
+      releaseType: stringWeights.releaseType,
+      stringMaterial: stringWeights.stringMaterial,
+    })
+    return calculateSpineMatch(bowSpecs, arrowSpecs, stringWeights)
+  }, [bowSpecs, arrowSpecs, stringWeights])
 
   const saveConfiguration = (slot: number) => {
     const config = { bowSpecs, arrowSpecs, stringWeights }

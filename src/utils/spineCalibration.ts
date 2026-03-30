@@ -391,8 +391,8 @@ export function evaluateCompoundMonotonicity(): CompoundMonotonicityCheck[] {
     const lightRear = calculateSpineMatch(baseBow, { ...baseArrow, nockWeight: '6', bushingPin: '4' }, DEFAULT_CALIBRATION_STRING_WEIGHTS)
     const heavyRear = calculateSpineMatch(baseBow, { ...baseArrow, nockWeight: '12', bushingPin: '10' }, DEFAULT_CALIBRATION_STRING_WEIGHTS)
 
-    const shortFletch = calculateSpineMatch(baseBow, { ...baseArrow, fletchLength: '1.75' }, DEFAULT_CALIBRATION_STRING_WEIGHTS)
-    const longFletch = calculateSpineMatch(baseBow, { ...baseArrow, fletchLength: '3' }, DEFAULT_CALIBRATION_STRING_WEIGHTS)
+    const noSilencer = calculateSpineMatch(baseBow, baseArrow, { ...DEFAULT_CALIBRATION_STRING_WEIGHTS, silencers: '0', silencerDfc: '0' })
+    const silencerAtMidBow = calculateSpineMatch(baseBow, baseArrow, { ...DEFAULT_CALIBRATION_STRING_WEIGHTS, silencers: '30', silencerDfc: '20' })
 
     const cleanString = calculateSpineMatch(baseBow, baseArrow, { ...DEFAULT_CALIBRATION_STRING_WEIGHTS, peep: '6', dLoop: '4', nockPoint: '2' })
     const heavyString = calculateSpineMatch(baseBow, baseArrow, { ...DEFAULT_CALIBRATION_STRING_WEIGHTS, peep: '14', dLoop: '8', nockPoint: '4', silencers: '12' })
@@ -445,12 +445,12 @@ export function evaluateCompoundMonotonicity(): CompoundMonotonicityCheck[] {
             details: `lightRear=${lightRear.spineRequired?.toFixed(4)} heavyRear=${heavyRear.spineRequired?.toFixed(4)}`,
         },
         {
-            id: 'compound_longer_fletch_weakens_dynamic_spine',
+            id: 'compound_silencer_at_mid_bow_weakens_dynamic_spine',
             passed:
-                shortFletch.spineRequired != null &&
-                longFletch.spineRequired != null &&
-                longFletch.spineRequired > shortFletch.spineRequired,
-            details: `short=${shortFletch.spineRequired?.toFixed(4)} long=${longFletch.spineRequired?.toFixed(4)}`,
+                noSilencer.spineRequired != null &&
+                silencerAtMidBow.spineRequired != null &&
+                silencerAtMidBow.spineRequired > noSilencer.spineRequired,
+            details: `noSilencer=${noSilencer.spineRequired?.toFixed(4)} silencerMid=${silencerAtMidBow.spineRequired?.toFixed(4)}`,
         },
         {
             id: 'compound_heavier_string_accessories_weaken_dynamic_spine',

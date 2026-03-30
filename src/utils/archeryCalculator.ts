@@ -415,10 +415,11 @@ function buildVelocityModel(
     }
 }
 
-function calculateStringOffsetEffect(axleToAxle: number, nockPeepWeight: number, fletchOffset: number): number {
+// FUN_0047c3d0: partial drag from silencer positioned at DFC inches from cam
+function calculateSilencerPartialDrag(axleToAxle: number, silencerDfc: number, silencerWeight: number): number {
     const halfA2A = axleToAxle * 0.5
     if (halfA2A === 0) return 0
-    return (1 - (halfA2A - nockPeepWeight) / halfA2A) * fletchOffset
+    return (1 - (halfA2A - silencerDfc) / halfA2A) * silencerWeight
 }
 
 function calculateVelocityDragBundle(
@@ -557,9 +558,11 @@ function calculateCompoundTargetSpine(
         shaftUseCategory?: ShaftUseCategory
     },
     stringSide: {
-        stringAccessoryWeight: number
-        nockPeepWeight: number
-        fletchOffset: number
+        peepWeight: number
+        dLoopWeight: number
+        nockPointWeight: number
+        silencerWeight: number
+        silencerDfc: number
     },
 ): number {
     let intermediate =
@@ -594,10 +597,10 @@ function calculateCompoundTargetSpine(
         intermediate = SFAX_DYNAMIC_MIN_INTERMEDIATE
     }
 
+    // FUN_0046da20: string effect = (peep + FUN_0047c3d0() + nockPoint + dLoop) * 0.12
+    const silencerDrag = calculateSilencerPartialDrag(bow.axleToAxle, stringSide.silencerDfc, stringSide.silencerWeight)
     const stringEffect =
-        (stringSide.stringAccessoryWeight +
-            calculateStringOffsetEffect(bow.axleToAxle, stringSide.nockPeepWeight, stringSide.fletchOffset) +
-            arrow.fletchHeight) *
+        (stringSide.peepWeight + silencerDrag + stringSide.nockPointWeight + stringSide.dLoopWeight) *
         SFAX_DYNAMIC_COMPONENT_SENSITIVITY
 
     intermediate =
@@ -606,7 +609,6 @@ function calculateCompoundTargetSpine(
         ((arrow.wrapWeight + arrow.fletchQuantity * arrow.weightEach) - SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE) *
             SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
         ((arrow.bushingPin + arrow.nockWeight) - SFAX_DYNAMIC_REAR_MASS_REFERENCE) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
-        arrow.fletchLength * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
         stringEffect
 
     if (bow.stringMaterial === 'dacron') {
@@ -650,9 +652,11 @@ function calculateNonCompoundTargetSpine(
         shaftUseCategory?: ShaftUseCategory
     },
     stringSide: {
-        stringAccessoryWeight: number
-        nockPeepWeight: number
-        fletchOffset: number
+        peepWeight: number
+        dLoopWeight: number
+        nockPointWeight: number
+        silencerWeight: number
+        silencerDfc: number
     },
 ): number {
     let intermediate =
@@ -711,10 +715,10 @@ function calculateNonCompoundTargetSpine(
         intermediate = SFAX_DYNAMIC_MIN_INTERMEDIATE
     }
 
+    // FUN_0046da20: string effect = (peep + FUN_0047c3d0() + nockPoint + dLoop) * 0.12
+    const silencerDrag = calculateSilencerPartialDrag(bow.axleToAxle, stringSide.silencerDfc, stringSide.silencerWeight)
     const stringEffect =
-        (stringSide.stringAccessoryWeight +
-            calculateStringOffsetEffect(bow.axleToAxle, stringSide.nockPeepWeight, stringSide.fletchOffset) +
-            arrow.fletchHeight) *
+        (stringSide.peepWeight + silencerDrag + stringSide.nockPointWeight + stringSide.dLoopWeight) *
         SFAX_DYNAMIC_COMPONENT_SENSITIVITY
 
     intermediate =
@@ -723,7 +727,6 @@ function calculateNonCompoundTargetSpine(
         ((arrow.wrapWeight + arrow.fletchQuantity * arrow.weightEach) - SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE) *
             SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
         ((arrow.bushingPin + arrow.nockWeight) - SFAX_DYNAMIC_REAR_MASS_REFERENCE) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
-        arrow.fletchLength * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
         stringEffect
 
     if (bow.stringMaterial === 'dacron') {
@@ -846,9 +849,7 @@ export function calculateSpineMatch(
     const dLoopWeight = toNumber(stringWeights.dLoop)
     const nockPointWeight = toNumber(stringWeights.nockPoint)
     const silencersWeight = toNumber(stringWeights.silencers)
-    const silencerDfcWeight = toNumber(stringWeights.silencerDfc)
-    const stringAccessoryWeight = peepWeight + dLoopWeight + nockPointWeight + silencersWeight + silencerDfcWeight
-    const nockPeepWeight = peepWeight + nockPointWeight
+    const silencerDfcWeight = toNumber(stringWeights.silencerDfc) // inches (position), not grains
 
     const hasAllInputs = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0 && braceHeight > 0
     if (!hasAllInputs) {
@@ -932,9 +933,11 @@ export function calculateSpineMatch(
                       shaftUseCategory: arrow.shaftUseCategory,
                   },
                   {
-                      stringAccessoryWeight,
-                      nockPeepWeight,
-                      fletchOffset,
+                      peepWeight,
+                      dLoopWeight,
+                      nockPointWeight,
+                      silencerWeight: silencersWeight,
+                      silencerDfc: silencerDfcWeight,
                   },
               )
             : calculateNonCompoundTargetSpine(
@@ -962,9 +965,11 @@ export function calculateSpineMatch(
                       shaftUseCategory: arrow.shaftUseCategory,
                   },
                   {
-                      stringAccessoryWeight,
-                      nockPeepWeight,
-                      fletchOffset,
+                      peepWeight,
+                      dLoopWeight,
+                      nockPointWeight,
+                      silencerWeight: silencersWeight,
+                      silencerDfc: silencerDfcWeight,
                   },
               )
 
