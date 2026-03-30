@@ -20,6 +20,7 @@ type DatabaseState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'ready'; shafts: ShaftEntry[]; fletches: FletchEntry[]; nocks: NockEntry[] }
+  | { status: 'error' }
 
 export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: DatabasePanelProps) {
   const [db, setDb] = useState<DatabaseState>({ status: 'idle' })
@@ -49,6 +50,8 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
           fletches: fletchMod.FLETCH_DATABASE,
           nocks: nockMod.NOCK_DATABASE,
         })
+      }).catch(() => {
+        setDb({ status: 'error' })
       })
     }
   }, [open, db.status])
@@ -84,7 +87,7 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
 
   const fletchModels = useMemo(() => {
     if (db.status !== 'ready' || !fletchMfg) return []
-    return db.fletches.filter((f) => f.manufacturer === fletchMfg)
+    return [...new Set(db.fletches.filter((f) => f.manufacturer === fletchMfg).map((f) => f.model))].sort()
   }, [db, fletchMfg])
 
   const selectedFletch = useMemo(() => {
@@ -101,7 +104,7 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
 
   const nockModels = useMemo(() => {
     if (db.status !== 'ready' || !nockMfg) return []
-    return db.nocks.filter((n) => n.manufacturer === nockMfg)
+    return [...new Set(db.nocks.filter((n) => n.manufacturer === nockMfg).map((n) => n.model))].sort()
   }, [db, nockMfg])
 
   const selectedNock = useMemo(() => {
@@ -167,6 +170,18 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
             </div>
           )}
 
+          {db.status === 'error' && (
+            <div className="py-12 text-center">
+              <p className="text-[13px] text-[var(--text-secondary)]">{t('db.error')}</p>
+              <button
+                onClick={() => setDb({ status: 'idle' })}
+                className="mt-3 text-[12px] font-medium text-[var(--gold)] press-scale"
+              >
+                {t('db.retry')}
+              </button>
+            </div>
+          )}
+
           {db.status === 'ready' && (
             <div className="space-y-4">
               {/* Shaft section */}
@@ -194,13 +209,13 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
                   />
                   {selectedShaft && (
                     <PreviewCard>
-                      <PreviewRow label="Spine" value={selectedShaft.spine.toString()} />
-                      <PreviewRow label="GPI" value={`${selectedShaft.gpi}`} />
-                      <PreviewRow label="Length" value={`${selectedShaft.stockLength}"`} />
-                      <PreviewRow label="OD" value={`${selectedShaft.od}"`} />
-                      {selectedShaft.nockWeight > 0 && <PreviewRow label="Nock" value={`${selectedShaft.nockWeight}gr`} />}
-                      {selectedShaft.bushingPin > 0 && <PreviewRow label="Bushing" value={`${selectedShaft.bushingPin}gr`} />}
-                      {selectedShaft.pointInsert > 0 && <PreviewRow label="Insert" value={`${selectedShaft.pointInsert}gr`} />}
+                      <PreviewRow label={t('db.preview.spine')} value={selectedShaft.spine.toString()} />
+                      <PreviewRow label={t('db.preview.gpi')} value={`${selectedShaft.gpi}`} />
+                      <PreviewRow label={t('db.preview.length')} value={`${selectedShaft.stockLength}"`} />
+                      <PreviewRow label={t('db.preview.od')} value={`${selectedShaft.od}"`} />
+                      {selectedShaft.nockWeight > 0 && <PreviewRow label={t('db.preview.nock')} value={`${selectedShaft.nockWeight}gr`} />}
+                      {selectedShaft.bushingPin > 0 && <PreviewRow label={t('db.preview.bushing')} value={`${selectedShaft.bushingPin}gr`} />}
+                      {selectedShaft.pointInsert > 0 && <PreviewRow label={t('db.preview.insert')} value={`${selectedShaft.pointInsert}gr`} />}
                     </PreviewCard>
                   )}
                 </div>
@@ -219,15 +234,15 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
                     label={t('db.selectModel')}
                     value={fletchModel}
                     onChange={setFletchModel}
-                    options={fletchModels.map((f) => ({ value: f.model, label: f.model }))}
+                    options={fletchModels.map((m) => ({ value: m, label: m }))}
                     disabled={!fletchMfg}
                   />
                   {selectedFletch && (
                     <PreviewCard>
-                      <PreviewRow label="Weight" value={`${selectedFletch.weight}gr`} />
-                      <PreviewRow label="Length" value={`${selectedFletch.length}"`} />
-                      <PreviewRow label="Height" value={`${selectedFletch.height}"`} />
-                      <PreviewRow label="Type" value={selectedFletch.type} />
+                      <PreviewRow label={t('db.preview.weight')} value={`${selectedFletch.weight}gr`} />
+                      <PreviewRow label={t('db.preview.length')} value={`${selectedFletch.length}"`} />
+                      <PreviewRow label={t('db.preview.height')} value={`${selectedFletch.height}"`} />
+                      <PreviewRow label={t('db.preview.type')} value={selectedFletch.type} />
                     </PreviewCard>
                   )}
                 </div>
@@ -246,13 +261,13 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
                     label={t('db.selectModel')}
                     value={nockModel}
                     onChange={setNockModel}
-                    options={nockModels.map((n) => ({ value: n.model, label: n.model }))}
+                    options={nockModels.map((m) => ({ value: m, label: m }))}
                     disabled={!nockMfg}
                   />
                   {selectedNock && (
                     <PreviewCard>
-                      <PreviewRow label="Weight" value={`${selectedNock.weight}gr`} />
-                      {selectedNock.bushingPin > 0 && <PreviewRow label="Bushing" value={`${selectedNock.bushingPin}gr`} />}
+                      <PreviewRow label={t('db.preview.weight')} value={`${selectedNock.weight}gr`} />
+                      {selectedNock.bushingPin > 0 && <PreviewRow label={t('db.preview.bushing')} value={`${selectedNock.bushingPin}gr`} />}
                     </PreviewCard>
                   )}
                 </div>
