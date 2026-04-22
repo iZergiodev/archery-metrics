@@ -186,23 +186,18 @@ type ArrowComponentWeight = {
 
 const DEFAULT_FLETCH_LENGTH = 2
 const DEFAULT_FLETCH_HEIGHT = 0.5
-const DEFAULT_FLETCH_OFFSET = 2
 
 const SFAX_SPEED_WEIGHT_CORRECTION_OFFSET = 0.04
 const SFAX_SPEED_WEIGHT_CORRECTION_SCALE = 1.05
 const SFAX_SPEED_DRAG_MULTIPLIER = 0.33
 const SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND = SFAX_DYNAMIC_DRAW_CURVE_AMPLITUDE_NON_COMPOUND
-const SFAX_PI = Math.PI
-const SFAX_ENERGY_FLETCH_DRAG_COEFFICIENT = 0.65
-const SFAX_ENERGY_FLETCH_DRAG_FACTOR = 15.25
-const SFAX_ENERGY_FLETCH_OFFSET_BASE = 2.34
-const SFAX_ENERGY_SCALE = 1.234
-const SFAX_ENERGY_LETOFF_FACTOR = 9.5
-const SFAX_ENERGY_SHAFT_AERO_FACTOR = 0.000000385
-const SFAX_ENERGY_SHAFT_LENGTH_FACTOR = 23.45
-const SFAX_DEFAULT_SHAFT_VELOCITY_FACTOR = 0.000015
 
-const toNumber = (value: string | undefined) => (value == null || value.trim() === '' ? 0 : Number(value.replace(',', '.')))
+const toNumber = (value: string | undefined) => {
+    const raw = value?.trim() ?? ''
+    if (raw === '') return 0
+    const parsed = Number(raw.replace(',', '.'))
+    return Number.isFinite(parsed) ? parsed : 0
+}
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 const round3 = (value: number) => Number(value.toFixed(3))
 const sfaxAbs = (value: number) => Math.abs(value)
@@ -245,24 +240,6 @@ function getShaftCategoryConstant(category: ShaftUseCategory | undefined): numbe
     }
 }
 
-function getVelocityShaftFactor(category: ShaftUseCategory | undefined): number {
-    switch (category) {
-        case 'hunting':
-            return 0.000018
-        case 'target':
-            return 0.000021
-        default:
-            return SFAX_DEFAULT_SHAFT_VELOCITY_FACTOR
-    }
-}
-
-function getCamEfficiencyFactor(camAggressiveness: string | undefined): number {
-    const normalized = (camAggressiveness ?? '').trim().toLowerCase()
-    if (normalized === 'soft') return SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR * 0.9
-    if (normalized === 'hard') return SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR * 1.1
-    return SFAX_DEFAULT_CAM_EFFICIENCY_FACTOR
-}
-
 function getReleaseMultiplier(releaseType: string): number {
     const normalized = releaseType.trim().toLowerCase()
     if (normalized.includes('finger') || normalized.includes('manual')) return SFAX_DYNAMIC_RELEASE_FINGER
@@ -303,6 +280,10 @@ function calculateArrowComponentWeight(arrow: ArrowSpecs): ArrowComponentWeight 
     }
 }
 
+// SFAX-faithful reverse-engineering: these curves are piecewise with intentional
+// discontinuities at the [start, end] boundaries that match the original firmware's
+// behavior. Do NOT smooth them — calibration tests depend on the exact shape.
+// See calibration dataset in src/data/sfax/.
 function sfaxSignedCurve(value: number, start: number, end: number, base: number, delta: number): number {
     const midpoint = (end - start) * 0.5 + start
     if (end < value) return -(base + delta)
@@ -318,6 +299,10 @@ function sfaxPositiveCurve(value: number, start: number, end: number, base: numb
     return sfaxAbs(end - value) * (delta / sfaxAbs(end - start)) + base
 }
 
+// SFAX-faithful: the call site deliberately passes brace/letoff twice so the
+// adjustments collapse to zero — this mirrors the firmware's velocity routine
+// which only uses these deltas in a separate pass. The factor-of-0.2 appears
+// both in letOffAdjustment and in velFromDW by design, not by mistake.
 function calculateVelocityAdjustment(
     referenceBraceHeight: number,
     braceHeight: number,
@@ -415,11 +400,14 @@ function buildVelocityModel(
     }
 }
 
-// FUN_0047c3d0: partial drag from silencer positioned at DFC inches from cam
+// FUN_0047c3d0: partial drag from silencer positioned at DFC inches from cam.
+// Ratio clamped to [0, 1] so out-of-range DFC values never produce negative drag
+// or a drag larger than the silencer's actual weight.
 function calculateSilencerPartialDrag(axleToAxle: number, silencerDfc: number, silencerWeight: number): number {
     const halfA2A = axleToAxle * 0.5
-    if (halfA2A === 0) return 0
-    return (1 - (halfA2A - silencerDfc) / halfA2A) * silencerWeight
+    if (halfA2A <= 0) return 0
+    const ratio = clamp(silencerDfc / halfA2A, 0, 1)
+    return ratio * silencerWeight
 }
 
 function calculateVelocityDragBundle(
@@ -430,35 +418,7 @@ function calculateVelocityDragBundle(
     peepWeight: number,
     dLoopWeight: number,
 ): number {
-    const halfA2A = axleToAxle * 0.5
-    if (halfA2A === 0) return 0
-    return (1 - (halfA2A - silencerDfc) / halfA2A) * silencerWeight + nockPointWeight + peepWeight + dLoopWeight
-}
-
-function calculateSfaxStoredDrag(
-    shaftUseCategory: ShaftUseCategory | undefined,
-    camAggressiveness: string | undefined,
-    percentLetoff: number,
-    shaftLength: number,
-    fletchQuantity: number,
-    fletchLength: number,
-    fletchHeight: number,
-    fletchOffset: number,
-): number {
-    const shaftTypeFactor = getVelocityShaftFactor(shaftUseCategory)
-    const camTypeFactor = getCamEfficiencyFactor(camAggressiveness)
-    return (
-        fletchLength *
-            fletchQuantity *
-            fletchHeight *
-            SFAX_ENERGY_FLETCH_DRAG_COEFFICIENT *
-            camTypeFactor *
-            SFAX_ENERGY_FLETCH_DRAG_FACTOR *
-            (fletchOffset + SFAX_ENERGY_FLETCH_OFFSET_BASE) *
-            SFAX_ENERGY_SCALE +
-        percentLetoff * percentLetoff * shaftTypeFactor * SFAX_ENERGY_LETOFF_FACTOR +
-        SFAX_PI * 2 * percentLetoff * 0.5 * shaftLength * SFAX_ENERGY_SHAFT_AERO_FACTOR * SFAX_ENERGY_SHAFT_LENGTH_FACTOR
-    )
+    return calculateSilencerPartialDrag(axleToAxle, silencerDfc, silencerWeight) + nockPointWeight + peepWeight + dLoopWeight
 }
 
 function calculateArrowSpeed(
@@ -470,17 +430,9 @@ function calculateArrowSpeed(
         braceHeight: number
         axleToAxle: number
         percentLetoff: number
-        camAggressiveness?: string
     },
     arrow: {
         arrowTotalWeight: number
-        shaftLength: number
-        fletchQuantity: number
-        fletchLength: number
-        fletchHeight: number
-        fletchOffset: number
-        weightEach: number
-        shaftUseCategory?: ShaftUseCategory
     },
     stringSide: {
         peepWeight: number
@@ -489,7 +441,7 @@ function calculateArrowSpeed(
         silencerWeight: number
         silencerDfc: number
     },
-): { fps: number; model: VelocityModel; storedDrag: number } {
+): { fps: number; model: VelocityModel } {
     const model = buildVelocityModel(
         bow.archeryType,
         bow.iboVelocity,
@@ -520,17 +472,7 @@ function calculateArrowSpeed(
         stringSide.dLoopWeight,
     )
     const fps = baseVelocity + weightCorrection - dragBundle * SFAX_SPEED_DRAG_MULTIPLIER * model.totalEfficiency
-    const storedDrag = calculateSfaxStoredDrag(
-        arrow.shaftUseCategory,
-        bow.camAggressiveness,
-        bow.percentLetoff,
-        arrow.shaftLength,
-        arrow.fletchQuantity,
-        arrow.fletchLength,
-        arrow.fletchHeight,
-        arrow.fletchOffset,
-    )
-    return { fps, model, storedDrag }
+    return { fps, model }
 }
 
 function calculateCompoundTargetSpine(
@@ -585,6 +527,9 @@ function calculateCompoundTargetSpine(
 
     intermediate = (velocityRatio / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) * (powerStroke - lengthFactor) + intermediate
 
+    // SFAX-faithful: the constant named "HOLDING_PERCENT_REFERENCE" is in fact the
+    // percentLetoff reference (65) used by the firmware here, not a holding percent
+    // in the consumer sense (100 - letoff). The two are compared on the same scale.
     if (bow.percentLetoff !== SFAX_HOLDING_PERCENT_REFERENCE && bow.percentLetoff !== 0) {
         intermediate += (SFAX_HOLDING_PERCENT_REFERENCE - bow.percentLetoff) * 0.2
     }
@@ -835,15 +780,29 @@ export function calculateSpineMatch(
     const axleToAxle = toNumber(bow.axleToAxle)
     const percentLetoff = toNumber(bow.percentLetoff)
     const archeryType = getEffectiveArcheryType(bow.archeryType)
+    if (!bow.archeryType) {
+        warnings.push('No se ha indicado el tipo de arco; se asume compound por defecto. Verifica el valor para evitar errores.')
+    }
 
     const shaftLength = toNumber(arrow.shaftLength)
     const staticSpine = toNumber(arrow.staticSpine)
     const fletchLength = toNumber(arrow.fletchLength ?? '') || DEFAULT_FLETCH_LENGTH
     const fletchHeight = toNumber(arrow.fletchHeight ?? '') || DEFAULT_FLETCH_HEIGHT
-    const fletchOffset = toNumber(arrow.fletchOffset ?? '') || DEFAULT_FLETCH_OFFSET
     const shaftMaterial = arrow.shaftMaterial || 'carbon'
 
     const componentWeights = calculateArrowComponentWeight(arrow)
+
+    const measuredArrowWeight = toNumber(arrow.measuredArrowTotalWeight ?? '')
+    const nonShaftComponentWeight =
+        componentWeights.pointWeight +
+        componentWeights.insertWeight +
+        componentWeights.fletchQuantity * componentWeights.weightEach +
+        componentWeights.wrapWeight +
+        componentWeights.nockWeight +
+        componentWeights.bushingPin
+    if (measuredArrowWeight > 0 && measuredArrowWeight < nonShaftComponentWeight) {
+        warnings.push('El peso total medido es menor que la suma de los componentes; revisa los datos.')
+    }
 
     const peepWeight = toNumber(stringWeights.peep)
     const dLoopWeight = toNumber(stringWeights.dLoop)
@@ -851,8 +810,8 @@ export function calculateSpineMatch(
     const silencersWeight = toNumber(stringWeights.silencers)
     const silencerDfcWeight = toNumber(stringWeights.silencerDfc) // inches (position), not grains
 
-    const hasAllInputs = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0 && braceHeight > 0
-    if (!hasAllInputs) {
+    const hasRequiredGeometry = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0 && braceHeight > 0
+    if (!hasRequiredGeometry) {
         const missingFields: string[] = []
         if (drawWeight <= 0) missingFields.push('peso de tiro')
         if (drawLength <= 0) missingFields.push('longitud de tiro')
@@ -864,6 +823,11 @@ export function calculateSpineMatch(
         }
         return createEmptyResult(archeryType, recommendations, warnings)
     }
+    const hasAllInputs =
+        iboVelocity > 0 &&
+        axleToAxle > 0 &&
+        (archeryType !== ARCHERY_TYPE.COMPOUND || percentLetoff > 0) &&
+        stringWeights.releaseType.trim() !== ''
 
     const powerStroke = drawLength - braceHeight
     if (componentWeights.arrowTotalWeight <= 0) {
@@ -884,17 +848,9 @@ export function calculateSpineMatch(
             braceHeight,
             axleToAxle,
             percentLetoff,
-            camAggressiveness: bow.camAggressiveness,
         },
         {
             arrowTotalWeight: componentWeights.arrowTotalWeight,
-            shaftLength,
-            fletchQuantity: componentWeights.fletchQuantity,
-            fletchLength,
-            fletchHeight,
-            fletchOffset,
-            weightEach: componentWeights.weightEach,
-            shaftUseCategory: arrow.shaftUseCategory,
         },
         {
             peepWeight,
@@ -1078,6 +1034,22 @@ export function calculateSpineMatch(
         measuredChronoSpeed > 0,
     )
 
+    const spineRequiredCI =
+        isFinite(spineRequiredBase) && spineRequiredBase > 0
+            ? createConfidenceInterval(spineRequiredBase, 0.03, confidence)
+            : null
+    const spineDynamicCI =
+        isFinite(spineDynamic) && spineDynamic > 0 ? createConfidenceInterval(spineDynamic, 0.02, confidence) : null
+    const matchIndexCI =
+        spineRequiredCI && spineDynamicCI && spineRequiredCI.lower > 0
+            ? {
+                  value: spineDynamicCI.value / spineRequiredCI.value,
+                  lower: spineDynamicCI.lower / spineRequiredCI.upper,
+                  upper: spineDynamicCI.upper / spineRequiredCI.lower,
+                  confidence,
+              }
+            : null
+
     return {
         spineRequired: isFinite(spineRequiredBase) ? spineRequiredBase : null,
         spineDynamic: isFinite(spineDynamic) ? spineDynamic : null,
@@ -1089,9 +1061,9 @@ export function calculateSpineMatch(
         effectiveFPS: isFinite(effectiveFPS) ? effectiveFPS : null,
         measuredFPS: measuredChronoSpeed > 0 ? measuredChronoSpeed : null,
         usedChronographData: measuredChronoSpeed > 0,
-        spineRequiredCI: isFinite(spineRequiredBase) ? createConfidenceInterval(spineRequiredBase, 0.03, confidence) : null,
-        spineDynamicCI: isFinite(spineDynamic) ? createConfidenceInterval(spineDynamic, 0.02, confidence) : null,
-        matchIndexCI: isFinite(matchIndex) ? createConfidenceInterval(matchIndex, 0.06, confidence) : null,
+        spineRequiredCI,
+        spineDynamicCI,
+        matchIndexCI,
         temperature: temperatureF,
         archeryType,
         recommendations,

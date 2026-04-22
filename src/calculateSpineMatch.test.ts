@@ -60,6 +60,131 @@ describe('calculateSpineMatch', () => {
         expect(result.recommendations.join(' ')).toMatch(/Faltan datos clave/i)
     })
 
+    it('degrada la confianza a "low" cuando falta iboVelocity', () => {
+        const result = calculateSpineMatch(
+            {
+                ...baseBow,
+                iboVelocity: '',
+            },
+            baseArrow,
+            baseString,
+        )
+
+        expect(result.spineRequiredCI?.confidence).toBe('low')
+    })
+
+    it('degrada la confianza a "low" cuando falta el tipo de release', () => {
+        const result = calculateSpineMatch(
+            baseBow,
+            baseArrow,
+            {
+                ...baseString,
+                releaseType: '',
+            },
+        )
+
+        expect(result.spineRequiredCI?.confidence).toBe('low')
+    })
+
+    it('clampa silencerDfc al rango físico [0, halfA2A]', () => {
+        const overRange = calculateSpineMatch(
+            baseBow,
+            baseArrow,
+            {
+                ...baseString,
+                silencers: '12',
+                silencerDfc: '30',
+            },
+        )
+        const atBoundary = calculateSpineMatch(
+            baseBow,
+            baseArrow,
+            {
+                ...baseString,
+                silencers: '12',
+                silencerDfc: '17',
+            },
+        )
+        const negative = calculateSpineMatch(
+            baseBow,
+            baseArrow,
+            {
+                ...baseString,
+                silencers: '12',
+                silencerDfc: '-5',
+            },
+        )
+        const atZero = calculateSpineMatch(
+            baseBow,
+            baseArrow,
+            {
+                ...baseString,
+                silencers: '12',
+                silencerDfc: '0',
+            },
+        )
+
+        expect(overRange.spineRequired).toBeCloseTo(atBoundary.spineRequired!, 6)
+        expect(negative.spineRequired).toBeCloseTo(atZero.spineRequired!, 6)
+    })
+
+    it('advierte cuando no se especifica el tipo de arco y se infiere por defecto', () => {
+        const result = calculateSpineMatch(
+            {
+                ...baseBow,
+                archeryType: undefined,
+            },
+            baseArrow,
+            baseString,
+        )
+
+        expect(result.warnings.join(' ')).toMatch(/tipo de arco.*compound/i)
+    })
+
+    it('advierte cuando el peso total medido es menor que la suma de componentes', () => {
+        const componentSum = 125 + 25 + 3 * 8 + 10 + 10 + 10 // 204 grains sin shaft
+        const result = calculateSpineMatch(
+            baseBow,
+            {
+                ...baseArrow,
+                measuredArrowTotalWeight: String(componentSum - 10),
+            },
+            baseString,
+        )
+
+        expect(result.warnings.join(' ')).toMatch(/peso total medido.*componentes/i)
+    })
+
+    it('deriva matchIndexCI de los intervalos de numerador y denominador', () => {
+        const result = calculateSpineMatch(baseBow, baseArrow, baseString)
+
+        expect(result.matchIndexCI).not.toBeNull()
+        expect(result.spineDynamicCI).not.toBeNull()
+        expect(result.spineRequiredCI).not.toBeNull()
+
+        const expectedLower = result.spineDynamicCI!.lower / result.spineRequiredCI!.upper
+        const expectedUpper = result.spineDynamicCI!.upper / result.spineRequiredCI!.lower
+
+        expect(result.matchIndexCI!.lower).toBeCloseTo(expectedLower, 8)
+        expect(result.matchIndexCI!.upper).toBeCloseTo(expectedUpper, 8)
+    })
+
+    it('trata entradas no numéricas como faltantes en lugar de propagar NaN', () => {
+        const result = calculateSpineMatch(
+            {
+                ...baseBow,
+                drawWeight: 'abc',
+            },
+            baseArrow,
+            baseString,
+        )
+
+        expect(result.status).toBeNull()
+        expect(result.spineRequired).toBeNull()
+        expect(result.matchIndex).toBeNull()
+        expect(result.recommendations.join(' ')).toMatch(/Faltan datos clave/i)
+    })
+
     it('usa el peso total medido de flecha cuando está disponible', () => {
         const result = calculateSpineMatch(
             baseBow,
