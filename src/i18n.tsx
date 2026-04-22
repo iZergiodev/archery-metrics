@@ -158,8 +158,8 @@ const translations: Record<Lang, Record<string, string>> = {
         'archeryType.recurve': 'Recurvo',
         'archeryType.traditional': 'Tradicional',
 
-        'option.units.imperial.short': 'Imperial',
-        'option.units.metric.short': 'Métrico',
+        'option.units.imperial.short': 'IMP',
+        'option.units.metric.short': 'MÉT',
 
         'option.release.post': 'Liberación posterior',
         'option.release.pre': 'Liberación previa',
@@ -358,8 +358,8 @@ const translations: Record<Lang, Record<string, string>> = {
         'archeryType.recurve': 'Recurve',
         'archeryType.traditional': 'Traditional',
 
-        'option.units.imperial.short': 'Imperial',
-        'option.units.metric.short': 'Metric',
+        'option.units.imperial.short': 'IMP',
+        'option.units.metric.short': 'MET',
 
         'option.release.post': 'Post Gate Release',
         'option.release.pre': 'Pre Gate Release',

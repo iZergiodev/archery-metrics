@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useI18n } from './i18n.tsx'
 import { calculateSpineMatch } from './utils/archeryCalculator'
 import { Toolbar } from './components/Toolbar'
@@ -100,6 +100,19 @@ function App() {
   const [arrowSpecs, setArrowSpecs] = useState(initialArrowSpecs)
   const [stringWeights, setStringWeights] = useState(initialStringWeights)
   const [dbPanelOpen, setDbPanelOpen] = useState(false)
+  const resultsRef = useRef<HTMLDivElement | null>(null)
+  const [resultsInView, setResultsInView] = useState(false)
+
+  useEffect(() => {
+    const node = resultsRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setResultsInView(entry.isIntersecting && entry.intersectionRatio > 0.35),
+      { threshold: [0, 0.35, 1] },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
 
   const spineMatch = useMemo(() => {
     console.log('%c── ARCHERY CONFIG ──', 'color:#D4A017;font-weight:bold')
@@ -316,12 +329,6 @@ function App() {
   const bowProgress = countFilledFields(bowSpecs, BOW_CORE_FIELDS)
   const arrowProgress = countFilledFields(arrowSpecs, ARROW_CORE_FIELDS)
   const stringProgress = countFilledFields(stringWeights, STRING_CORE_FIELDS)
-  const totalProgress = bowProgress + arrowProgress + stringProgress
-  const totalCoreFields = BOW_CORE_FIELDS.length + ARROW_CORE_FIELDS.length + STRING_CORE_FIELDS.length
-
-  const fitPercent = spineMatch.matchIndex != null
-    ? Math.round((1 - Math.min(Math.abs(spineMatch.matchIndex - 1) / 0.4, 1)) * 100)
-    : null
 
   const tabs = [
     {
@@ -359,7 +366,7 @@ function App() {
           <InputField
             {...bowField('drawWeight', 'drawWeight')}
             label={t('field.drawWeight')}
-            placeholder={unitLabel('drawWeight')}
+            placeholder=""
             id="drawWeight"
             required
             unit={unitLabel('drawWeight')}
@@ -367,7 +374,7 @@ function App() {
           <InputField
             {...bowField('drawLength', 'length')}
             label={t('field.drawLength')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="drawLength"
             required
             unit={unitLabel('length')}
@@ -375,7 +382,7 @@ function App() {
           <InputField
             {...bowField('iboVelocity', 'speed')}
             label={t('field.iboVelocity')}
-            placeholder={unitLabel('speed')}
+            placeholder=""
             id="iboVelocity"
             required
             unit={unitLabel('speed')}
@@ -383,7 +390,7 @@ function App() {
           <InputField
             {...bowField('braceHeight', 'length')}
             label={t('field.braceHeight')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="braceHeight"
             required
             unit={unitLabel('length')}
@@ -396,7 +403,7 @@ function App() {
           <InputField
             {...bowField('measuredChronoSpeed', 'speed')}
             label={t('field.measuredChronoSpeed')}
-            placeholder={unitLabel('speed')}
+            placeholder=""
             id="measuredChronoSpeed"
             unit={unitLabel('speed')}
             hint={t('field.measuredChronoSpeed.hint')}
@@ -405,7 +412,7 @@ function App() {
           <InputField
             {...bowField('axleToAxle', 'length')}
             label={t('field.axleToAxle')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="axleToAxle"
             unit={unitLabel('length')}
           />
@@ -450,7 +457,7 @@ function App() {
           <InputField
             {...arrowField('shaftLength', 'length')}
             label={t('field.shaftLength')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="shaftLength"
             required
             unit={unitLabel('length')}
@@ -458,14 +465,14 @@ function App() {
           <InputField
             {...arrowField('shaftGpi', 'linearDensity')}
             label={t('field.shaftGpi')}
-            placeholder={unitLabel('linearDensity')}
+            placeholder=""
             id="shaftGpi"
             unit={unitLabel('linearDensity')}
           />
           <InputField
             {...arrowField('pointWeight', 'componentWeight')}
             label={t('field.pointWeight')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="pointWeight"
             unit={unitLabel('componentWeight')}
           />
@@ -477,7 +484,7 @@ function App() {
           <InputField
             {...arrowField('measuredArrowTotalWeight', 'componentWeight')}
             label={t('field.measuredArrowTotalWeight')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="measuredArrowTotalWeight"
             unit={unitLabel('componentWeight')}
             hint={t('field.measuredArrowTotalWeight.hint')}
@@ -485,7 +492,7 @@ function App() {
           <InputField
             {...arrowField('insertWeight', 'componentWeight')}
             label={t('field.insertWeight')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="insertWeight"
             unit={unitLabel('componentWeight')}
           />
@@ -532,49 +539,49 @@ function App() {
           <InputField
             {...arrowField('weightEach', 'componentWeight')}
             label={t('field.weightEach')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="weightEach"
             unit={unitLabel('componentWeight')}
           />
           <InputField
             {...arrowField('fletchLength', 'length')}
             label={t('field.fletchLength')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="fletchLength"
             unit={unitLabel('length')}
           />
           <InputField
             {...arrowField('fletchHeight', 'length')}
             label={t('field.fletchHeight')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="fletchHeight"
             unit={unitLabel('length')}
           />
           <InputField
             {...arrowField('fletchOffset', 'length')}
             label={t('field.fletchOffset')}
-            placeholder={unitLabel('length')}
+            placeholder=""
             id="fletchOffset"
             unit={unitLabel('length')}
           />
           <InputField
             {...arrowField('wrapWeight', 'componentWeight')}
             label={t('field.wrapWeight')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="wrapWeight"
             unit={unitLabel('componentWeight')}
           />
           <InputField
             {...arrowField('nockWeight', 'componentWeight')}
             label={t('field.nockWeight')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="nockWeight"
             unit={unitLabel('componentWeight')}
           />
           <InputField
             {...arrowField('bushingPin', 'componentWeight')}
             label={t('field.bushingPin')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="bushingPin"
             unit={unitLabel('componentWeight')}
           />
@@ -624,14 +631,14 @@ function App() {
           <InputField
             {...stringField('dLoop', 'componentWeight')}
             label={t('field.dLoop')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="dLoop"
             unit={unitLabel('componentWeight')}
           />
           <InputField
             {...stringField('peep', 'componentWeight')}
             label={t('field.peep')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="peep"
             unit={unitLabel('componentWeight')}
           />
@@ -643,21 +650,21 @@ function App() {
           <InputField
             {...stringField('nockPoint', 'componentWeight')}
             label={t('field.nockPoint')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="nockPoint"
             unit={unitLabel('componentWeight')}
           />
           <InputField
             {...stringField('silencers', 'componentWeight')}
             label={t('field.silencers')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="silencers"
             unit={unitLabel('componentWeight')}
           />
           <InputField
             {...stringField('silencerDfc', 'componentWeight')}
             label={t('field.silencerDfc')}
-            placeholder={unitLabel('componentWeight')}
+            placeholder=""
             id="silencerDfc"
             unit={unitLabel('componentWeight')}
           />
@@ -675,9 +682,6 @@ function App() {
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--gold)]">{t('app.kicker')}</p>
                 <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-[var(--text-primary)]">{t('app.title')}</h1>
-                <p className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
-                  {totalProgress}/{totalCoreFields} {t('app.progress')}
-                </p>
               </div>
             </div>
 
@@ -708,7 +712,7 @@ function App() {
         </div>
 
         {/* Results below form */}
-        <div className="mt-8">
+        <div ref={resultsRef} className="mt-8">
           <ResultsSummary
             result={spineMatch}
             matchColor={matchColor}
@@ -749,27 +753,30 @@ function App() {
         t={t}
       />
 
-      {/* Sticky bottom match indicator */}
-      {spineMatch.status != null && (
-        <div
+      {/* Sticky bottom match indicator — only when results are scrolled out of view */}
+      {spineMatch.status != null && !resultsInView && (
+        <button
+          type="button"
+          onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="fixed bottom-0 left-0 right-0 z-50 safe-bottom animate-slide-up-entry border-t border-[var(--border)]"
           style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(16px)' }}
+          aria-label={`${matchLabel} — ${t('summary.primarySignal')}`}
         >
           <div
-            className="mx-auto flex h-14 max-w-[560px] items-center gap-4 px-4"
+            className="mx-auto flex h-12 max-w-[560px] items-center gap-3 px-4"
             style={{ borderLeft: `3px solid ${stickyBarBorderColor}` }}
           >
-            <span className={`text-[14px] font-semibold ${matchColor}`}>{matchLabel}</span>
-            <span className="font-mono text-[15px] text-[var(--text-primary)]">
+            <span
+              className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: stickyBarBorderColor }}
+              aria-hidden="true"
+            />
+            <span className={`text-[13px] font-semibold ${matchColor}`}>{matchLabel}</span>
+            <span className="ml-auto font-mono text-[13px] text-[var(--text-secondary)]">
               {spineMatch.matchIndex?.toFixed(3) ?? '--'}
             </span>
-            {fitPercent != null && (
-              <span className="ml-auto text-[13px] font-medium text-[var(--text-secondary)]">
-                {fitPercent}% fit
-              </span>
-            )}
           </div>
-        </div>
+        </button>
       )}
     </div>
   )

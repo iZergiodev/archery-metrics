@@ -1,6 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import type { UnitSystem } from '../utils/unitSystem'
+
+type SlotSummary = { drawWeight?: string; staticSpine?: string; filled: boolean }
+
+function readSlotSummary(slot: number): SlotSummary {
+  const saved = localStorage.getItem(`archery-config-${slot}`)
+  if (!saved) return { filled: false }
+  try {
+    const config = JSON.parse(saved) as {
+      bowSpecs?: { drawWeight?: string }
+      arrowSpecs?: { staticSpine?: string }
+    }
+    const drawWeight = config.bowSpecs?.drawWeight?.trim()
+    const staticSpine = config.arrowSpecs?.staticSpine?.trim()
+    return {
+      drawWeight: drawWeight || undefined,
+      staticSpine: staticSpine || undefined,
+      filled: Boolean(drawWeight || staticSpine),
+    }
+  } catch {
+    return { filled: false }
+  }
+}
 
 interface ToolbarProps {
   onSave: (slot: number) => void
@@ -26,6 +48,17 @@ export function Toolbar({
   t,
 }: ToolbarProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const [slotSummaries, setSlotSummaries] = useState<SlotSummary[]>(() => [
+    { filled: false },
+    { filled: false },
+    { filled: false },
+  ])
+
+  useEffect(() => {
+    if (showMenu) {
+      setSlotSummaries([readSlotSummary(1), readSlotSummary(2), readSlotSummary(3)])
+    }
+  }, [showMenu])
 
   return (
     <div className="relative flex w-full items-center gap-2">
@@ -59,51 +92,100 @@ export function Toolbar({
       </div>
 
       {showMenu && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-[14px] border border-[var(--border)] p-3 shadow-2xl animate-fade-in card-surface">
-          <MenuSection title={t('toolbar.save')}>
-            <div className="grid grid-cols-3 gap-1.5">
-              {[1, 2, 3].map((slot) => (
-                <MenuButton
-                  key={`save-${slot}`}
-                  onClick={() => {
-                    onSave(slot)
-                    setShowMenu(false)
-                  }}
-                >
-                  {slot}
-                </MenuButton>
-              ))}
-            </div>
-          </MenuSection>
-
-          <MenuSection title={t('toolbar.load')}>
-            <div className="grid grid-cols-3 gap-1.5">
-              {[1, 2, 3].map((slot) => (
-                <MenuButton
-                  key={`load-${slot}`}
-                  onClick={() => {
-                    onLoad(slot)
-                    setShowMenu(false)
-                  }}
-                >
-                  {slot}
-                </MenuButton>
-              ))}
-            </div>
-          </MenuSection>
-
+        <>
           <button
-            onClick={() => {
-              onClear()
-              setShowMenu(false)
-            }}
-            className="mt-3 border-t border-[var(--border)] pt-3 text-[12px] uppercase tracking-[0.18em] text-[var(--target-red)] transition-colors hover:text-[var(--target-red)]/70"
-          >
-            {t('toolbar.clearAll')}
-          </button>
-        </div>
+            type="button"
+            aria-label="close menu"
+            onClick={() => setShowMenu(false)}
+            className="fixed inset-0 z-40 cursor-default bg-transparent"
+          />
+          <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[14px] border border-[var(--border)] p-3 shadow-2xl animate-fade-in card-surface">
+            <MenuSection title={t('toolbar.save')}>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[1, 2, 3].map((slot) => (
+                  <SlotButton
+                    key={`save-${slot}`}
+                    slot={slot}
+                    summary={slotSummaries[slot - 1]}
+                    variant="save"
+                    onClick={() => {
+                      onSave(slot)
+                      setShowMenu(false)
+                    }}
+                  />
+                ))}
+              </div>
+            </MenuSection>
+
+            <MenuSection title={t('toolbar.load')}>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[1, 2, 3].map((slot) => (
+                  <SlotButton
+                    key={`load-${slot}`}
+                    slot={slot}
+                    summary={slotSummaries[slot - 1]}
+                    variant="load"
+                    disabled={!slotSummaries[slot - 1].filled}
+                    onClick={() => {
+                      onLoad(slot)
+                      setShowMenu(false)
+                    }}
+                  />
+                ))}
+              </div>
+            </MenuSection>
+
+            <button
+              onClick={() => {
+                onClear()
+                setShowMenu(false)
+              }}
+              className="mt-3 border-t border-[var(--border)] pt-3 text-[12px] uppercase tracking-[0.18em] text-[var(--target-red)] transition-colors hover:text-[var(--target-red)]/70"
+            >
+              {t('toolbar.clearAll')}
+            </button>
+          </div>
+        </>
       )}
     </div>
+  )
+}
+
+function SlotButton({
+  slot,
+  summary,
+  variant,
+  disabled = false,
+  onClick,
+}: {
+  slot: number
+  summary: SlotSummary
+  variant: 'save' | 'load'
+  disabled?: boolean
+  onClick: () => void
+}) {
+  const summaryLine =
+    summary.filled
+      ? [summary.drawWeight ? `${summary.drawWeight}#` : null, summary.staticSpine ? `${summary.staticSpine}` : null]
+          .filter(Boolean)
+          .join(' · ')
+      : '—'
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-[10px] border border-[var(--border)] px-1 py-2 text-center transition-all duration-150 press-scale ${
+        disabled
+          ? 'cursor-not-allowed opacity-40'
+          : variant === 'save'
+            ? 'hover:border-[var(--gold)]/40 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
+            : 'hover:border-[var(--gold)]/40 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
+      }`}
+    >
+      <span className="font-mono text-[13px] font-semibold text-[var(--text-primary)]">{slot}</span>
+      <span className="w-full truncate font-mono text-[9px] leading-tight text-[var(--text-muted)]">{summaryLine}</span>
+    </button>
   )
 }
 
@@ -146,13 +228,3 @@ function MenuSection({ title, children }: { title: string; children: React.React
   )
 }
 
-function MenuButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className="rounded-[10px] border border-[var(--border)] px-0 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--gold)]/40 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
-    >
-      {children}
-    </button>
-  )
-}

@@ -10,11 +10,14 @@
     --bg-surface: #141414;
     --bg-elevated: #1A1A1A;
     --text-primary: #F0EDE8;
-    --text-secondary: #9A948A;
-    --text-muted: #6B6560;
+    --text-secondary: #A8A299;
+    --text-muted: #8A847C;
     --border: rgba(255, 248, 235, 0.12);
     --border-hover: rgba(255, 248, 235, 0.24);
     --ring-gold: rgba(212, 160, 23, 0.5);
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
   }
 
   html, body {
@@ -150,9 +153,9 @@
     animation: flashGold 0.6s ease-out both;
   }
 
-  /* Focus glow for inputs */
+  /* Focus ring for inputs — static, no infinite repaint */
   .focus-glow:focus-within {
-    animation: pulseGlow 1.5s ease-in-out infinite;
+    box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.35);
   }
 
   /* Card depth + hover lift */
