@@ -5,14 +5,12 @@ import { createRequire } from 'node:module'
 
 const repoRoot = process.cwd()
 const outDir = path.join(os.tmpdir(), 'archery-metrics-calibration-cjs')
-
-const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+const tscCli = path.join(repoRoot, 'node_modules', 'typescript', 'bin', 'tsc')
 
 execFileSync(
-  pnpmCmd,
+  process.execPath,
   [
-    'exec',
-    'tsc',
+    tscCli,
     'src/constants.ts',
     'src/data/official/compoundDatabase.ts',
     'src/data/sfax/compoundReference.ts',

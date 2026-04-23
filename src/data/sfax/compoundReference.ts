@@ -34,7 +34,7 @@ const DEFAULT_STRING: StringWeights = {
 }
 
 const DEFAULT_ARROW_ADVANCED = {
-  shaftUseCategory: 'base' as const,
+  shaftUseCategory: 'hunting' as const,
   insertType: 'default' as const,
   fletchLength: '2',
   fletchHeight: '0.5',
@@ -70,7 +70,7 @@ export const SFAX_COMPOUND_REFERENCE_CASES_V1: SfaxReferenceCase[] = [
       shaftMaterial: 'carbon',
       fletchLength: '2',
       fletchHeight: '0.5',
-      shaftUseCategory: 'base',
+      shaftUseCategory: 'hunting',
       insertType: 'default',
       measuredArrowTotalWeight: '431.77',
     },
@@ -118,7 +118,7 @@ export const SFAX_COMPOUND_REFERENCE_CASES_V1: SfaxReferenceCase[] = [
       shaftMaterial: 'carbon',
       fletchLength: '2',
       fletchHeight: '0.5',
-      shaftUseCategory: 'base',
+      shaftUseCategory: 'hunting',
       insertType: 'default',
       measuredArrowTotalWeight: '448.78',
     },

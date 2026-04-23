@@ -8,6 +8,7 @@ const repoRoot = process.cwd()
 const tempDir = mkdtempSync(path.join(os.tmpdir(), 'archery-metrics-vitest-'))
 const tempConfigPath = path.join(tempDir, 'vitest.config.mts')
 const vitestConfigModule = pathToFileURL(path.resolve(repoRoot, 'node_modules', 'vitest', 'dist', 'config.js')).href
+const vitestCli = path.resolve(repoRoot, 'node_modules', 'vitest', 'vitest.mjs')
 const cacheDir = path.join(os.tmpdir(), 'archery-metrics-vitest-cache')
 
 writeFileSync(
@@ -29,7 +30,7 @@ writeFileSync(
   'utf8',
 )
 
-execFileSync('pnpm', ['exec', 'vitest', 'run', '--config', tempConfigPath, ...process.argv.slice(2)], {
+execFileSync(process.execPath, [vitestCli, 'run', '--config', tempConfigPath, ...process.argv.slice(2)], {
   cwd: repoRoot,
   stdio: 'inherit',
 })

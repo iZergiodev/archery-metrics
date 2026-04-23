@@ -264,6 +264,13 @@ describe('calculateSpineMatch', () => {
         expect(checks.every((check) => check.passed)).toBe(true)
     })
 
+    it.each(SFAX_PRIMARY_REFERENCE_CASES)('$label coincide con el spine dinamico SFAX', (referenceCase) => {
+        const result = calculateSpineMatch(referenceCase.bow, referenceCase.arrow, referenceCase.stringWeights)
+
+        expect(result.spineRequired).not.toBeNull()
+        expect(Math.abs(result.spineRequired! - referenceCase.sfaxResults.dynamicSpine)).toBeLessThanOrEqual(0.001)
+    })
+
     it('resume la fidelidad compound con error acotado frente a SFAX', () => {
         const summary = summarizeCompoundCalibration()
 

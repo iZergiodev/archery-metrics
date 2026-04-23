@@ -5,12 +5,12 @@ import { createRequire } from 'node:module'
 
 const repoRoot = process.cwd()
 const outDir = path.join(os.tmpdir(), 'archery-metrics-analysis-cjs')
+const tscCli = path.join(repoRoot, 'node_modules', 'typescript', 'bin', 'tsc')
 
 execFileSync(
-  'pnpm',
+  process.execPath,
   [
-    'exec',
-    'tsc',
+    tscCli,
     'src/constants.ts',
     'src/data/official/compoundDatabase.ts',
     'src/data/sfax/compoundReference.ts',
