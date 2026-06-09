@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Archivo Variable", "Segoe UI Variable", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", "Consolas", monospace;
+}
+
 @layer base {
   :root {
     --gold: #D4A017;
@@ -23,7 +28,7 @@
   html, body {
     @apply h-full antialiased;
     font-size: 16px;
-    font-family: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+    font-family: var(--font-sans);
     background-color: var(--bg-primary);
     background-image: radial-gradient(ellipse at 50% 30%, rgba(212, 160, 23, 0.02) 0%, transparent 70%);
     color: var(--text-primary);
@@ -39,7 +44,8 @@
   }
 
   h1, h2, h3 {
-    font-family: "Bahnschrift", "Aptos Display", "Segoe UI Variable", sans-serif;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
   }
 
   input[type="number"]::-webkit-outer-spin-button,
