@@ -53,13 +53,13 @@ export function ResultsSummary({
           : t('summary.fitOff')
 
   return (
-    <section className="border-b border-[var(--border)] pb-6" aria-labelledby="results-heading">
+    <section className="pb-2" aria-labelledby="results-heading">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start" role="status" aria-live="polite">
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--gold)]/80">{t('summary.live')}</p>
           <h2
             id="results-heading"
-            className={`mt-3 break-words text-[30px] font-semibold leading-none tracking-tight sm:text-[34px] ${matchColor}`}
+            className={`mt-3 break-words text-[34px] font-semibold leading-none tracking-tight sm:text-[38px] ${matchColor}`}
           >
             {matchLabel}
           </h2>

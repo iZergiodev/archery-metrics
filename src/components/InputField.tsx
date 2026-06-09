@@ -73,7 +73,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             step={step}
             min={min}
             inputMode={type === 'number' ? 'decimal' : undefined}
-            className="w-full bg-transparent px-0 py-3 pr-12 text-right font-mono text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
+            className="w-full bg-transparent px-0 py-3.5 pr-12 text-right font-mono text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
           />
           {unit && (
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-[var(--text-secondary)]">
