@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, X, Loader } from 'lucide-react'
+import { ChevronDown, Loader } from 'lucide-react'
+import { BottomSheet } from './BottomSheet'
 import type { ShaftEntry } from '../data/equipment/types'
 
 interface DatabasePanelProps {
@@ -89,87 +90,77 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-6 px-4">
-        <div className="mx-auto w-full max-w-[560px] rounded-[16px] border border-[var(--border)] p-5 card-surface">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-[11px] uppercase tracking-[0.24em] text-[var(--gold)]">{t('db.title')}</h2>
-            <button onClick={handleClose} className="rounded-full p-2 text-[var(--text-secondary)] transition-colors press-scale hover:text-[var(--text-primary)]">
-              <X size={20} />
+    <>
+      <BottomSheet open={open} onClose={handleClose} title={t('db.title')}>
+        {db.status === 'loading' && (
+          <div className="flex items-center gap-3 py-12 text-[var(--text-secondary)]">
+            <Loader size={18} className="animate-spin" />
+            <span className="text-[13px]">{t('db.loading')}</span>
+          </div>
+        )}
+
+        {db.status === 'error' && (
+          <div className="py-12 text-center">
+            <p className="text-[13px] text-[var(--text-secondary)]">{t('db.error')}</p>
+            <button
+              onClick={() => setDb({ status: 'idle' })}
+              className="mt-3 text-[12px] font-medium text-[var(--gold)] press-scale"
+            >
+              {t('db.retry')}
             </button>
           </div>
+        )}
 
-          {db.status === 'loading' && (
-            <div className="flex items-center gap-3 py-12 text-[var(--text-secondary)]">
-              <Loader size={18} className="animate-spin" />
-              <span className="text-[13px]">{t('db.loading')}</span>
-            </div>
-          )}
+        {db.status === 'ready' && (
+          <div className="space-y-3">
+            <PanelSelect
+              label={t('db.selectManufacturer')}
+              value={manufacturer}
+              onChange={(v) => { setManufacturer(v); setModel(''); setSize('') }}
+              options={manufacturers.map((m) => ({ value: m, label: m }))}
+            />
+            <PanelSelect
+              label={t('db.selectModel')}
+              value={model}
+              onChange={(v) => { setModel(v); setSize('') }}
+              options={models.map((m) => ({ value: m, label: m }))}
+              disabled={!manufacturer}
+            />
+            <PanelSelect
+              label={t('db.selectVariant')}
+              value={size}
+              onChange={setSize}
+              options={sizes.map((s) => ({ value: s, label: s }))}
+              disabled={!model}
+            />
 
-          {db.status === 'error' && (
-            <div className="py-12 text-center">
-              <p className="text-[13px] text-[var(--text-secondary)]">{t('db.error')}</p>
-              <button
-                onClick={() => setDb({ status: 'idle' })}
-                className="mt-3 text-[12px] font-medium text-[var(--gold)] press-scale"
-              >
-                {t('db.retry')}
-              </button>
-            </div>
-          )}
+            {selectedShaft && (
+              <PreviewCard>
+                <PreviewRow label={t('db.preview.spine')} value={selectedShaft.spine.toString()} />
+                <PreviewRow label={t('db.preview.gpi')} value={`${selectedShaft.gpi}`} />
+                <PreviewRow label={t('db.preview.length')} value={`${selectedShaft.stockLength}"`} />
+                <PreviewRow label={t('db.preview.od')} value={`${selectedShaft.od}"`} />
+                {selectedShaft.nockWeight > 0 && <PreviewRow label={t('db.preview.nock')} value={`${selectedShaft.nockWeight}gr`} />}
+                {selectedShaft.bushingPin > 0 && <PreviewRow label={t('db.preview.bushing')} value={`${selectedShaft.bushingPin}gr`} />}
+                {selectedShaft.pointInsert > 0 && <PreviewRow label={t('db.preview.insert')} value={`${selectedShaft.pointInsert}gr`} />}
+              </PreviewCard>
+            )}
 
-          {db.status === 'ready' && (
-            <div className="space-y-3">
-              <PanelSelect
-                label={t('db.selectManufacturer')}
-                value={manufacturer}
-                onChange={(v) => { setManufacturer(v); setModel(''); setSize('') }}
-                options={manufacturers.map((m) => ({ value: m, label: m }))}
-              />
-              <PanelSelect
-                label={t('db.selectModel')}
-                value={model}
-                onChange={(v) => { setModel(v); setSize('') }}
-                options={models.map((m) => ({ value: m, label: m }))}
-                disabled={!manufacturer}
-              />
-              <PanelSelect
-                label={t('db.selectVariant')}
-                value={size}
-                onChange={setSize}
-                options={sizes.map((s) => ({ value: s, label: s }))}
-                disabled={!model}
-              />
-
-              {selectedShaft && (
-                <PreviewCard>
-                  <PreviewRow label={t('db.preview.spine')} value={selectedShaft.spine.toString()} />
-                  <PreviewRow label={t('db.preview.gpi')} value={`${selectedShaft.gpi}`} />
-                  <PreviewRow label={t('db.preview.length')} value={`${selectedShaft.stockLength}"`} />
-                  <PreviewRow label={t('db.preview.od')} value={`${selectedShaft.od}"`} />
-                  {selectedShaft.nockWeight > 0 && <PreviewRow label={t('db.preview.nock')} value={`${selectedShaft.nockWeight}gr`} />}
-                  {selectedShaft.bushingPin > 0 && <PreviewRow label={t('db.preview.bushing')} value={`${selectedShaft.bushingPin}gr`} />}
-                  {selectedShaft.pointInsert > 0 && <PreviewRow label={t('db.preview.insert')} value={`${selectedShaft.pointInsert}gr`} />}
-                </PreviewCard>
-              )}
-
-              {/* Apply button */}
-              <button
-                onClick={handleApplyClick}
-                disabled={!selectedShaft}
-                className={`mt-4 w-full rounded-[14px] py-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] transition-all duration-150 press-scale ${
-                  selectedShaft
-                    ? 'bg-[var(--gold)] text-[var(--bg-primary)] hover:bg-[var(--gold-light)]'
-                    : 'cursor-not-allowed bg-[var(--bg-elevated)] text-[var(--text-muted)]'
-                }`}
-              >
-                {t('db.apply')}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+            {/* Apply button */}
+            <button
+              onClick={handleApplyClick}
+              disabled={!selectedShaft}
+              className={`mt-4 w-full rounded-[14px] py-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] transition-all duration-150 press-scale ${
+                selectedShaft
+                  ? 'bg-[var(--gold)] text-[var(--bg-primary)] hover:bg-[var(--gold-light)]'
+                  : 'cursor-not-allowed bg-[var(--bg-elevated)] text-[var(--text-muted)]'
+              }`}
+            >
+              {t('db.apply')}
+            </button>
+          </div>
+        )}
+      </BottomSheet>
 
       {/* Confirmation dialog */}
       {showConfirm && (
@@ -193,7 +184,7 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
