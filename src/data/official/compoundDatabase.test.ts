@@ -39,7 +39,7 @@ const baseArrow: ArrowSpecs = {
 
 describe('official compound database', () => {
   it('mantiene una base versionada con cobertura de fabricantes y fuentes oficiales', () => {
-    expect(OFFICIAL_COMPOUND_DATABASE_VERSION).toBe('official-compound-v2')
+    expect(OFFICIAL_COMPOUND_DATABASE_VERSION).toBe('official-compound-v3')
     expect(OFFICIAL_COMPOUND_CASES_V1.length).toBeGreaterThanOrEqual(18)
     expect(OFFICIAL_COMPOUND_RULES_V1.length).toBeGreaterThanOrEqual(8)
     expect(OFFICIAL_COMPOUND_BOW_SPECS_V1.length).toBeGreaterThanOrEqual(3)
@@ -165,13 +165,13 @@ describe('official compound database', () => {
     expect(unsafeLightArrow.warnings.join(' ')).toMatch(/Flecha muy ligera|Flecha ligera/i)
   })
 
-  it('mantiene el chart oficial como sanity check secundario, no como fuente primaria exacta', () => {
+  it('cae dentro de los rangos oficiales celda-fieles (carta Easton verificada + envolventes por proveedor)', () => {
     const summary = analyzeOfficialCompoundBenchmarks().overall
 
-    expect(summary.meanAbsoluteError).toBeLessThan(0.35)
-    expect(summary.weightedMeanAbsoluteError).toBeLessThan(0.35)
-    expect(summary.maxAbsoluteError).toBeLessThan(0.75)
-    expect(summary.inRangeRate).toBeGreaterThan(0.2)
+    expect(summary.inRangeRate).toBeGreaterThanOrEqual(0.94)
+    expect(summary.meanAbsoluteError).toBeLessThan(0.01)
+    expect(summary.weightedMeanAbsoluteError).toBeLessThan(0.01)
+    expect(summary.maxAbsoluteError).toBeLessThan(0.05)
   })
 
   it('incluye referencias finger-release derivadas de la regla oficial +5 lbs de Easton', () => {

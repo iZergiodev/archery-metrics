@@ -1,7 +1,7 @@
 import { ARCHERY_TYPE } from '../../constants'
 import type { ArrowSpecs, BowSpecs, StringWeights } from '../../utils/archeryCalculator'
 
-export const OFFICIAL_COMPOUND_DATABASE_VERSION = 'official-compound-v2'
+export const OFFICIAL_COMPOUND_DATABASE_VERSION = 'official-compound-v3'
 
 export type OfficialSourceId =
   | 'easton_hunting_selector_2023'
@@ -336,10 +336,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'easton_standard_70lb_340',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton standard chart-style compound row around 70# / 30in / 340 spine',
+    source:
+      'Easton 2023 verificado: 70 lb ajustadas (IBO 330 sin ajuste, 100gr, insert 25) -> fila 67-72, flecha 31in -> celda 300-250; rango = celda ±4.5% de cuantización',
     confidence: 'high',
     usage: 'both',
     expectedMatchIndex: 1,
+    acceptableMatchRange: {
+      min: 1.082,
+      max: 1.421,
+    },
     calibrationWeight: 0.8,
     bow: {
       iboVelocity: '330',
@@ -367,10 +372,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'easton_standard_75lb_300',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton fast compound chart-style row around 75# / 30in / 300 spine',
+    source:
+      'Easton 2023 verificado: 75 lb +5 (IBO 350) -> fila 79-84, flecha 31in -> celda 250-200; rango = celda ±4.5% de cuantización',
     confidence: 'high',
     usage: 'both',
     expectedMatchIndex: 1,
+    acceptableMatchRange: {
+      min: 1.146,
+      max: 1.568,
+    },
     calibrationWeight: 0.8,
     bow: {
       iboVelocity: '350',
@@ -398,10 +408,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'easton_adjusted_70lb_125gr_300',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton chart adjustment: 70# / 30in / 125gr front at fast bow speed should move to 300-class spine',
-    confidence: 'medium',
+    source:
+      'Easton 2023 verificado: 70 lb +5 (IBO 350) +3 (punta 125gr) = 78 -> fila 73-78, flecha 31in -> celda 300-250; rango = celda ±4.5%',
+    confidence: 'high',
     usage: 'both',
     expectedMatchIndex: 1,
+    acceptableMatchRange: {
+      min: 0.955,
+      max: 1.254,
+    },
     calibrationWeight: 0.7,
     bow: {
       iboVelocity: '350',
@@ -428,14 +443,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'mid_weight_50lb_400',
-    sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton chart-style reference: 400 spine around 45-60# at 30in arrow length',
+    sourceIds: ['easton_hunting_selector_2023', 'gold_tip_selector_2025'],
+    source:
+      'Consenso 50 lb / 30in: celda Easton 2023 verificada 400-350 ∪ recomendación Gold Tip 500; rango = envolvente ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.764,
+      max: 1.194,
     },
     calibrationWeight: 0.8,
     bow: {
@@ -463,14 +479,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'low_weight_45lb_500',
-    sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton chart-style reference: 500 spine around 38-50# at 30in arrow length',
+    sourceIds: ['easton_hunting_selector_2023', 'gold_tip_selector_2025'],
+    source:
+      'Consenso 45 lb / 30in: celda Easton 2023 verificada 400-350 ∪ recomendación Gold Tip 500; rango = envolvente ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.9,
-      max: 1.1,
+      min: 0.868,
+      max: 1.493,
     },
     calibrationWeight: 0.8,
     bow: {
@@ -499,13 +516,13 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'short_draw_70lb_27in_340',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton short-draw chart-style reference: 340 spine around 56-70# with 28in arrow length',
+    source: 'Easton 2023 verificado: 70 lb (IBO 335 sin ajuste) -> fila 67-72, flecha 28in -> celda 350-300; rango = celda ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.928,
+      max: 1.184,
     },
     calibrationWeight: 0.7,
     bow: {
@@ -534,13 +551,13 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'heavy_front_70lb_175gr_300',
     sourceIds: ['easton_hunting_selector_2023', 'gold_tip_selector_2025'],
-    source: 'Easton front-weight adjustment estimate: 70# / 30in / 175gr total front should bias toward 300 spine',
+    source: 'Easton 2023 verificado: 70 lb +6 (punta 150gr) = 76 -> fila 73-78, flecha 30in -> celda 300-250; rango = celda ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.9,
-      max: 1.1,
+      min: 0.955,
+      max: 1.254,
     },
     calibrationWeight: 0.6,
     bow: {
@@ -568,14 +585,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'easton_standard_60lb_400_29in',
-    sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton chart-style reference: 400 spine around 60# / 29in on a standard-speed hunting bow',
+    sourceIds: ['easton_hunting_selector_2023', 'gold_tip_selector_2025'],
+    source:
+      'Consenso 60 lb / 30in: celda Easton 2023 verificada 350-300 ∪ recomendación Gold Tip 400; rango = envolvente ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.9,
-      max: 1.1,
+      min: 0.849,
+      max: 1.393,
     },
     calibrationWeight: 0.8,
     bow: {
@@ -604,13 +622,13 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'easton_standard_65lb_340_29in',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton chart-style reference: 340 spine around 65# / 29in on a standard-speed hunting bow',
+    source: 'Easton 2023 verificado: 65 lb (IBO 330 sin ajuste) -> fila 62-66, flecha 30in -> celda 350-300; rango = celda ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.928,
+      max: 1.184,
     },
     calibrationWeight: 0.7,
     bow: {
@@ -639,13 +657,13 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'easton_fast_80lb_250_30in',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton fast-bow reference: 250 spine around 80# / 30in',
+    source: 'Easton 2023 verificado: 80 lb +5 (IBO 350) = 85 -> fila 85-90, flecha 31in -> celda 250-200; rango = celda ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.955,
+      max: 1.306,
     },
     calibrationWeight: 0.6,
     bow: {
@@ -674,13 +692,13 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   {
     id: 'easton_slow_55lb_400_29in',
     sourceIds: ['easton_hunting_selector_2023'],
-    source: 'Easton slow-bow reference: 400 spine around 55# / 29in at 300 FPS class',
+    source: 'Easton 2023 verificado: 55 lb -5 (IBO 300) = 50 -> fila 47-51, flecha 30in -> celda 400-350; rango = celda ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.955,
+      max: 1.194,
     },
     calibrationWeight: 0.6,
     bow: {
@@ -778,14 +796,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'bowtech_core_ss_force_foc_340',
-    sourceIds: ['bowtech_core_ss', 'gold_tip_force_foc_specs', 'gold_tip_selector_2025'],
-    source: 'Bowtech Core SS + Gold Tip Force F.O.C. 340 reference setup',
+    sourceIds: ['bowtech_core_ss', 'gold_tip_force_foc_specs', 'gold_tip_selector_2025', 'easton_hunting_selector_2023'],
+    source:
+      'Bowtech Core SS + GT Force F.O.C. 340: rango = unión GT 340 (±medio grupo) ∪ celda Easton 2023 300-250 (70 lb / 30in) ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.9,
-      max: 1.1,
+      min: 0.878,
+      max: 1.421,
     },
     calibrationWeight: 0.7,
     bow: {
@@ -848,14 +867,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'mathews_lift_x_force_foc_300',
-    sourceIds: ['mathews_lift_x_33', 'gold_tip_force_foc_specs', 'gold_tip_selector_2025'],
-    source: 'Mathews LIFT X 33 + Gold Tip Force F.O.C. 300 reference setup',
+    sourceIds: ['mathews_lift_x_33', 'gold_tip_force_foc_specs', 'gold_tip_selector_2025', 'easton_hunting_selector_2023'],
+    source:
+      'Mathews LIFT X 33 + GT Force F.O.C. 300: rango = unión GT 300 (±medio grupo) ∪ celda Easton 2023 250-200 (75+5 lb / 31in) ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.9,
-      max: 1.1,
+      min: 0.895,
+      max: 1.568,
     },
     calibrationWeight: 0.75,
     bow: {
@@ -883,14 +903,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'mathews_lift_x_force_foc_340_70',
-    sourceIds: ['mathews_lift_x_33', 'gold_tip_force_foc_specs', 'gold_tip_selector_2025'],
-    source: 'Mathews LIFT X 33 + Gold Tip Force F.O.C. 340 around 70# / 29in',
+    sourceIds: ['mathews_lift_x_33', 'gold_tip_force_foc_specs', 'gold_tip_selector_2025', 'easton_hunting_selector_2023'],
+    source:
+      'Mathews LIFT X 33 + GT Force F.O.C. 340: rango = unión GT 340 (±medio grupo) ∪ celda Easton 2023 300-250 (70+5 lb / 30in) ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.9,
-      max: 1.1,
+      min: 0.878,
+      max: 1.421,
     },
     calibrationWeight: 0.7,
     bow: {
@@ -918,15 +939,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'easton_finger_release_55lb_400_29in',
-    sourceIds: ['easton_hunting_selector_2023'],
+    sourceIds: ['easton_hunting_selector_2023', 'gold_tip_selector_2025'],
     source:
-      'Easton finger-release reference derived from the +5 lbs rule: 55# / 29in / 400 spine should track the 60# release-aid chart class',
+      'Easton 2023 regla dedos +5: 55+5 = 60 -> fila 57-61, flecha 30in -> celda 350-300; rango = envolvente con GT 400 ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.849,
+      max: 1.393,
     },
     calibrationWeight: 0.6,
     bow: {
@@ -958,15 +979,15 @@ export const OFFICIAL_COMPOUND_CASES_V1: OfficialCompoundCaseDefinition[] = [
   },
   {
     id: 'easton_finger_release_60lb_340_29in',
-    sourceIds: ['easton_hunting_selector_2023'],
+    sourceIds: ['easton_hunting_selector_2023', 'gold_tip_selector_2025'],
     source:
-      'Easton finger-release reference derived from the +5 lbs rule: 60# / 29in / 340 spine should track the 65# release-aid chart class',
+      'Easton 2023 regla dedos +5: 60+5 = 65 -> fila 62-66, flecha 30in -> celda 350-300; rango = envolvente con GT 400 ±4.5%',
     confidence: 'medium',
     usage: 'both',
     expectedMatchIndex: 1,
     acceptableMatchRange: {
-      min: 0.85,
-      max: 1.1,
+      min: 0.722,
+      max: 1.184,
     },
     calibrationWeight: 0.6,
     bow: {

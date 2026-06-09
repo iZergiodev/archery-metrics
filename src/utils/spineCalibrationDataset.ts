@@ -1,4 +1,5 @@
 import { OFFICIAL_COMPOUND_CASES_V1, OFFICIAL_DEFAULT_COMPOUND_STRING_WEIGHTS, type OfficialSourceId } from '../data/official/compoundDatabase'
+import { OFFICIAL_RECURVE_CASES_V1, OFFICIAL_RECURVE_DATABASE_VERSION } from '../data/official/recurveDatabase'
 import { SFAX_COMPOUND_REFERENCE_CASES_V1 } from '../data/sfax/compoundReference'
 import type { ArrowSpecs, BowSpecs, StringWeights } from './archeryCalculator'
 
@@ -72,3 +73,21 @@ export const OFFICIAL_COMPOUND_CALIBRATION_CASES = OFFICIAL_COMPOUND_SANITY_CASE
 export const OFFICIAL_COMPOUND_BENCHMARK_CASES = OFFICIAL_COMPOUND_SANITY_CASES
 
 export const COMPOUND_CALIBRATION_CASES = OFFICIAL_COMPOUND_CALIBRATION_CASES
+
+// Benchmark non-compound (recurvo/longbow) derivado celda a celda de la carta
+// Easton Hunting 2023. Reutiliza la forma de CompoundCalibrationCase para que
+// la maquinaria de evaluación sirva para ambos tipos de arco.
+export const OFFICIAL_RECURVE_BENCHMARK_CASES: CompoundCalibrationCase[] = OFFICIAL_RECURVE_CASES_V1.map((entry) => ({
+  id: entry.id,
+  source: entry.source,
+  sourceType: 'official_chart' as const,
+  sourceIds: entry.sourceIds,
+  confidence: entry.confidence,
+  datasetVersion: OFFICIAL_RECURVE_DATABASE_VERSION,
+  expectedMatchIndex: entry.expectedMatchIndex,
+  acceptableMatchRange: entry.acceptableMatchRange,
+  weight: entry.calibrationWeight,
+  bow: entry.bow,
+  arrow: entry.arrow,
+  stringWeights: entry.stringWeights,
+}))

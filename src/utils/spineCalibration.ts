@@ -1,8 +1,11 @@
+import { ARCHERY_TYPE } from '../constants'
 import { OFFICIAL_COMPOUND_CASES_V1, OFFICIAL_COMPOUND_SOURCES } from '../data/official/compoundDatabase'
-import { calculateSpineMatch } from './archeryCalculator'
+import { OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS } from '../data/official/recurveDatabase'
+import { calculateSpineMatch, type ArrowSpecs, type BowSpecs } from './archeryCalculator'
 import {
     DEFAULT_CALIBRATION_STRING_WEIGHTS,
     OFFICIAL_COMPOUND_BENCHMARK_CASES,
+    OFFICIAL_RECURVE_BENCHMARK_CASES,
     SFAX_PRIMARY_REFERENCE_CASES,
     type CompoundCalibrationCase,
     type SfaxReferenceBenchmarkCase,
@@ -485,4 +488,108 @@ export function evaluateCompoundMonotonicity(): CompoundMonotonicityCheck[] {
 export function getOfficialCaseUsage(calibrationCase: CompoundCalibrationCase): string {
     const officialCase = OFFICIAL_COMPOUND_CASES_V1.find((entry) => entry.id === calibrationCase.id)
     return officialCase?.usage ?? 'calibration'
+}
+
+// === BENCHMARK NON-COMPOUND (CARTA EASTON RECURVE/LONGBOW) ===
+
+export function evaluateOfficialRecurveBenchmarks(
+    cases: CompoundCalibrationCase[] = OFFICIAL_RECURVE_BENCHMARK_CASES,
+): OfficialCompoundBenchmarkResult[] {
+    return evaluateOfficialCompoundBenchmarks(cases)
+}
+
+export function summarizeOfficialRecurveBenchmarks(
+    cases: CompoundCalibrationCase[] = OFFICIAL_RECURVE_BENCHMARK_CASES,
+): OfficialCompoundBenchmarkSummary {
+    const results = evaluateOfficialRecurveBenchmarks(cases)
+    const totalWeight = cases.reduce((sum, entry) => sum + entry.weight, 0)
+    const inRangeCount = results.filter((result) => result.absoluteError === 0).length
+
+    return {
+        meanAbsoluteError: results.reduce((sum, result) => sum + result.absoluteError, 0) / results.length,
+        weightedMeanAbsoluteError: results.reduce((sum, result) => sum + result.weightedAbsoluteError, 0) / totalWeight,
+        maxAbsoluteError: Math.max(...results.map((result) => result.absoluteError)),
+        inRangeRate: inRangeCount / results.length,
+        results,
+    }
+}
+
+export function evaluateRecurveMonotonicity(): CompoundMonotonicityCheck[] {
+    const baseBow: BowSpecs = {
+        iboVelocity: '',
+        drawLength: '28',
+        drawWeight: '40',
+        braceHeight: '8',
+        axleToAxle: '',
+        percentLetoff: '',
+        archeryType: ARCHERY_TYPE.RECURVO,
+    }
+    const baseArrow: ArrowSpecs = {
+        shaftLength: '28',
+        pointWeight: '100',
+        insertWeight: '0',
+        shaftGpi: '8.0',
+        fletchQuantity: '3',
+        weightEach: '3',
+        fletchLength: '3',
+        fletchHeight: '0.5',
+        wrapWeight: '0',
+        nockWeight: '7',
+        bushingPin: '0',
+        staticSpine: '0.450',
+        shaftMaterial: 'carbon',
+    }
+
+    const base = calculateSpineMatch(baseBow, baseArrow, OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS)
+    const heavierBow = calculateSpineMatch({ ...baseBow, drawWeight: '45' }, baseArrow, OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS)
+    const longerArrow = calculateSpineMatch(baseBow, { ...baseArrow, shaftLength: '29' }, OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS)
+    const heavierPoint = calculateSpineMatch(baseBow, { ...baseArrow, pointWeight: '125' }, OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS)
+    const fastflight = calculateSpineMatch(baseBow, baseArrow, {
+        ...OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS,
+        stringMaterial: 'fastflight',
+    })
+    const longerDraw = calculateSpineMatch({ ...baseBow, drawLength: '30' }, baseArrow, OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS)
+    const traditional = calculateSpineMatch(
+        { ...baseBow, archeryType: ARCHERY_TYPE.TRADITIONAL },
+        baseArrow,
+        OFFICIAL_DEFAULT_RECURVE_STRING_WEIGHTS,
+    )
+
+    return [
+        {
+            id: 'recurve_heavier_bow_requires_stiffer_target_spine',
+            passed: base.spineRequired != null && heavierBow.spineRequired != null && heavierBow.spineRequired < base.spineRequired,
+            details: `base=${base.spineRequired?.toFixed(4)} heavier=${heavierBow.spineRequired?.toFixed(4)}`,
+        },
+        {
+            id: 'recurve_longer_arrow_requires_stiffer_target_spine',
+            passed: base.spineRequired != null && longerArrow.spineRequired != null && longerArrow.spineRequired < base.spineRequired,
+            details: `base=${base.spineRequired?.toFixed(4)} longer=${longerArrow.spineRequired?.toFixed(4)}`,
+        },
+        {
+            id: 'recurve_heavier_point_requires_stiffer_target_spine',
+            passed: base.spineRequired != null && heavierPoint.spineRequired != null && heavierPoint.spineRequired < base.spineRequired,
+            details: `base=${base.spineRequired?.toFixed(4)} heavierPoint=${heavierPoint.spineRequired?.toFixed(4)}`,
+        },
+        {
+            id: 'recurve_fastflight_requires_stiffer_target_spine',
+            passed: base.spineRequired != null && fastflight.spineRequired != null && fastflight.spineRequired < base.spineRequired,
+            details: `dacron=${base.spineRequired?.toFixed(4)} fastflight=${fastflight.spineRequired?.toFixed(4)}`,
+        },
+        {
+            id: 'recurve_longer_draw_requires_stiffer_target_spine',
+            passed: base.spineRequired != null && longerDraw.spineRequired != null && longerDraw.spineRequired < base.spineRequired,
+            details: `draw28=${base.spineRequired?.toFixed(4)} draw30=${longerDraw.spineRequired?.toFixed(4)}`,
+        },
+        {
+            id: 'traditional_longbow_requires_stiffer_target_spine_than_recurve',
+            passed: base.spineRequired != null && traditional.spineRequired != null && traditional.spineRequired < base.spineRequired,
+            details: `recurve=${base.spineRequired?.toFixed(4)} traditional=${traditional.spineRequired?.toFixed(4)}`,
+        },
+        {
+            id: 'recurve_without_ibo_reports_no_fabricated_speed',
+            passed: base.calculatedFPS === null && base.effectiveFPS === null,
+            details: `calculatedFPS=${String(base.calculatedFPS)} effectiveFPS=${String(base.effectiveFPS)}`,
+        },
+    ]
 }
