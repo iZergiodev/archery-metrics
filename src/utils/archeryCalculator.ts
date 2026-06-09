@@ -25,11 +25,6 @@ import {
     VELOCITY_MAX_SAFE,
     VELOCITY_MIN_TARGET,
     VELOCITY_OPTIMAL_MAX,
-    SFAX_DYNAMIC_A2A_REF_NON_COMPOUND,
-    SFAX_DYNAMIC_A2A_SENSITIVITY_NON_COMPOUND,
-    SFAX_DYNAMIC_A2A_DIVISOR_NON_COMPOUND,
-    SFAX_DYNAMIC_DRAW_CURVE_AMPLITUDE_NON_COMPOUND,
-    SFAX_DYNAMIC_NON_COMPOUND_CURVE_DIVISOR,
     SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK,
     SFAX_REFERENCE_DRAW_WEIGHT as SFAX_DRAW_WEIGHT_REFERENCE,
     SFAX_REFERENCE_DRAW_LENGTH as SFAX_DRAW_LENGTH_REFERENCE,
@@ -65,10 +60,6 @@ import {
     SFAX_RELEASE_FACTOR_ROPE as SFAX_DYNAMIC_RELEASE_ROPE,
     SFAX_RELEASE_FACTOR_POST as SFAX_DYNAMIC_RELEASE_POST,
     SFAX_RELEASE_FACTOR_UNKNOWN as SFAX_DYNAMIC_RELEASE_UNKNOWN,
-    SFAX_DYNAMIC_FINGER_START,
-    SFAX_DYNAMIC_FINGER_END,
-    SFAX_DYNAMIC_FINGER_BASE,
-    SFAX_DYNAMIC_FINGER_DELTA,
     SFAX_DYNAMIC_LENGTH_MULTIPLIER,
     SFAX_DYNAMIC_LENGTH_DIVISOR,
     SFAX_DYNAMIC_LENGTH_REFERENCE as SFAX_DYNAMIC_INTERMEDIATE_REFERENCE,
@@ -84,6 +75,26 @@ import {
     SFAX_DACRON_DRAW_LENGTH_CEILING as SFAX_DACRON_END_DRAW_LENGTH,
     SFAX_DACRON_CURVE_DIVISOR as SFAX_DACRON_DIVISOR,
     SFAX_VELOCITY_LOW_IBO_EFFICIENCY as SFAX_SPEED_LOW_IBO_EFFICIENCY,
+    EASTON_FINGER_RELEASE_LB,
+    SFAX_DEFAULT_IBO_FALLBACK,
+    CAM_FDR,
+    CAM_FDR_TO_LB,
+    RECURVE_SPINE_BASE,
+    RECURVE_SPINE_SLOPE,
+    RECURVE_REFERENCE_ARROW_LENGTH,
+    RECURVE_REFERENCE_POINT_WEIGHT,
+    RECURVE_REFERENCE_DRAW_LENGTH,
+    RECURVE_LENGTH_LB_PER_INCH,
+    RECURVE_POINT_LB_PER_25GR,
+    RECURVE_INSERT_FREE_ALLOWANCE_GR,
+    RECURVE_DRAW_LENGTH_LB_PER_INCH,
+    RECURVE_FASTFLIGHT_LB,
+    RECURVE_UNKNOWN_STRING_LB,
+    TRADITIONAL_LONGBOW_LB_OFFSET,
+    RECURVE_MIN_EFFECTIVE_LB,
+    RECURVE_MAX_EFFECTIVE_LB,
+    CI_REQUIRED_UNCERTAINTY,
+    CI_DYNAMIC_UNCERTAINTY,
     type ArcheryType,
 } from '../constants'
 
@@ -189,7 +200,6 @@ const DEFAULT_FLETCH_HEIGHT = 0.5
 const SFAX_SPEED_WEIGHT_CORRECTION_OFFSET = 0.04
 const SFAX_SPEED_WEIGHT_CORRECTION_SCALE = 1.05
 const SFAX_SPEED_DRAG_MULTIPLIER = 0.33
-const SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND = SFAX_DYNAMIC_DRAW_CURVE_AMPLITUDE_NON_COMPOUND
 
 const toNumber = (value: string | undefined) => {
     const raw = value?.trim() ?? ''
@@ -249,6 +259,25 @@ function getReleaseMultiplier(releaseType: string): number {
     return SFAX_DYNAMIC_RELEASE_UNKNOWN
 }
 
+// Leva más agresiva = empuje inicial más violento = demanda de spine más
+// rígida. Escala Easton-equivalente en libras; campo vacío/desconocido = 0,
+// así los casos de referencia SFAX (que no definen leva) no se ven afectados.
+function getCamAggressivenessLbDelta(raw: string | undefined): number {
+    const normalized = (raw ?? '').trim().toLowerCase()
+    if (normalized === '') return 0
+    let forceDrawRatio: number = CAM_FDR.medium
+    if (normalized.includes('round') || normalized.includes('soft') || normalized.includes('suave')) {
+        forceDrawRatio = CAM_FDR.round
+    } else if (normalized.includes('max')) {
+        forceDrawRatio = CAM_FDR.max
+    } else if (normalized.includes('speed') || normalized.includes('velocidad')) {
+        forceDrawRatio = CAM_FDR.speed
+    } else if (normalized.includes('aggressive') || normalized.includes('agresiv')) {
+        forceDrawRatio = CAM_FDR.aggressive
+    }
+    return (forceDrawRatio - CAM_FDR.medium) * CAM_FDR_TO_LB
+}
+
 function calculateArrowComponentWeight(arrow: ArrowSpecs): ArrowComponentWeight {
     const shaftLength = toNumber(arrow.shaftLength)
     const shaftGpi = toNumber(arrow.shaftGpi)
@@ -290,12 +319,6 @@ function sfaxSignedCurve(value: number, start: number, end: number, base: number
     const scale = delta / sfaxAbs(end - start)
     const sign = midpoint <= value ? 1 : -1
     return sfaxAbs(midpoint - value) * scale * sign
-}
-
-function sfaxPositiveCurve(value: number, start: number, end: number, base: number, delta: number): number {
-    if (end < value) return base + delta
-    if (value < start) return base
-    return sfaxAbs(end - value) * (delta / sfaxAbs(end - start)) + base
 }
 
 // SFAX-faithful: the call site deliberately passes brace/letoff twice so the
@@ -484,6 +507,7 @@ function calculateCompoundTargetSpine(
         percentLetoff: number
         releaseType: string
         stringMaterial: StringWeights['stringMaterial']
+        camLbDelta: number
     },
     arrow: {
         shaftLength: number
@@ -533,9 +557,19 @@ function calculateCompoundTargetSpine(
         intermediate += (SFAX_HOLDING_PERCENT_REFERENCE - bow.percentLetoff) * 0.2
     }
 
-    intermediate +=
-        (getReleaseMultiplier(bow.releaseType) / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) *
-        (bow.percentLetoff - SFAX_HOLDING_PERCENT_REFERENCE)
+    const releaseMultiplier = getReleaseMultiplier(bow.releaseType)
+    if (releaseMultiplier === SFAX_DYNAMIC_RELEASE_FINGER) {
+        // Easton 2023 (verificado): dedos = +5 lb planos, independientes del
+        // letoff. La curva SFAX original no está anclada por ningún caso de
+        // referencia con dedos y degeneraba con letoff bajo o ausente.
+        intermediate += EASTON_FINGER_RELEASE_LB
+    } else {
+        intermediate +=
+            (releaseMultiplier / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) *
+            (bow.percentLetoff - SFAX_HOLDING_PERCENT_REFERENCE)
+    }
+
+    intermediate += bow.camLbDelta
 
     if (intermediate <= 0) {
         intermediate = SFAX_DYNAMIC_MIN_INTERMEDIATE
@@ -571,122 +605,56 @@ function calculateCompoundTargetSpine(
     return round3((SFAX_DYNAMIC_AMO_TEST_LENGTH / intermediate) * (SFAX_DYNAMIC_AMO_TEST_LENGTH / arrow.shaftLength) + getShaftCategoryConstant(arrow.shaftUseCategory))
 }
 
+// Modelo non-compound anclado a la carta Easton Hunting 2023 (doc 301055-A,
+// columnas RECURVE/LONGBOW). Sustituye a la antigua variante pseudo-SFAX, que
+// dependía de un IBO que los recurvos no tienen y producía deflexiones sin
+// sentido (~1.0 para un recurvo de 40 lb). Ajuste log-lineal sobre las celdas
+// de la carta; todos los ajustes están en libras equivalentes de carta.
 function calculateNonCompoundTargetSpine(
+    archeryType: ArcheryType,
     bow: {
-        iboVelocity: number
         drawWeight: number
         drawLength: number
-        braceHeight: number
-        axleToAxle: number
-        percentLetoff: number
-        releaseType: string
-        stringMaterial: StringWeights['stringMaterial']
     },
     arrow: {
         shaftLength: number
         pointWeight: number
         insertWeight: number
-        fletchQuantity: number
-        weightEach: number
-        fletchLength: number
-        fletchHeight: number
-        wrapWeight: number
-        nockWeight: number
-        bushingPin: number
-        shaftUseCategory?: ShaftUseCategory
     },
-    stringSide: {
-        peepWeight: number
-        dLoopWeight: number
-        nockPointWeight: number
-        silencerWeight: number
-        silencerDfc: number
-    },
+    stringMaterial: StringWeights['stringMaterial'],
 ): number {
-    let intermediate =
-        (bow.iboVelocity / 290) *
-        (sfaxSignedCurve(
-            bow.drawWeight,
-            SFAX_DYNAMIC_DRAW_START,
-            SFAX_DYNAMIC_DRAW_END,
-            0,
-            SFAX_DYNAMIC_DRAW_DELTA_NON_COMPOUND,
-        ) +
-            bow.drawWeight)
+    const pointAdjustment =
+        ((arrow.pointWeight - RECURVE_REFERENCE_POINT_WEIGHT) / 25) * RECURVE_POINT_LB_PER_25GR
+    const insertAdjustment =
+        arrow.insertWeight > RECURVE_INSERT_FREE_ALLOWANCE_GR
+            ? ((arrow.insertWeight - RECURVE_INSERT_FREE_ALLOWANCE_GR) / 25) * RECURVE_POINT_LB_PER_25GR
+            : 0
+    const lengthAdjustment = (arrow.shaftLength - RECURVE_REFERENCE_ARROW_LENGTH) * RECURVE_LENGTH_LB_PER_INCH
+    const drawLengthAdjustment =
+        bow.drawLength > 0
+            ? (bow.drawLength - RECURVE_REFERENCE_DRAW_LENGTH) * RECURVE_DRAW_LENGTH_LB_PER_INCH
+            : 0
+    const stringAdjustment =
+        stringMaterial === 'fastflight'
+            ? RECURVE_FASTFLIGHT_LB
+            : stringMaterial === 'unknown'
+              ? RECURVE_UNKNOWN_STRING_LB
+              : 0
+    const traditionalAdjustment = archeryType === ARCHERY_TYPE.TRADITIONAL ? TRADITIONAL_LONGBOW_LB_OFFSET : 0
 
-    intermediate -=
-        (SFAX_DYNAMIC_A2A_SENSITIVITY_NON_COMPOUND / SFAX_DYNAMIC_A2A_DIVISOR_NON_COMPOUND) *
-        (bow.axleToAxle - SFAX_DYNAMIC_A2A_REF_NON_COMPOUND)
+    const effectiveLb = clamp(
+        bow.drawWeight +
+            pointAdjustment +
+            insertAdjustment +
+            lengthAdjustment +
+            drawLengthAdjustment +
+            stringAdjustment +
+            traditionalAdjustment,
+        RECURVE_MIN_EFFECTIVE_LB,
+        RECURVE_MAX_EFFECTIVE_LB,
+    )
 
-    let nonCompoundCurveBase = SFAX_DACRON_BASE
-    if (intermediate <= SFAX_HOLDING_PERCENT_REFERENCE) {
-        nonCompoundCurveBase =
-            intermediate >= 25
-                ? (SFAX_DACRON_BASE / SFAX_DYNAMIC_NON_COMPOUND_CURVE_DIVISOR) *
-                  sfaxAbs(SFAX_HOLDING_PERCENT_REFERENCE - intermediate)
-                : 0
-    }
-
-    intermediate += nonCompoundCurveBase * 0.15
-
-    const powerStroke = bow.drawLength - bow.braceHeight
-    let lengthFactor =
-        (SFAX_DYNAMIC_LENGTH_MULTIPLIER / sfaxAbs(SFAX_DYNAMIC_LENGTH_DIVISOR)) *
-            (intermediate - SFAX_DYNAMIC_INTERMEDIATE_REFERENCE) +
-        SFAX_DYNAMIC_LENGTH_BASE
-
-    if (lengthFactor === 0) {
-        lengthFactor = SFAX_DYNAMIC_DEFAULT_LENGTH_FALLBACK
-    }
-
-    const velocityRatio = (bow.braceHeight / powerStroke) * SFAX_SPEED_LOW_IBO_THRESHOLD * (powerStroke / lengthFactor)
-
-    intermediate = (velocityRatio / sfaxAbs(SFAX_DRAW_LENGTH_REFERENCE)) * (powerStroke - lengthFactor) + intermediate
-
-    if (bow.releaseType.toLowerCase().includes('finger') || bow.releaseType.toLowerCase().includes('manual')) {
-        intermediate =
-            sfaxPositiveCurve(
-                bow.drawWeight,
-                SFAX_DYNAMIC_FINGER_START,
-                SFAX_DYNAMIC_FINGER_END,
-                SFAX_DYNAMIC_FINGER_BASE,
-                SFAX_DYNAMIC_FINGER_DELTA,
-            ) * 0.05 +
-            intermediate
-    }
-
-    if (intermediate <= 0) {
-        intermediate = SFAX_DYNAMIC_MIN_INTERMEDIATE
-    }
-
-    // FUN_0046da20: string effect = (peep + FUN_0047c3d0() + nockPoint + dLoop) * 0.12
-    const silencerDrag = calculateSilencerPartialDrag(bow.axleToAxle, stringSide.silencerDfc, stringSide.silencerWeight)
-    const stringEffect =
-        (stringSide.peepWeight + silencerDrag + stringSide.nockPointWeight + stringSide.dLoopWeight) *
-        SFAX_DYNAMIC_COMPONENT_SENSITIVITY
-
-    intermediate =
-        intermediate -
-        (SFAX_DYNAMIC_FRONT_MASS_REFERENCE - (arrow.pointWeight + arrow.insertWeight)) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
-        ((arrow.wrapWeight + arrow.fletchQuantity * arrow.weightEach) - SFAX_DYNAMIC_FLETCH_WEIGHT_REFERENCE) *
-            SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
-        ((arrow.bushingPin + arrow.nockWeight) - SFAX_DYNAMIC_REAR_MASS_REFERENCE) * SFAX_DYNAMIC_COMPONENT_SENSITIVITY -
-        stringEffect
-
-    if (bow.stringMaterial === 'dacron') {
-        let dacronAdjustment = SFAX_DACRON_MAX
-        if (bow.drawLength <= SFAX_DACRON_END_DRAW_LENGTH) {
-            dacronAdjustment =
-                bow.drawLength >= SFAX_DACRON_START_DRAW_LENGTH
-                    ? sfaxAbs(SFAX_DACRON_END_DRAW_LENGTH - bow.drawLength) *
-                          (2 / sfaxAbs(SFAX_DACRON_DIVISOR)) +
-                      SFAX_DACRON_BASE
-                    : SFAX_DACRON_BASE
-        }
-        intermediate -= dacronAdjustment
-    }
-
-    return round3((SFAX_DYNAMIC_AMO_TEST_LENGTH / intermediate) * (SFAX_DYNAMIC_AMO_TEST_LENGTH / arrow.shaftLength) + getShaftCategoryConstant(arrow.shaftUseCategory))
+    return round3(RECURVE_SPINE_BASE * Math.exp(-RECURVE_SPINE_SLOPE * effectiveLb))
 }
 
 function calibrateTargetSpineFromChronograph(targetSpine: number, estimatedFPS: number, measuredFPS: number): number {
@@ -779,6 +747,7 @@ export function calculateSpineMatch(
     const axleToAxle = toNumber(bow.axleToAxle)
     const percentLetoff = toNumber(bow.percentLetoff)
     const archeryType = getEffectiveArcheryType(bow.archeryType)
+    const isCompound = archeryType === ARCHERY_TYPE.COMPOUND
     if (!bow.archeryType) {
         warnings.push('No se ha indicado el tipo de arco; se asume compound por defecto. Verifica el valor para evitar errores.')
     }
@@ -809,12 +778,25 @@ export function calculateSpineMatch(
     const silencersWeight = toNumber(stringWeights.silencers)
     const silencerDfcWeight = toNumber(stringWeights.silencerDfc) // inches (position), not grains
 
-    const hasRequiredGeometry = drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0 && braceHeight > 0
+    // El spine compound SFAX necesita un IBO; sin él el modelo degenera. Mejor
+    // asumir un compound moderno típico con confianza "low" que propagar un 0.
+    const iboProvided = iboVelocity > 0
+    let effectiveIbo = iboVelocity
+    if (isCompound && !iboProvided) {
+        effectiveIbo = SFAX_DEFAULT_IBO_FALLBACK
+        warnings.push(
+            `Sin velocidad IBO: se asume un compound moderno de ${SFAX_DEFAULT_IBO_FALLBACK} fps. Introduce el IBO real para más precisión.`,
+        )
+    }
+
+    const hasRequiredGeometry = isCompound
+        ? drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0 && braceHeight > 0
+        : drawWeight > 0 && shaftLength > 0 && staticSpine > 0 && drawLength > 0
     if (!hasRequiredGeometry) {
         const missingFields: string[] = []
         if (drawWeight <= 0) missingFields.push('peso de tiro')
         if (drawLength <= 0) missingFields.push('longitud de tiro')
-        if (braceHeight <= 0) missingFields.push('brace height')
+        if (isCompound && braceHeight <= 0) missingFields.push('brace height')
         if (shaftLength <= 0) missingFields.push('longitud del eje')
         if (staticSpine <= 0) missingFields.push('spine estático')
         if (missingFields.length > 0) {
@@ -822,111 +804,94 @@ export function calculateSpineMatch(
         }
         return createEmptyResult(archeryType, recommendations, warnings)
     }
-    const hasAllInputs =
-        iboVelocity > 0 &&
-        axleToAxle > 0 &&
-        (archeryType !== ARCHERY_TYPE.COMPOUND || percentLetoff > 0) &&
-        stringWeights.releaseType.trim() !== ''
+    const hasAllInputs = isCompound
+        ? iboProvided && axleToAxle > 0 && percentLetoff > 0 && stringWeights.releaseType.trim() !== ''
+        : componentWeights.pointWeight > 0
 
     const powerStroke = drawLength - braceHeight
     if (componentWeights.arrowTotalWeight <= 0) {
         recommendations.push('Falta peso de flecha para calcular el resultado. Añade GPI, peso total medido o los componentes principales.')
         return createEmptyResult(archeryType, recommendations, warnings)
     }
-    if (powerStroke <= 0) {
+    if (isCompound && powerStroke <= 0) {
         warnings.push('La longitud de tiro debe ser mayor que el brace height para poder calcular el disparo.')
         return createEmptyResult(archeryType, recommendations, warnings)
     }
 
-    const speedResult = calculateArrowSpeed(
-        {
-            archeryType,
-            iboVelocity,
-            drawWeight,
-            drawLength,
-            braceHeight,
-            axleToAxle,
-            percentLetoff,
-        },
-        {
-            arrowTotalWeight: componentWeights.arrowTotalWeight,
-        },
-        {
-            peepWeight,
-            dLoopWeight,
-            nockPointWeight,
-            silencerWeight: silencersWeight,
-            silencerDfc: silencerDfcWeight,
-        },
-    )
+    // Para recurvo/tradicional sin IBO no hay modelo de velocidad honesto:
+    // mejor no inventar una cifra. El spine non-compound no la necesita.
+    const canEstimateSpeed = isCompound || (iboProvided && braceHeight > 0 && powerStroke > 0)
+    const calculatedFPS = canEstimateSpeed
+        ? calculateArrowSpeed(
+              {
+                  archeryType,
+                  iboVelocity: effectiveIbo,
+                  drawWeight,
+                  drawLength,
+                  braceHeight,
+                  axleToAxle,
+                  percentLetoff,
+              },
+              {
+                  arrowTotalWeight: componentWeights.arrowTotalWeight,
+              },
+              {
+                  peepWeight,
+                  dLoopWeight,
+                  nockPointWeight,
+                  silencerWeight: silencersWeight,
+                  silencerDfc: silencerDfcWeight,
+              },
+          ).fps
+        : NaN
 
-    const calculatedFPS = speedResult.fps
-    let spineRequiredBase =
-        archeryType === ARCHERY_TYPE.COMPOUND
-            ? calculateCompoundTargetSpine(
-                  {
-                      iboVelocity,
-                      drawWeight,
-                      drawLength,
-                      braceHeight,
-                      axleToAxle,
-                      percentLetoff,
-                      releaseType: stringWeights.releaseType,
-                      stringMaterial: stringWeights.stringMaterial,
-                  },
-                  {
-                      shaftLength,
-                      pointWeight: componentWeights.pointWeight,
-                      insertWeight: componentWeights.insertWeight,
-                      fletchQuantity: componentWeights.fletchQuantity,
-                      weightEach: componentWeights.weightEach,
-                      fletchLength,
-                      fletchHeight,
-                      wrapWeight: componentWeights.wrapWeight,
-                      nockWeight: componentWeights.nockWeight,
-                      bushingPin: componentWeights.bushingPin,
-                      shaftUseCategory: arrow.shaftUseCategory,
-                  },
-                  {
-                      peepWeight,
-                      dLoopWeight,
-                      nockPointWeight,
-                      silencerWeight: silencersWeight,
-                      silencerDfc: silencerDfcWeight,
-                  },
-              )
-            : calculateNonCompoundTargetSpine(
-                  {
-                      iboVelocity,
-                      drawWeight,
-                      drawLength,
-                      braceHeight,
-                      axleToAxle,
-                      percentLetoff,
-                      releaseType: stringWeights.releaseType,
-                      stringMaterial: stringWeights.stringMaterial,
-                  },
-                  {
-                      shaftLength,
-                      pointWeight: componentWeights.pointWeight,
-                      insertWeight: componentWeights.insertWeight,
-                      fletchQuantity: componentWeights.fletchQuantity,
-                      weightEach: componentWeights.weightEach,
-                      fletchLength,
-                      fletchHeight,
-                      wrapWeight: componentWeights.wrapWeight,
-                      nockWeight: componentWeights.nockWeight,
-                      bushingPin: componentWeights.bushingPin,
-                      shaftUseCategory: arrow.shaftUseCategory,
-                  },
-                  {
-                      peepWeight,
-                      dLoopWeight,
-                      nockPointWeight,
-                      silencerWeight: silencersWeight,
-                      silencerDfc: silencerDfcWeight,
-                  },
-              )
+    let spineRequiredBase = isCompound
+        ? calculateCompoundTargetSpine(
+              {
+                  iboVelocity: effectiveIbo,
+                  drawWeight,
+                  drawLength,
+                  braceHeight,
+                  axleToAxle,
+                  percentLetoff,
+                  releaseType: stringWeights.releaseType,
+                  stringMaterial: stringWeights.stringMaterial,
+                  camLbDelta: getCamAggressivenessLbDelta(bow.camAggressiveness),
+              },
+              {
+                  shaftLength,
+                  pointWeight: componentWeights.pointWeight,
+                  insertWeight: componentWeights.insertWeight,
+                  fletchQuantity: componentWeights.fletchQuantity,
+                  weightEach: componentWeights.weightEach,
+                  fletchLength,
+                  fletchHeight,
+                  wrapWeight: componentWeights.wrapWeight,
+                  nockWeight: componentWeights.nockWeight,
+                  bushingPin: componentWeights.bushingPin,
+                  shaftUseCategory: arrow.shaftUseCategory,
+              },
+              {
+                  peepWeight,
+                  dLoopWeight,
+                  nockPointWeight,
+                  silencerWeight: silencersWeight,
+                  silencerDfc: silencerDfcWeight,
+              },
+          )
+        : calculateNonCompoundTargetSpine(
+              archeryType,
+              {
+                  drawWeight,
+                  drawLength,
+              },
+              {
+                  shaftLength,
+                  pointWeight: componentWeights.pointWeight,
+                  insertWeight: componentWeights.insertWeight,
+              },
+              stringWeights.stringMaterial,
+          )
 
     if (measuredChronoSpeed > 0) {
         spineRequiredBase = calibrateTargetSpineFromChronograph(spineRequiredBase, calculatedFPS, measuredChronoSpeed)
@@ -983,13 +948,28 @@ export function calculateSpineMatch(
         }
     }
 
-    if (isFinite(effectiveFPS)) {
+    // Los umbrales de velocidad están calibrados para compound; un recurvo a
+    // 180 fps es perfectamente normal y no debe generar ruido.
+    if (isCompound && isFinite(effectiveFPS)) {
         if (effectiveFPS > VELOCITY_MAX_SAFE) {
             warnings.push('Velocidad extrema - asegúrese de que su equipo pueda manejar estas fuerzas')
         } else if (effectiveFPS < VELOCITY_MIN_TARGET) {
             recommendations.push('La velocidad es baja. Considera reducir el peso de la flecha o optimizar la eficiencia del arco.')
         } else if (effectiveFPS > VELOCITY_OPTIMAL_MAX) {
             recommendations.push('La velocidad es alta. Asegúrate de que tu equipo pueda manejar estas fuerzas.')
+        }
+    }
+
+    if (!isCompound) {
+        if (Math.abs(drawLength - RECURVE_REFERENCE_DRAW_LENGTH) > 0.5) {
+            recommendations.push(
+                'El peso del arco se interpreta como el marcado a 28" y se ajusta ~2.5 lb por pulgada de apertura real. Si ya mediste el peso en tu apertura, indica 28 como apertura.',
+            )
+        }
+        if (archeryType === ARCHERY_TYPE.TRADITIONAL) {
+            warnings.push(
+                'Modelo tradicional/longbow con confianza media (mapeo impreso de la carta Easton). Verifica con bare shaft tuning.',
+            )
         }
     }
 
@@ -1035,10 +1015,12 @@ export function calculateSpineMatch(
 
     const spineRequiredCI =
         isFinite(spineRequiredBase) && spineRequiredBase > 0
-            ? createConfidenceInterval(spineRequiredBase, 0.03, confidence)
+            ? createConfidenceInterval(spineRequiredBase, CI_REQUIRED_UNCERTAINTY[confidence], confidence)
             : null
     const spineDynamicCI =
-        isFinite(spineDynamic) && spineDynamic > 0 ? createConfidenceInterval(spineDynamic, 0.02, confidence) : null
+        isFinite(spineDynamic) && spineDynamic > 0
+            ? createConfidenceInterval(spineDynamic, CI_DYNAMIC_UNCERTAINTY[confidence], confidence)
+            : null
     const matchIndexCI =
         spineRequiredCI && spineDynamicCI && spineRequiredCI.lower > 0
             ? {
