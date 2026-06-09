@@ -1,8 +1,9 @@
 /**
  * Archery calculator constants.
  *
- * Compound tuning is now centered on the reverse-engineered SFAX formulas.
- * Recurve/traditional keep the previous calibrated approximation.
+ * Compound tuning is centered on the reverse-engineered SFAX formulas.
+ * Recurve/traditional use a log-linear model fitted to the verified Easton
+ * Hunting 2023 chart (RECURVE_* below; design notes in docs/superpowers/specs/).
  */
 
 // === ARCHERY TYPES ===
