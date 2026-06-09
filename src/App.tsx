@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { ARCHERY_TYPE, type ArcheryType } from './constants'
 import { useI18n } from './i18n.tsx'
 import { calculateSpineMatch } from './utils/archeryCalculator'
 import { BottomNav, type BottomNavItem } from './components/BottomNav'
@@ -39,6 +40,8 @@ const initialBowSpecs = {
   braceHeight: '',
   axleToAxle: '',
   percentLetoff: '',
+  camAggressiveness: '',
+  archeryType: ARCHERY_TYPE.COMPOUND as ArcheryType,
 }
 
 const initialArrowSpecs = {
@@ -334,7 +337,10 @@ function App() {
     return 70 + ((matchIndex - 1.15) / 0.25) * 28
   }
 
-  const bowProgress = countFilledFields(bowSpecs, BOW_CORE_FIELDS)
+  const isCompoundBow = bowSpecs.archeryType === ARCHERY_TYPE.COMPOUND
+  // El modelo recurvo/tradicional no usa IBO ni brace height.
+  const bowCoreFields = isCompoundBow ? BOW_CORE_FIELDS : (['drawWeight', 'drawLength'] as const)
+  const bowProgress = countFilledFields(bowSpecs, bowCoreFields)
   const arrowProgress = countFilledFields(arrowSpecs, ARROW_CORE_FIELDS)
   const stringProgress = countFilledFields(stringWeights, STRING_CORE_FIELDS)
 
@@ -344,8 +350,8 @@ function App() {
     {
       id: 'bow' as const,
       label: t('nav.bow'),
-      detail: `${bowProgress}/${BOW_CORE_FIELDS.length}`,
-      complete: bowProgress === BOW_CORE_FIELDS.length,
+      detail: `${bowProgress}/${bowCoreFields.length}`,
+      complete: bowProgress === bowCoreFields.length,
     },
     {
       id: 'arrow' as const,
@@ -362,7 +368,7 @@ function App() {
   ]
 
   const navItems: BottomNavItem[] = [
-    { id: 'bow', label: t('nav.bow'), complete: bowProgress === BOW_CORE_FIELDS.length },
+    { id: 'bow', label: t('nav.bow'), complete: bowProgress === bowCoreFields.length },
     { id: 'arrow', label: t('nav.arrow'), complete: arrowProgress === ARROW_CORE_FIELDS.length },
     { id: 'string', label: t('nav.string'), complete: stringProgress === STRING_CORE_FIELDS.length },
     {
@@ -376,11 +382,22 @@ function App() {
     <FormSection
       title={t('section.bowSpecs')}
       icon="01"
-      eyebrow={`${bowProgress}/${BOW_CORE_FIELDS.length} ${t('app.progress')}`}
+      eyebrow={`${bowProgress}/${bowCoreFields.length} ${t('app.progress')}`}
       description={t('section.bowSpecs.description')}
     >
       <FieldGroup title={t('group.core')}>
         <div className="space-y-5">
+          <SelectField
+            label={t('field.archeryType')}
+            value={bowSpecs.archeryType}
+            onChange={(value) => setBowSpecs({ ...bowSpecs, archeryType: value as ArcheryType })}
+            options={[
+              { value: ARCHERY_TYPE.COMPOUND, label: t('archeryType.compound') },
+              { value: ARCHERY_TYPE.RECURVO, label: t('archeryType.recurvo') },
+              { value: ARCHERY_TYPE.TRADITIONAL, label: t('archeryType.traditional') },
+            ]}
+            id="archeryType"
+          />
           <InputField
             {...bowField('drawWeight', 'drawWeight')}
             label={t('field.drawWeight')}
@@ -397,22 +414,26 @@ function App() {
             required
             unit={unitLabel('length')}
           />
-          <InputField
-            {...bowField('iboVelocity', 'speed')}
-            label={t('field.iboVelocity')}
-            placeholder=""
-            id="iboVelocity"
-            required
-            unit={unitLabel('speed')}
-          />
-          <InputField
-            {...bowField('braceHeight', 'length')}
-            label={t('field.braceHeight')}
-            placeholder=""
-            id="braceHeight"
-            required
-            unit={unitLabel('length')}
-          />
+          {isCompoundBow && (
+            <InputField
+              {...bowField('iboVelocity', 'speed')}
+              label={t('field.iboVelocity')}
+              placeholder=""
+              id="iboVelocity"
+              required
+              unit={unitLabel('speed')}
+            />
+          )}
+          {isCompoundBow && (
+            <InputField
+              {...bowField('braceHeight', 'length')}
+              label={t('field.braceHeight')}
+              placeholder=""
+              id="braceHeight"
+              required
+              unit={unitLabel('length')}
+            />
+          )}
         </div>
       </FieldGroup>
 
@@ -427,20 +448,38 @@ function App() {
             hint={t('field.measuredChronoSpeed.hint')}
             tooltip={t('field.measuredChronoSpeed.tooltip')}
           />
-          <InputField
-            {...bowField('axleToAxle', 'length')}
-            label={t('field.axleToAxle')}
-            placeholder=""
-            id="axleToAxle"
-            unit={unitLabel('length')}
-          />
-          <InputField
-            {...bowField('percentLetoff')}
-            label={t('field.percentLetoff')}
-            placeholder="%"
-            id="percentLetoff"
-            unit="%"
-          />
+          {isCompoundBow && (
+            <InputField
+              {...bowField('axleToAxle', 'length')}
+              label={t('field.axleToAxle')}
+              placeholder=""
+              id="axleToAxle"
+              unit={unitLabel('length')}
+            />
+          )}
+          {isCompoundBow && (
+            <InputField
+              {...bowField('percentLetoff')}
+              label={t('field.percentLetoff')}
+              placeholder="%"
+              id="percentLetoff"
+              unit="%"
+            />
+          )}
+          {isCompoundBow && (
+            <SelectField
+              label={t('field.camAggressiveness')}
+              value={bowSpecs.camAggressiveness}
+              onChange={(value) => setBowSpecs({ ...bowSpecs, camAggressiveness: value })}
+              options={[
+                { value: '', label: t('option.cam.unknown') },
+                { value: 'round', label: t('option.cam.soft') },
+                { value: 'medium', label: t('option.cam.medium') },
+                { value: 'speed', label: t('option.cam.hard') },
+              ]}
+              id="camAggressiveness"
+            />
+          )}
         </div>
       </FieldGroup>
     </FormSection>

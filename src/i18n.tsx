@@ -39,6 +39,8 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.axleToAxle': 'Eje a eje',
         'field.percentLetoff': 'Porcentaje de liberación',
         'field.camAggressiveness': 'Agresividad de poleas',
+        'field.archeryType': 'Tipo de arco',
+        'option.cam.unknown': 'Sin especificar',
 
         'field.pointWeight': 'Peso de la punta',
         'field.insertWeight': 'Peso del inserto',
@@ -163,6 +165,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
         'archeryType.compound': 'Compound',
         'archeryType.recurve': 'Recurvo',
+        'archeryType.recurvo': 'Recurvo',
         'archeryType.traditional': 'Tradicional',
 
         'option.units.imperial.short': 'IMP',
@@ -246,6 +249,8 @@ const translations: Record<Lang, Record<string, string>> = {
         'field.axleToAxle': 'Axle To Axle',
         'field.percentLetoff': 'Percent Letoff',
         'field.camAggressiveness': 'Cam Aggressiveness',
+        'field.archeryType': 'Bow type',
+        'option.cam.unknown': 'Not specified',
 
         'field.pointWeight': 'Point Weight',
         'field.insertWeight': 'Insert Weight',
@@ -370,6 +375,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
         'archeryType.compound': 'Compound',
         'archeryType.recurve': 'Recurve',
+        'archeryType.recurvo': 'Recurve',
         'archeryType.traditional': 'Traditional',
 
         'option.units.imperial.short': 'IMP',
