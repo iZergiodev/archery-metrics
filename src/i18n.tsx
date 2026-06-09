@@ -14,6 +14,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'app.kicker': 'Tuning de spine',
         'app.subtitle': 'Ajusta flecha y arco con una lectura clara del spine dinámico, la energía y el emparejamiento final.',
         'app.progress': 'Campos clave',
+        'settings.title': 'Ajustes',
 
         'section.bowSpecs': 'Especificaciones del arco',
         'section.arrowSpecs': 'Especificaciones de la flecha',
@@ -214,6 +215,7 @@ const translations: Record<Lang, Record<string, string>> = {
         'app.kicker': 'Spine tuning',
         'app.subtitle': 'Tune bow and arrow with a clearer read of dynamic spine, available energy, and final match quality.',
         'app.progress': 'Core fields',
+        'settings.title': 'Settings',
 
         'section.bowSpecs': 'Bow Specs',
         'section.arrowSpecs': 'Arrow Specs',
