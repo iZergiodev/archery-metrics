@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { BottomSheet } from './BottomSheet'
 import type { UnitSystem } from '../utils/unitSystem'
 
@@ -49,17 +49,13 @@ export function SettingsSheet({
   onSetUnitSystem,
   t,
 }: SettingsSheetProps) {
+  // Los slots solo cambian desde este sheet (onSave), así que basta con leer
+  // localStorage al montar y refrescar tras cada guardado.
   const [slotSummaries, setSlotSummaries] = useState<SlotSummary[]>(() => [
-    { filled: false },
-    { filled: false },
-    { filled: false },
+    readSlotSummary(1),
+    readSlotSummary(2),
+    readSlotSummary(3),
   ])
-
-  useEffect(() => {
-    if (open) {
-      setSlotSummaries([readSlotSummary(1), readSlotSummary(2), readSlotSummary(3)])
-    }
-  }, [open])
 
   const handleSave = (slot: number) => {
     onSave(slot)

@@ -14,7 +14,6 @@ interface InputFieldProps {
   step?: string
   min?: string
   className?: string
-  priority?: 'primary' | 'secondary'
 }
 
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
@@ -33,7 +32,6 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       step,
       min,
       className = '',
-      priority: _priority = 'secondary',
     },
     ref,
   ) => {

@@ -8,11 +8,10 @@ interface SelectFieldProps {
   options: { value: string; label: string }[]
   id: string
   className?: string
-  priority?: 'primary' | 'secondary'
 }
 
 export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
-  ({ label, value, onChange, options, id, className = '', priority: _priority = 'secondary' }, ref) => {
+  ({ label, value, onChange, options, id, className = '' }, ref) => {
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
         <label htmlFor={id} className="text-[13px] font-medium text-[var(--text-primary)]">
