@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { useI18n } from './i18n.tsx'
 import { calculateSpineMatch } from './utils/archeryCalculator'
-import { Toolbar } from './components/Toolbar'
-import { TabNavigation } from './components/TabNavigation'
+import { BottomNav, type BottomNavItem } from './components/BottomNav'
+import { StatusStrip } from './components/StatusStrip'
+import { SectionTabs, type SectionTabId } from './components/SectionTabs'
+import { SettingsSheet } from './components/SettingsSheet'
 import { ResultsSummary } from './components/ResultsSummary'
 import { TuningAssistant } from './components/TuningAssistant'
 import { SetupComparator, type SetupComparisonEntry } from './components/SetupComparator'
@@ -12,7 +14,7 @@ import { InputField } from './components/InputField'
 import { SelectField } from './components/SelectField'
 import { DatabasePanel } from './components/DatabasePanel'
 import type { ShaftEntry } from './data/equipment/types'
-import { Search } from 'lucide-react'
+import { Search, SlidersHorizontal } from 'lucide-react'
 import { buildTuningActions } from './utils/tuningAssistant'
 import {
   formatInputDisplayValue,
@@ -22,7 +24,7 @@ import {
   type UnitSystem,
 } from './utils/unitSystem'
 
-type ActiveTab = 'bow' | 'arrow' | 'string'
+type ActiveTab = 'bow' | 'arrow' | 'string' | 'results'
 
 const UNIT_SYSTEM_STORAGE_KEY = 'archery-unit-system'
 const BOW_CORE_FIELDS = ['drawWeight', 'drawLength', 'iboVelocity', 'braceHeight'] as const
@@ -87,6 +89,23 @@ function getSavedConfiguration(slot: number) {
   }
 }
 
+const DESKTOP_QUERY = '(min-width: 1024px)'
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(DESKTOP_QUERY).matches,
+  )
+
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_QUERY)
+    const onChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+
+  return isDesktop
+}
+
 function App() {
   const { t, lang, setLang } = useI18n()
   const [activeTab, setActiveTab] = useState<ActiveTab>('bow')
@@ -100,19 +119,8 @@ function App() {
   const [arrowSpecs, setArrowSpecs] = useState(initialArrowSpecs)
   const [stringWeights, setStringWeights] = useState(initialStringWeights)
   const [dbPanelOpen, setDbPanelOpen] = useState(false)
-  const resultsRef = useRef<HTMLDivElement | null>(null)
-  const [resultsInView, setResultsInView] = useState(false)
-
-  useEffect(() => {
-    const node = resultsRef.current
-    if (!node || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver(
-      ([entry]) => setResultsInView(entry.isIntersecting && entry.intersectionRatio > 0.35),
-      { threshold: [0, 0.35, 1] },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const isDesktop = useIsDesktop()
 
   const spineMatch = useMemo(() => {
     console.log('%c── ARCHERY CONFIG ──', 'color:#D4A017;font-weight:bold')
@@ -248,7 +256,7 @@ function App() {
     }
   }, [spineMatch.status])
 
-  const stickyBarBorderColor: string = useMemo(() => {
+  const statusAccentColor: string = useMemo(() => {
     switch (spineMatch.status) {
       case 'weak':
         return 'var(--target-red)'
@@ -330,27 +338,37 @@ function App() {
   const arrowProgress = countFilledFields(arrowSpecs, ARROW_CORE_FIELDS)
   const stringProgress = countFilledFields(stringWeights, STRING_CORE_FIELDS)
 
-  const tabs = [
+  const formTab: SectionTabId = activeTab === 'results' ? 'bow' : activeTab
+
+  const sectionTabs = [
     {
-      id: 'bow',
-      label: t('section.bowSpecs'),
-      icon: '01',
+      id: 'bow' as const,
+      label: t('nav.bow'),
       detail: `${bowProgress}/${BOW_CORE_FIELDS.length}`,
       complete: bowProgress === BOW_CORE_FIELDS.length,
     },
     {
-      id: 'arrow',
-      label: t('section.arrowSpecs'),
-      icon: '02',
+      id: 'arrow' as const,
+      label: t('nav.arrow'),
       detail: `${arrowProgress}/${ARROW_CORE_FIELDS.length}`,
       complete: arrowProgress === ARROW_CORE_FIELDS.length,
     },
     {
-      id: 'string',
-      label: t('section.weightOnString'),
-      icon: '03',
+      id: 'string' as const,
+      label: t('nav.string'),
       detail: `${stringProgress}/${STRING_CORE_FIELDS.length}`,
       complete: stringProgress === STRING_CORE_FIELDS.length,
+    },
+  ]
+
+  const navItems: BottomNavItem[] = [
+    { id: 'bow', label: t('nav.bow'), complete: bowProgress === BOW_CORE_FIELDS.length },
+    { id: 'arrow', label: t('nav.arrow'), complete: arrowProgress === ARROW_CORE_FIELDS.length },
+    { id: 'string', label: t('nav.string'), complete: stringProgress === STRING_CORE_FIELDS.length },
+    {
+      id: 'results',
+      label: t('nav.results'),
+      statusColor: spineMatch.status != null ? statusAccentColor : null,
     },
   ]
 
@@ -673,77 +691,103 @@ function App() {
     </FormSection>
   )
 
+  const resultsContent = (
+    <>
+      <ResultsSummary
+        result={spineMatch}
+        matchColor={matchColor}
+        matchLabel={matchLabel}
+        getMatchIndexPosition={getMatchIndexPosition}
+        unitSystem={unitSystem}
+        t={t}
+      />
+
+      <TuningAssistant actions={tuningActions} status={spineMatch.status} t={t} />
+
+      {(spineMatch.warnings.length > 0 || spineMatch.recommendations.length > 0) && (
+        <div className="mt-6 space-y-5">
+          {spineMatch.warnings.length > 0 && (
+            <AlertPanel title={t('alerts.warnings')} tone="warning" items={spineMatch.warnings} />
+          )}
+          {spineMatch.recommendations.length > 0 && (
+            <AlertPanel title={t('alerts.recommendations')} tone="info" items={spineMatch.recommendations} />
+          )}
+        </div>
+      )}
+
+      <SetupComparator
+        entries={comparisonEntries}
+        bestEntryId={bestComparisonEntryId}
+        onLoadSlot={loadConfiguration}
+        unitSystem={unitSystem}
+        t={t}
+      />
+    </>
+  )
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      <header className="sticky top-0 z-40 safe-top" style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(12px)' }}>
-        <div className="mx-auto max-w-[560px] px-4 py-3">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--gold)]">{t('app.kicker')}</p>
-                <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-[var(--text-primary)]">{t('app.title')}</h1>
-              </div>
-            </div>
-
-            <Toolbar
-              onSave={saveConfiguration}
-              onLoad={loadConfiguration}
-              onClear={clearInputs}
-              lang={lang}
-              onSetLang={setLang}
-              unitSystem={unitSystem}
-              onSetUnitSystem={setGlobalUnitSystem}
-              t={t}
-            />
+      <header
+        className="sticky top-0 z-40 safe-top"
+        style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(12px)' }}
+      >
+        <div className="mx-auto flex h-14 w-full max-w-[560px] items-center justify-between px-4 lg:max-w-[1080px]">
+          <div className="min-w-0">
+            <p className="text-[9px] uppercase tracking-[0.24em] text-[var(--gold)]">{t('app.kicker')}</p>
+            <h1 className="truncate text-[17px] font-semibold leading-tight tracking-tight text-[var(--text-primary)]">
+              {t('app.title')}
+            </h1>
           </div>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label={t('settings.title')}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] transition-all duration-150 press-scale hover:border-[var(--gold)]/40 hover:text-[var(--text-primary)]"
+          >
+            <SlidersHorizontal size={18} />
+          </button>
         </div>
         <div className="header-accent" />
       </header>
 
-      <main className="mx-auto max-w-[560px] px-4 py-4" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
-        {/* Tabs first - immediately accessible */}
-        <TabNavigation tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as ActiveTab)} />
+      <main className="mx-auto w-full max-w-[560px] px-4 pt-4 pb-[calc(9rem+env(safe-area-inset-bottom,0px))] lg:grid lg:max-w-[1080px] lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10 lg:pb-16">
+        <div className="min-w-0">
+          {isDesktop && (
+            <SectionTabs tabs={sectionTabs} active={formTab} onChange={(tab) => setActiveTab(tab)} />
+          )}
 
-        {/* Form content - primary interaction area */}
-        <div key={activeTab} className="animate-fade-in">
-          {activeTab === 'bow' && renderBowSection()}
-          {activeTab === 'arrow' && renderArrowSection()}
-          {activeTab === 'string' && renderStringSection()}
+          {(isDesktop || activeTab !== 'results') && (
+            <div key={formTab} className="animate-fade-in">
+              {formTab === 'bow' && renderBowSection()}
+              {formTab === 'arrow' && renderArrowSection()}
+              {formTab === 'string' && renderStringSection()}
+            </div>
+          )}
+
+          {!isDesktop && activeTab === 'results' && (
+            <div className="animate-fade-in">{resultsContent}</div>
+          )}
         </div>
 
-        {/* Results below form */}
-        <div ref={resultsRef} className="mt-8">
-          <ResultsSummary
-            result={spineMatch}
-            matchColor={matchColor}
-            matchLabel={matchLabel}
-            getMatchIndexPosition={getMatchIndexPosition}
-            unitSystem={unitSystem}
-            t={t}
-          />
-        </div>
-
-        <TuningAssistant actions={tuningActions} status={spineMatch.status} t={t} />
-
-        {(spineMatch.warnings.length > 0 || spineMatch.recommendations.length > 0) && (
-          <div className="mt-6 space-y-5">
-            {spineMatch.warnings.length > 0 && (
-              <AlertPanel title={t('alerts.warnings')} tone="warning" items={spineMatch.warnings} />
-            )}
-            {spineMatch.recommendations.length > 0 && (
-              <AlertPanel title={t('alerts.recommendations')} tone="info" items={spineMatch.recommendations} />
-            )}
-          </div>
+        {isDesktop && (
+          <aside className="min-w-0">
+            <div className="sticky top-20">{resultsContent}</div>
+          </aside>
         )}
-
-        <SetupComparator
-          entries={comparisonEntries}
-          bestEntryId={bestComparisonEntryId}
-          onLoadSlot={loadConfiguration}
-          unitSystem={unitSystem}
-          t={t}
-        />
       </main>
+
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSave={saveConfiguration}
+        onLoad={loadConfiguration}
+        onClear={clearInputs}
+        lang={lang}
+        onSetLang={setLang}
+        unitSystem={unitSystem}
+        onSetUnitSystem={setGlobalUnitSystem}
+        t={t}
+      />
 
       <DatabasePanel
         open={dbPanelOpen}
@@ -753,30 +797,25 @@ function App() {
         t={t}
       />
 
-      {/* Sticky bottom match indicator — only when results are scrolled out of view */}
-      {spineMatch.status != null && !resultsInView && (
-        <button
-          type="button"
-          onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className="fixed bottom-0 left-0 right-0 z-50 safe-bottom animate-slide-up-entry border-t border-[var(--border)]"
-          style={{ backgroundColor: 'rgba(11,11,11,0.94)', backdropFilter: 'blur(16px)' }}
-          aria-label={`${matchLabel} — ${t('summary.primarySignal')}`}
-        >
-          <div
-            className="mx-auto flex h-12 max-w-[560px] items-center gap-3 px-4"
-            style={{ borderLeft: `3px solid ${stickyBarBorderColor}` }}
-          >
-            <span
-              className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: stickyBarBorderColor }}
-              aria-hidden="true"
+      {!isDesktop && (
+        <div className="fixed inset-x-0 bottom-0 z-40">
+          {spineMatch.status != null && activeTab !== 'results' && (
+            <StatusStrip
+              label={matchLabel}
+              matchIndex={spineMatch.matchIndex}
+              accentColor={statusAccentColor}
+              textClass={matchColor}
+              onClick={() => setActiveTab('results')}
+              ariaLabel={t('nav.viewResults')}
             />
-            <span className={`text-[13px] font-semibold ${matchColor}`}>{matchLabel}</span>
-            <span className="ml-auto font-mono text-[13px] text-[var(--text-secondary)]">
-              {spineMatch.matchIndex?.toFixed(3) ?? '--'}
-            </span>
-          </div>
-        </button>
+          )}
+          <BottomNav
+            items={navItems}
+            activeTab={activeTab}
+            onChange={(tab) => setActiveTab(tab)}
+            ariaLabel={t('nav.aria')}
+          />
+        </div>
       )}
     </div>
   )
