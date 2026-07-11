@@ -62,7 +62,8 @@ The generated 2022 legacy data remains unchanged in `src/data/equipment/shaftDat
 src/data/equipment/
   shaftDatabase.ts          generated legacy rows
   currentShaftSources.ts    official source registry
-  currentShaftDatabase.ts   verified current rows
+  currentShaftData/         verified rows grouped by manufacturer
+  currentShaftDatabase.ts   typed aggregate of current manufacturer modules
   shaftCatalog.ts           deterministic merge and public catalog export
 ```
 
