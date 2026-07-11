@@ -29,7 +29,9 @@
 - Create `src/data/equipment/currentShaftDatabase.test.ts`: aggregate data integrity and regression checks.
 - Create `src/data/equipment/shaftCatalog.ts`: normalization, aliases, merge, and public merged export.
 - Create `src/data/equipment/shaftCatalog.test.ts`: merge behavior and final uniqueness checks.
-- Modify `src/components/DatabasePanel.tsx:25`: lazy-load the merged catalog.
+- Create `src/components/loadShaftCatalog.ts`: single-flight dynamic loader for the merged catalog.
+- Create `src/components/DatabasePanel.test.ts`: Node-environment loader and retry tests.
+- Modify `src/components/DatabasePanel.tsx`: load the merged catalog with an in-flight guard.
 
 ## Task 1: Add the official source registry
 
@@ -725,11 +727,23 @@ describe('current Gold Tip shafts', () => {
     expect(GOLD_TIP_CURRENT_SHAFTS).toHaveLength(16)
   })
 
-  it('corrects Pierce Tour 700 and current Hunter XT metadata', () => {
+  it('preserves corrected rows and exact included hardware masses', () => {
     expect(GOLD_TIP_CURRENT_SHAFTS.find((entry) => entry.model === 'Kinetic Pierce Tour' && entry.size === '700'))
       .toMatchObject({ spine: 0.7, pointInsert: 0, bushingPin: 0, nockWeight: 0 })
     expect(GOLD_TIP_CURRENT_SHAFTS.find((entry) => entry.model === 'Hunter XT' && entry.size === '500'))
       .toMatchObject({ useCategory: 'hunting', od: 0.291, pointInsert: 12.1, nockWeight: 12.2 })
+
+    const expectedAirstrikePointInsert = new Map([
+      ['400', 39.1],
+      ['340', 39.5],
+      ['300', 39.2],
+      ['250', 44.6],
+    ])
+
+    for (const [size, pointInsert] of expectedAirstrikePointInsert) {
+      expect(GOLD_TIP_CURRENT_SHAFTS.find((entry) => entry.model === 'Airstrike' && entry.size === size))
+        .toMatchObject({ pointInsert })
+    }
   })
 })
 ```
@@ -742,7 +756,7 @@ Expected: FAIL because `./goldTip` does not exist.
 
 - [ ] **Step 3: Add the exact Gold Tip rows**
 
-Airstrike's published aluminum insert maps to `pointInsert`; its rear nock collar maps to `bushingPin`. The separately published front Ballistic Collar remains unrepresented because the current form has no separate front-collar field.
+Airstrike includes an aluminum insert and a front Ballistic Collar for each size. Because the form has no separate front-collar field, `pointInsert` stores their exact published sum: `39.1` for 400 (`24.3 + 14.8`), `39.5` for 340 (`24.9 + 14.6`), `39.2` for 300 (`25.4 + 13.8`), and `44.6` for 250 (`26.4 + 18.2`). Its rear nock collar still maps to `bushingPin`, and the published nock weight remains in `nockWeight`. These totals use exact first-party component masses, never inferred values.
 
 ```ts
 import { makeCurrentShaftEntries, type CurrentShaftEntry } from './types'
@@ -763,10 +777,11 @@ export const GOLD_TIP_CURRENT_SHAFTS: CurrentShaftEntry[] = [
   ...makeCurrentShaftEntries(
     { manufacturer: 'Gold Tip', model: 'Airstrike', useCategory: 'hunting', sourceId: 'gold_tip_2026_airstrike' },
     [
-      ['400', 0.254, 32, 0.4, 7.2, 24.3, 3.4, 11.6],
-      ['340', 0.258, 32, 0.34, 7.8, 24.9, 3.9, 11.6],
-      ['300', 0.262, 32, 0.3, 8.5, 25.4, 4, 11.6],
-      ['250', 0.269, 32, 0.25, 9.6, 26.4, 5, 11.6],
+      // pointInsert combines the insert and front Ballistic Collar masses.
+      ['400', 0.254, 32, 0.4, 7.2, 39.1, 3.4, 11.6],
+      ['340', 0.258, 32, 0.34, 7.8, 39.5, 3.9, 11.6],
+      ['300', 0.262, 32, 0.3, 8.5, 39.2, 4, 11.6],
+      ['250', 0.269, 32, 0.25, 9.6, 44.6, 5, 11.6],
     ],
   ),
   ...makeCurrentShaftEntries(
@@ -1158,7 +1173,6 @@ export const CURRENT_SHAFT_DATABASE: CurrentShaftEntry[] = [
 
 ```ts
 export { CURRENT_SHAFT_DATABASE } from './currentShaftData'
-export type { CurrentShaftEntry } from './currentShaftData/types'
 ```
 
 - [ ] **Step 4: Publish the merged export from `shaftCatalog.ts`**
@@ -1195,42 +1209,133 @@ git commit -m "feat(data): publish verified merged shaft catalog"
 ## Task 12: Load the merged catalog in the database panel
 
 **Files:**
-- Modify: `src/components/DatabasePanel.tsx:25-31`
+- Create: `src/components/loadShaftCatalog.ts`
+- Create: `src/components/DatabasePanel.test.ts`
+- Modify: `src/components/DatabasePanel.tsx`
 
-- [ ] **Step 1: Run the current production build as a baseline**
-
-Run: `pnpm run build`
-
-Expected: PASS before changing the lazy import.
-
-- [ ] **Step 2: Replace the lazy import with the merged catalog**
-
-Replace:
+- [ ] **Step 1: Add failing Node tests for the catalog loader**
 
 ```ts
-import('../data/equipment/shaftDatabase').then((mod) => {
-  setDb({ status: 'ready', shafts: mod.SHAFT_DATABASE })
+import { describe, expect, it } from 'vitest'
+import { createSingleFlightLoader, loadShaftCatalog } from './loadShaftCatalog'
+
+describe('loadShaftCatalog', () => {
+  it('reuses one in-flight catalog load', async () => {
+    const firstLoad = loadShaftCatalog()
+
+    expect(loadShaftCatalog()).toBe(firstLoad)
+    await firstLoad
+  })
+
+  it('loads both current-only and legacy shaft rows', async () => {
+    const shafts = await loadShaftCatalog()
+
+    expect(shafts).toContainEqual(expect.objectContaining({
+      manufacturer: 'Pandarus',
+      model: 'ELITE CA320',
+      size: '325',
+    }))
+    expect(shafts).toContainEqual(expect.objectContaining({
+      manufacturer: 'Victory Archery',
+      model: '3DHV Elite',
+      size: '400-FB',
+    }))
+  })
+
+  it('allows a new load after the in-flight operation rejects', async () => {
+    const failure = new Error('catalog unavailable')
+    let attempts = 0
+    const load = createSingleFlightLoader(() => {
+      attempts += 1
+      return attempts === 1 ? Promise.reject(failure) : Promise.resolve('catalog')
+    })
+
+    const failedLoad = load()
+    expect(load()).toBe(failedLoad)
+    await expect(failedLoad).rejects.toBe(failure)
+    await expect(load()).resolves.toBe('catalog')
+    expect(attempts).toBe(2)
+  })
 })
 ```
 
-with:
+- [ ] **Step 2: Run the loader test and verify that it fails**
+
+Run: `pnpm test -- src/components/DatabasePanel.test.ts`
+
+Expected: FAIL because `./loadShaftCatalog` does not exist.
+
+- [ ] **Step 3: Create the single-flight dynamic loader**
+
+`src/components/loadShaftCatalog.ts`:
 
 ```ts
-import('../data/equipment/shaftCatalog').then((mod) => {
-  setDb({ status: 'ready', shafts: mod.SHAFT_CATALOG })
-})
+import type { ShaftEntry } from '../data/equipment/types'
+
+export function createSingleFlightLoader<T>(load: () => Promise<T>): () => Promise<T> {
+  let inFlight: Promise<T> | undefined
+
+  return () => {
+    if (inFlight) return inFlight
+
+    inFlight = load().catch((error: unknown) => {
+      inFlight = undefined
+      throw error
+    })
+    return inFlight
+  }
+}
+
+const loadShaftCatalogOnce = createSingleFlightLoader(
+  () => import('../data/equipment/shaftCatalog').then(({ SHAFT_CATALOG }) => SHAFT_CATALOG),
+)
+
+export function loadShaftCatalog(): Promise<ShaftEntry[]> {
+  return loadShaftCatalogOnce()
+}
 ```
 
-- [ ] **Step 3: Run the focused data tests and production build**
+Concurrent callers receive the same promise. A rejection clears the cached in-flight promise so the retry button can initiate a fresh dynamic import.
 
-Run: `pnpm test -- src/data/equipment && pnpm run build`
+- [ ] **Step 4: Wire the guarded loader into `DatabasePanel`**
 
-Expected: all equipment tests PASS and the Vite production build succeeds.
+Import `useRef` and the loader, initialize the state as `loading`, and replace the inline database import with this guarded effect:
 
-- [ ] **Step 4: Commit the UI wiring**
+```ts
+const [db, setDb] = useState<DatabaseState>({ status: 'loading' })
+const catalogLoadInFlight = useRef(false)
+
+useEffect(() => {
+  if (open && db.status === 'loading' && !catalogLoadInFlight.current) {
+    catalogLoadInFlight.current = true
+    loadShaftCatalog().then((shafts) => {
+      setDb({ status: 'ready', shafts })
+    }).catch(() => {
+      setDb({ status: 'error' })
+    }).finally(() => {
+      catalogLoadInFlight.current = false
+    })
+  }
+}, [open, db.status])
+```
+
+The panel-level `useRef` guard prevents duplicate result handlers while the loader-level single-flight guarantee prevents duplicate catalog imports. Keep the retry action as `setDb({ status: 'loading' })` so a rejected load can run again.
+
+- [ ] **Step 5: Run the focused tests and production build**
+
+Run:
 
 ```bash
-git add src/components/DatabasePanel.tsx
+pnpm test -- src/components/DatabasePanel.test.ts src/data/equipment
+pnpm run build
+```
+
+Expected: the Node loader tests and all equipment tests PASS, and the Vite production build succeeds.
+
+- [ ] **Step 6: Commit the guarded UI loader**
+
+```bash
+git add src/components/loadShaftCatalog.ts src/components/DatabasePanel.test.ts src/components/DatabasePanel.tsx
 git commit -m "feat(ui): load merged current shaft catalog"
 ```
 

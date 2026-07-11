@@ -52,7 +52,7 @@ Every current shaft row must satisfy the existing `ShaftEntry` contract:
 - included bushing or pin weight
 - included nock weight
 
-Spine, GPI, stock length, and outside diameter must be explicitly published and positive. Included component weights are recorded only when the official source identifies an exact weight for that size. A missing, optional, separately sold, or included-but-unpublished component weight is represented as `0`; in this schema, `0` means "do not auto-fill this component", not necessarily "the component is absent". Its weight is never guessed.
+Spine, GPI, stock length, and outside diameter must be explicitly published and positive. Included component weights are recorded only when the official source identifies an exact weight for that size. When the form has no independent field for every included front component, `pointInsert` may store the exact combined weight of the published point, insert, and front collar hardware for that size. Such totals are arithmetic sums of exact first-party component weights, never inferred package contents or estimated masses. A missing, optional, separately sold, or included-but-unpublished component weight is represented as `0`; in this schema, `0` means "do not auto-fill this component", not necessarily "the component is absent". Its weight is never guessed.
 
 ## Architecture
 
@@ -62,12 +62,12 @@ The generated 2022 legacy data remains unchanged in `src/data/equipment/shaftDat
 src/data/equipment/
   shaftDatabase.ts          generated legacy rows
   currentShaftSources.ts    official source registry
-  currentShaftData/         verified rows grouped by manufacturer
-  currentShaftDatabase.ts   typed aggregate of current manufacturer modules
+  currentShaftData/         verified rows and typed manufacturer aggregate
+  currentShaftDatabase.ts   stable re-export of the current aggregate
   shaftCatalog.ts           deterministic merge and public catalog export
 ```
 
-`DatabasePanel` will import the merged catalog from `shaftCatalog.ts`. No interface redesign or form-model change is required.
+`DatabasePanel` loads the merged catalog through `src/components/loadShaftCatalog.ts`, which dynamically imports `SHAFT_CATALOG` from `shaftCatalog.ts`. The loader shares one in-flight promise between concurrent callers and clears a rejected promise so the existing retry action can start a fresh load. The panel also guards its loading effect against duplicate result handlers. No interface redesign or form-model change is required.
 
 ## Identity and Merge Rules
 
