@@ -40,14 +40,14 @@ describe('mergeShaftCatalog', () => {
     expect(result[0]?.spine).toBe(0.7)
   })
 
-  it('normalizes case and surrounding or repeated whitespace in shaft identities', () => {
+  it('normalizes compatibility forms, case, and surrounding or repeated whitespace', () => {
     const normalized = shaft('VAP', '400 target', 0.4)
-    const irregular = {
-      ...shaft('  vap  ', '  400   TARGET  ', 0.4),
-      manufacturer: '  GOLD   TIP  ',
+    const compatibilityForm = {
+      ...shaft('  ＶＡＰ  ', '  ４００　　ＴＡＲＧＥＴ  ', 0.4),
+      manufacturer: '  ＧＯＬＤ　　ＴＩＰ  ',
     }
 
-    expect(shaftKey(irregular)).toBe(shaftKey(normalized))
+    expect(shaftKey(compatibilityForm)).toBe(shaftKey(normalized))
   })
 
   it('appends a new current row when no legacy rows exist', () => {
