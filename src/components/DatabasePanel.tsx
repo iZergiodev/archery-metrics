@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, Loader } from 'lucide-react'
 import { BottomSheet } from './BottomSheet'
 import { loadShaftCatalog } from './loadShaftCatalog'
@@ -19,17 +19,21 @@ type DatabaseState =
 
 export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: DatabasePanelProps) {
   const [db, setDb] = useState<DatabaseState>({ status: 'loading' })
+  const catalogLoadInFlight = useRef(false)
   const [manufacturer, setManufacturer] = useState('')
   const [model, setModel] = useState('')
   const [size, setSize] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
-    if (open && db.status === 'loading') {
+    if (open && db.status === 'loading' && !catalogLoadInFlight.current) {
+      catalogLoadInFlight.current = true
       loadShaftCatalog().then((shafts) => {
         setDb({ status: 'ready', shafts })
       }).catch(() => {
         setDb({ status: 'error' })
+      }).finally(() => {
+        catalogLoadInFlight.current = false
       })
     }
   }, [open, db.status])
