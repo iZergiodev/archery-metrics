@@ -27,8 +27,11 @@ describe('CURRENT_SHAFT_DATABASE', () => {
     }
   })
 
-  it('contains valid categories, physical measurements, and component weights', () => {
+  it('contains non-empty identities, valid categories, measurements, and component weights', () => {
     for (const entry of CURRENT_SHAFT_DATABASE) {
+      expect(entry.manufacturer.trim()).not.toBe('')
+      expect(entry.model.trim()).not.toBe('')
+      expect(entry.size.trim()).not.toBe('')
       expect(['base', 'hunting', 'target']).toContain(entry.useCategory)
 
       for (const value of [entry.od, entry.stockLength, entry.spine, entry.gpi]) {
