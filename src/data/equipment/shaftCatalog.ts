@@ -1,4 +1,6 @@
 import type { ShaftEntry } from './types'
+import { CURRENT_SHAFT_DATABASE } from './currentShaftDatabase'
+import { SHAFT_DATABASE as LEGACY_SHAFT_DATABASE } from './shaftDatabase'
 
 const MODEL_ALIASES: Readonly<Record<string, string>> = {
   'easton|ace': 'A/C/E',
@@ -79,3 +81,8 @@ export function mergeShaftCatalog(
 
   return result
 }
+
+export const SHAFT_CATALOG: ShaftEntry[] = mergeShaftCatalog(
+  LEGACY_SHAFT_DATABASE,
+  CURRENT_SHAFT_DATABASE,
+)

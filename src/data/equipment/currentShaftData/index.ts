@@ -1,0 +1,28 @@
+import { BLACK_EAGLE_CURRENT_SHAFTS } from './blackEagle'
+import { EASTON_CURRENT_SHAFTS } from './easton'
+import { FIVICS_CURRENT_SHAFTS } from './fivics'
+import { GOLD_TIP_CURRENT_SHAFTS } from './goldTip'
+import { PANDARUS_CURRENT_SHAFTS } from './pandarus'
+import { SKYLON_CURRENT_SHAFTS } from './skylon'
+import type { CurrentShaftEntry } from './types'
+import { VICTORY_CURRENT_SHAFTS } from './victory'
+
+export {
+  BLACK_EAGLE_CURRENT_SHAFTS,
+  EASTON_CURRENT_SHAFTS,
+  FIVICS_CURRENT_SHAFTS,
+  GOLD_TIP_CURRENT_SHAFTS,
+  PANDARUS_CURRENT_SHAFTS,
+  SKYLON_CURRENT_SHAFTS,
+  VICTORY_CURRENT_SHAFTS,
+}
+
+export const CURRENT_SHAFT_DATABASE: CurrentShaftEntry[] = [
+  ...EASTON_CURRENT_SHAFTS,
+  ...VICTORY_CURRENT_SHAFTS,
+  ...GOLD_TIP_CURRENT_SHAFTS,
+  ...BLACK_EAGLE_CURRENT_SHAFTS,
+  ...SKYLON_CURRENT_SHAFTS,
+  ...FIVICS_CURRENT_SHAFTS,
+  ...PANDARUS_CURRENT_SHAFTS,
+]
