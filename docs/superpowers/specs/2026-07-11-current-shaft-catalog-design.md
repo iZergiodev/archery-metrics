@@ -10,13 +10,13 @@ The application models shafts, not finished arrows. Factory-fletched arrows are 
 
 The first current-catalog release will research these active product families across target recurve, target compound, 3D, and hunting:
 
-- Easton: X10, A/C/E, 5.0, and 5MM FMJ
-- Victory: VXT, VAP Target, and RIP TKO
+- Easton: X10, A/C/E, 5.0, 5MM FMJ Classic, and 5MM FMJ MAX
+- Victory: VXT, VAP, and RIP TKO
 - Gold Tip: Kinetic Pierce Tour, Airstrike, and Hunter XT
 - Black Eagle: X Impact and Rampage
 - Skylon: Paragon
-- Fivics: FIVE-X
-- Pandarus: Elite CA320
+- FIVICS: FIVE-X
+- Pandarus: ELITE CA320
 
 The release may contain both new families and verified replacements for legacy rows. A listed family or size is included only when its required numerical fields can be traced to a current official source.
 

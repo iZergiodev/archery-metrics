@@ -47,32 +47,36 @@ import {
   type CurrentShaftSourceId,
 } from './currentShaftSources'
 
-const EXPECTED_HOSTS: Record<CurrentShaftSourceId, string> = {
-  easton_2026_x10: 'eastonarchery.com',
-  easton_2026_ace: 'eastonarchery.com',
-  easton_2026_5_0: 'eastonarchery.com',
-  easton_2026_5mm_fmj: 'eastonarchery.com',
-  victory_2026_vxt: 'victoryarchery.com',
-  victory_2026_vap: 'victoryarchery.com',
-  victory_2026_rip_tko: 'victoryarchery.com',
-  gold_tip_2026_pierce_tour: 'goldtip.com',
-  gold_tip_2026_airstrike: 'goldtip.com',
-  gold_tip_2026_hunter_xt: 'goldtip.com',
-  black_eagle_2026_x_impact: 'blackeaglearrows.com',
-  black_eagle_2026_rampage: 'blackeaglearrows.com',
-  skylon_2026_paragon: 'skylonarchery.com',
-  fivics_2026_five_x: 'fivics.com',
-  pandarus_2026_elite_ca320: 'pandarusarchery.com',
-}
+const EXPECTED_URLS = {
+  easton_2026_x10: 'https://eastonarchery.com/arrows_/x10/',
+  easton_2026_ace: 'https://eastonarchery.com/arrows_/a-c-e/',
+  easton_2026_5_0: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
+  easton_2026_5mm_fmj: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
+  victory_2026_vxt: 'https://victoryarchery.com/arrows-target/vxt/',
+  victory_2026_vap: 'https://victoryarchery.com/arrows-target/vap/',
+  victory_2026_rip_tko: 'https://victoryarchery.com/arrows-hunting/rip-tko/',
+  gold_tip_2026_pierce_tour:
+    'https://goldtip.com/collections/arrows/products/kinetic-pierce-tour-target-arrows',
+  gold_tip_2026_airstrike:
+    'https://goldtip.com/collections/arrows/products/airstrike-hunting-arrows',
+  gold_tip_2026_hunter_xt:
+    'https://goldtip.com/collections/arrows/products/hunter-xt-hunting-arrows',
+  black_eagle_2026_x_impact:
+    'https://blackeaglearrows.com/collections/hunting-arrows/products/x-impact-fletched-arrows',
+  black_eagle_2026_rampage:
+    'https://blackeaglearrows.com/collections/hunting-arrows/products/rampage-fletched-arrows',
+  skylon_2026_paragon: 'https://www.skylonarchery.com/arrows/id-3-2/paragon',
+  fivics_2026_five_x: 'https://www.fivics.com/shop/product/detail/37',
+  pandarus_2026_elite_ca320: 'https://www.pandarusarchery.com/elite_ca320',
+} as const satisfies Record<CurrentShaftSourceId, string>
 
 describe('current shaft sources', () => {
   it('contains exactly the reviewed first-party sources', () => {
-    expect(Object.keys(CURRENT_SHAFT_SOURCES).sort()).toEqual(Object.keys(EXPECTED_HOSTS).sort())
+    expect(Object.keys(CURRENT_SHAFT_SOURCES).sort()).toEqual(Object.keys(EXPECTED_URLS).sort())
 
-    for (const id of Object.keys(EXPECTED_HOSTS) as CurrentShaftSourceId[]) {
+    for (const id of Object.keys(EXPECTED_URLS) as CurrentShaftSourceId[]) {
       const source: CurrentShaftSource = CURRENT_SHAFT_SOURCES[id]
-      const host = new URL(source.url).hostname.replace(/^www\./, '')
-      expect(host).toBe(EXPECTED_HOSTS[id])
+      expect(source.url).toBe(EXPECTED_URLS[id])
       expect(source.accessedOn).toBe('2026-07-11')
       expect(source.publicationYear ?? Number(source.accessedOn.slice(0, 4))).toBe(2026)
     }
@@ -115,14 +119,14 @@ export const CURRENT_SHAFT_SOURCES = {
   easton_2026_5_0: {
     manufacturer: 'Easton',
     title: 'Easton 5.0 product specifications',
-    url: 'https://eastonarchery.com/arrows_/easton-5-0/',
+    url: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
     publicationYear: 2026,
     accessedOn: '2026-07-11',
   },
   easton_2026_5mm_fmj: {
     manufacturer: 'Easton',
     title: '5MM FMJ product specifications',
-    url: 'https://eastonarchery.com/arrows_/5mm-full-metal-jacket/',
+    url: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
     publicationYear: 2026,
     accessedOn: '2026-07-11',
   },
@@ -635,7 +639,7 @@ describe('current Victory shafts', () => {
     expect(VICTORY_CURRENT_SHAFTS.find((entry) => entry.model === 'VXT' && entry.size === '300'))
       .toMatchObject({ od: 0.241, gpi: 8.3, bushingPin: 12, nockWeight: 3 })
     expect(VICTORY_CURRENT_SHAFTS.find((entry) => entry.model === 'RIP TKO' && entry.size === '200'))
-      .toMatchObject({ stockLength: 31, gpi: 10.6, pointInsert: 50, nockWeight: 8 })
+      .toMatchObject({ stockLength: 31, gpi: 10.6, pointInsert: 50, nockWeight: 9 })
   })
 })
 ```
@@ -681,11 +685,11 @@ export const VICTORY_CURRENT_SHAFTS: CurrentShaftEntry[] = [
   ...makeCurrentShaftEntries(
     { manufacturer: 'Victory Archery', model: 'RIP TKO', useCategory: 'hunting', sourceId: 'victory_2026_rip_tko' },
     [
-      ['200', 0.276, 31, 0.2, 10.6, 50, 0, 8],
-      ['250', 0.266, 31, 0.25, 8.9, 50, 0, 8],
-      ['300', 0.266, 31, 0.3, 8.8, 50, 0, 8],
-      ['350', 0.265, 31, 0.35, 8.7, 50, 0, 8],
-      ['400', 0.266, 31, 0.4, 9, 50, 0, 8],
+      ['200', 0.276, 31, 0.2, 10.6, 50, 0, 9],
+      ['250', 0.266, 31, 0.25, 8.9, 50, 0, 9],
+      ['300', 0.266, 31, 0.3, 8.8, 50, 0, 9],
+      ['350', 0.265, 31, 0.35, 8.7, 50, 0, 9],
+      ['400', 0.266, 31, 0.4, 9, 50, 0, 9],
     ],
   ),
 ]
