@@ -29,7 +29,6 @@ describe('GOLD_TIP_CURRENT_SHAFTS', () => {
     expect(GOLD_TIP_CURRENT_SHAFTS.find(({ model, size }) => (
       model === 'Airstrike' && size === '400'
     ))).toMatchObject({
-      pointInsert: 24.3,
       bushingPin: 3.4,
       nockWeight: 11.6,
     })
@@ -42,5 +41,20 @@ describe('GOLD_TIP_CURRENT_SHAFTS', () => {
       pointInsert: 12.1,
       nockWeight: 12.2,
     })
+  })
+
+  it('combines the Airstrike insert and front Ballistic Collar in pointInsert', () => {
+    const expectedPointInsertBySize = new Map([
+      ['400', 39.1],
+      ['340', 39.5],
+      ['300', 39.2],
+      ['250', 44.6],
+    ])
+
+    for (const [size, pointInsert] of expectedPointInsertBySize) {
+      expect(GOLD_TIP_CURRENT_SHAFTS.find((entry) => (
+        entry.model === 'Airstrike' && entry.size === size
+      ))).toMatchObject({ pointInsert })
+    }
   })
 })
