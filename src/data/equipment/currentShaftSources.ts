@@ -24,14 +24,14 @@ export const CURRENT_SHAFT_SOURCES = {
   easton_2026_5_0: {
     manufacturer: 'Easton',
     title: 'Easton 5.0 product specifications',
-    url: 'https://eastonarchery.com/arrows_/easton-5-0/',
+    url: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
     publicationYear: 2026,
     accessedOn: '2026-07-11',
   },
   easton_2026_5mm_fmj: {
     manufacturer: 'Easton',
     title: '5MM FMJ product specifications',
-    url: 'https://eastonarchery.com/arrows_/5mm-full-metal-jacket/',
+    url: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
     publicationYear: 2026,
     accessedOn: '2026-07-11',
   },

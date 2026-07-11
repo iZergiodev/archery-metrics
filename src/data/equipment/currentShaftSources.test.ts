@@ -23,8 +23,8 @@ const EXPECTED_HOSTS = {
 const EXPECTED_URLS = {
   easton_2026_x10: 'https://eastonarchery.com/arrows_/x10/',
   easton_2026_ace: 'https://eastonarchery.com/arrows_/a-c-e/',
-  easton_2026_5_0: 'https://eastonarchery.com/arrows_/easton-5-0/',
-  easton_2026_5mm_fmj: 'https://eastonarchery.com/arrows_/5mm-full-metal-jacket/',
+  easton_2026_5_0: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
+  easton_2026_5mm_fmj: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
   victory_2026_vxt: 'https://victoryarchery.com/arrows-target/vxt/',
   victory_2026_vap: 'https://victoryarchery.com/arrows-target/vap/',
   victory_2026_rip_tko: 'https://victoryarchery.com/arrows-hunting/rip-tko/',

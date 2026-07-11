@@ -25,8 +25,20 @@ describe('EASTON_CURRENT_SHAFTS', () => {
     expect(EASTON_CURRENT_SHAFTS.find(({ model, size }) => model === '5.0' && size === '200'))
       .toMatchObject({
         useCategory: 'hunting',
+        sourceId: 'easton_2026_5_0',
+        stockLength: 33,
         pointInsert: 0,
         nockWeight: 8,
       })
+
+    expect(EASTON_CURRENT_SHAFTS.find(({ model, size }) => (
+      model === '5MM FMJ MAX' && size === '200'
+    ))).toMatchObject({
+      sourceId: 'easton_2026_5mm_fmj',
+      od: 0.28,
+      stockLength: 33,
+      spine: 0.2,
+      gpi: 13.3,
+    })
   })
 })
