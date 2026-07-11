@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Loader } from 'lucide-react'
 import { BottomSheet } from './BottomSheet'
+import { loadShaftCatalog } from './loadShaftCatalog'
 import type { ShaftEntry } from '../data/equipment/types'
 
 interface DatabasePanelProps {
@@ -12,23 +13,21 @@ interface DatabasePanelProps {
 }
 
 type DatabaseState =
-  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'ready'; shafts: ShaftEntry[] }
   | { status: 'error' }
 
 export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: DatabasePanelProps) {
-  const [db, setDb] = useState<DatabaseState>({ status: 'idle' })
+  const [db, setDb] = useState<DatabaseState>({ status: 'loading' })
   const [manufacturer, setManufacturer] = useState('')
   const [model, setModel] = useState('')
   const [size, setSize] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
-    if (open && db.status === 'idle') {
-      setDb({ status: 'loading' })
-      import('../data/equipment/shaftDatabase').then((mod) => {
-        setDb({ status: 'ready', shafts: mod.SHAFT_DATABASE })
+    if (open && db.status === 'loading') {
+      loadShaftCatalog().then((shafts) => {
+        setDb({ status: 'ready', shafts })
       }).catch(() => {
         setDb({ status: 'error' })
       })
@@ -103,7 +102,7 @@ export function DatabasePanel({ open, onClose, onApply, hasExistingData, t }: Da
           <div className="py-12 text-center">
             <p className="text-[13px] text-[var(--text-secondary)]">{t('db.error')}</p>
             <button
-              onClick={() => setDb({ status: 'idle' })}
+              onClick={() => setDb({ status: 'loading' })}
               className="mt-3 text-[12px] font-medium text-[var(--gold)] press-scale"
             >
               {t('db.retry')}
