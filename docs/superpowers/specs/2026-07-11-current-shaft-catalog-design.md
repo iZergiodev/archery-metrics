@@ -52,7 +52,7 @@ Every current shaft row must satisfy the existing `ShaftEntry` contract:
 - included bushing or pin weight
 - included nock weight
 
-Spine, GPI, stock length, and outside diameter must be explicitly published and positive. Included component weights are recorded only when the official source identifies the component as included for that exact size. A missing, optional, or separately sold component is represented as `0`; its weight is never guessed.
+Spine, GPI, stock length, and outside diameter must be explicitly published and positive. Included component weights are recorded only when the official source identifies an exact weight for that size. A missing, optional, separately sold, or included-but-unpublished component weight is represented as `0`; in this schema, `0` means "do not auto-fill this component", not necessarily "the component is absent". Its weight is never guessed.
 
 ## Architecture
 
