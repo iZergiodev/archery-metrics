@@ -1,0 +1,100 @@
+import type { ShaftEntry } from './types'
+import { CURRENT_SHAFT_DATABASE } from './currentShaftDatabase'
+import { SHAFT_DATABASE as LEGACY_SHAFT_DATABASE } from './shaftDatabase'
+
+const MODEL_ALIASES: Readonly<Record<string, string>> = {
+  'easton|ace': 'A/C/E',
+  'easton|a.c.e.': 'A/C/E',
+  'easton|easton 5.0': '5.0',
+  'easton|5mm fmj': '5MM FMJ Classic',
+  'easton|fmj 5mm': '5MM FMJ Classic',
+  'easton|axis': '5MM Axis',
+  'easton|4mm fmj': '4MM FMJ',
+  'easton|x10 parallel pro': '4MM X10 Parallel Pro',
+  'easton|superdrive23': 'Superdrive 23',
+  'easton|rx-7': 'RX7',
+  'gold tip|30x pro': '30X',
+  'gold tip|triple x pro': 'Triple X',
+  'gold tip|nine.3 max pro': 'Nine.3 Max',
+  'gold tip|22 series pro': 'Series 22',
+  'gold tip|x-cutter pro': 'X-Cutter',
+  'victory archery|3dhv elite': '3DHV',
+  'black eagle|ps27': 'PS27 Super X',
+  'victory archery|vap target': 'VAP',
+  'gold tip|pierce tour': 'Kinetic Pierce Tour',
+  'gold tip|kinetic pierce tour arrows .166': 'Kinetic Pierce Tour',
+  'black eagle|x-impact': 'X Impact',
+}
+
+function normalizeSegment(value: string): string {
+  return value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US')
+}
+
+function canonicalDisplaySegment(value: string): string {
+  return value.normalize('NFKC').trim().replace(/\s+/g, ' ')
+}
+
+function canonicalModel(manufacturer: string, model: string): string {
+  const aliasKey = `${normalizeSegment(manufacturer)}|${normalizeSegment(model)}`
+
+  return MODEL_ALIASES[aliasKey] ?? canonicalDisplaySegment(model)
+}
+
+function canonicalizeShaftEntry(entry: ShaftEntry): ShaftEntry {
+  const manufacturer = canonicalDisplaySegment(entry.manufacturer)
+
+  return {
+    ...entry,
+    manufacturer,
+    model: canonicalModel(manufacturer, entry.model),
+    size: canonicalDisplaySegment(entry.size),
+  }
+}
+
+export function shaftKey(entry: ShaftEntry): string {
+  return [
+    normalizeSegment(entry.manufacturer),
+    normalizeSegment(canonicalModel(entry.manufacturer, entry.model)),
+    normalizeSegment(entry.size),
+  ].join('|')
+}
+
+export function mergeShaftCatalog(
+  legacyRows: readonly ShaftEntry[],
+  currentRows: readonly ShaftEntry[],
+): ShaftEntry[] {
+  const result: ShaftEntry[] = []
+  const indexesByKey = new Map<string, number>()
+
+  for (const row of legacyRows) {
+    const entry = canonicalizeShaftEntry(row)
+    const key = shaftKey(entry)
+
+    if (indexesByKey.has(key)) {
+      continue
+    }
+
+    indexesByKey.set(key, result.length)
+    result.push(entry)
+  }
+
+  for (const row of currentRows) {
+    const entry = canonicalizeShaftEntry(row)
+    const key = shaftKey(entry)
+    const existingIndex = indexesByKey.get(key)
+
+    if (existingIndex === undefined) {
+      indexesByKey.set(key, result.length)
+      result.push(entry)
+    } else {
+      result[existingIndex] = entry
+    }
+  }
+
+  return result
+}
+
+export const SHAFT_CATALOG: ShaftEntry[] = mergeShaftCatalog(
+  LEGACY_SHAFT_DATABASE,
+  CURRENT_SHAFT_DATABASE,
+)
