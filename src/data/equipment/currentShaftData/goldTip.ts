@@ -49,4 +49,79 @@ export const GOLD_TIP_CURRENT_SHAFTS: CurrentShaftEntry[] = [
       ['250', 0.309, 32, 0.25, 10.6, 12.1, 0, 12.2],
     ],
   ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: 'Pierce LRT',
+      useCategory: 'hunting',
+      sourceId: 'gold_tip_2026_pierce_lrt',
+    },
+    [
+      ['500', 0.223, 30, 0.5, 6.6, 0, 0, 0],
+      ['400', 0.229, 32, 0.4, 7.5, 0, 0, 0],
+      ['340', 0.234, 32, 0.34, 8.3, 0, 0, 0],
+      ['300', 0.24, 32, 0.3, 9.1, 0, 0, 0],
+      ['250', 0.245, 32, 0.25, 9.8, 0, 0, 0],
+    ],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: 'Kinetic',
+      useCategory: 'hunting',
+      sourceId: 'gold_tip_2026_kinetic',
+    },
+    [
+      ['500', 0.258, 30, 0.5, 7.6, 0, 0, 0],
+      ['400', 0.27, 32, 0.4, 9.5, 0, 0, 0],
+      ['340', 0.272, 32, 0.34, 9.9, 0, 0, 0],
+      ['300', 0.274, 32, 0.3, 10.4, 0, 0, 0],
+      ['200', 0.282, 32, 0.2, 11.6, 0, 0, 0],
+    ],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: '30X',
+      useCategory: 'target',
+      sourceId: 'gold_tip_2026_30x',
+    },
+    [['150', 0.399, 32, 0.15, 8.5, 0, 0, 0]],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: 'Triple X',
+      useCategory: 'target',
+      sourceId: 'gold_tip_2026_triple_x',
+    },
+    [['100', 0.421, 32, 0.1, 9.3, 0, 0, 0]],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: 'Nine.3 Max',
+      useCategory: 'target',
+      sourceId: 'gold_tip_2026_nine_3_max',
+    },
+    [['250', 0.365, 32, 0.25, 8.3, 0, 0, 0]],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: 'Series 22',
+      useCategory: 'target',
+      sourceId: 'gold_tip_2026_series_22',
+    },
+    [['300', 0.338, 32, 0.3, 7.3, 0, 0, 0]],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Gold Tip',
+      model: 'X-Cutter',
+      useCategory: 'target',
+      sourceId: 'gold_tip_2026_x_cutter',
+    },
+    [['250', 0.38, 32, 0.25, 7.8, 0, 0, 0]],
+  ),
 ]

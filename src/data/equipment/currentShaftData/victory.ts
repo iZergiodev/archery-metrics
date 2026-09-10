@@ -53,4 +53,78 @@ export const VICTORY_CURRENT_SHAFTS: CurrentShaftEntry[] = [
       ['400', 0.266, 31, 0.4, 9, 50, 0, 9],
     ],
   ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Victory Archery',
+      model: 'VX-27',
+      useCategory: 'target',
+      sourceId: 'victory_2026_vx_27',
+    },
+    [['200', 0.419, 31, 0.2, 8.8, 0, 25, 8]],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Victory Archery',
+      model: 'V-TAC 23',
+      useCategory: 'target',
+      sourceId: 'victory_2026_vtac_23',
+    },
+    [
+      ['270', 0.35, 31, 0.27, 7.2, 0, 16, 8],
+      ['380', 0.349, 31, 0.38, 6.8, 0, 16, 8],
+      ['480', 0.35, 31, 0.48, 7.2, 0, 16, 8],
+    ],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Victory Archery',
+      model: 'V-TAC 25',
+      useCategory: 'target',
+      sourceId: 'victory_2026_vtac_25',
+    },
+    [
+      ['200', 0.382, 31, 0.2, 8.1, 0, 19, 8],
+      ['300', 0.379, 31, 0.3, 7.2, 0, 19, 8],
+    ],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Victory Archery',
+      model: 'V-TAC 27',
+      useCategory: 'target',
+      sourceId: 'victory_2026_vtac_27',
+    },
+    [['220', 0.416, 31, 0.22, 10.8, 0, 25, 8]],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Victory Archery',
+      model: '3DHV',
+      useCategory: 'target',
+      sourceId: 'victory_2026_3dhv',
+    },
+    [
+      ['300', 0.255, 31, 0.3, 7.1, 0, 7, 8],
+      ['350', 0.251, 31, 0.35, 6.4, 0, 7, 8],
+      ['400', 0.247, 31, 0.4, 5.9, 0, 7, 8],
+      ['500', 0.242, 31, 0.5, 5.1, 0, 7, 8],
+      ['600', 0.244, 31, 0.6, 5.5, 0, 7, 8],
+      ['700', 0.243, 31, 0.7, 5.4, 0, 7, 8],
+      ['800', 0.24, 31, 0.8, 5, 0, 7, 8],
+    ],
+  ),
+  ...makeCurrentShaftEntries(
+    {
+      manufacturer: 'Victory Archery',
+      model: 'VFT',
+      useCategory: 'target',
+      sourceId: 'victory_2026_vft',
+    },
+    [
+      ['350', 0.298, 31, 0.35, 8.7, 0, 11, 3],
+      ['400', 0.295, 31, 0.4, 8.2, 0, 11, 3],
+      ['500', 0.287, 31, 0.5, 6.9, 0, 11, 3],
+      ['600', 0.287, 31, 0.6, 6.6, 0, 11, 3],
+    ],
+  ),
 ]

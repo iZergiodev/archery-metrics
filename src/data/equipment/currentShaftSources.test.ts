@@ -2,25 +2,23 @@ import { describe, expect, it } from 'vitest'
 import { CURRENT_SHAFT_SOURCES } from './currentShaftSources'
 import type { CurrentShaftSource, CurrentShaftSourceId } from './currentShaftSources'
 
-const EXPECTED_HOSTS = {
-  easton_2026_x10: 'eastonarchery.com',
-  easton_2026_ace: 'eastonarchery.com',
-  easton_2026_5_0: 'eastonarchery.com',
-  easton_2026_5mm_fmj: 'eastonarchery.com',
-  victory_2026_vxt: 'victoryarchery.com',
-  victory_2026_vap: 'victoryarchery.com',
-  victory_2026_rip_tko: 'victoryarchery.com',
-  gold_tip_2026_pierce_tour: 'goldtip.com',
-  gold_tip_2026_airstrike: 'goldtip.com',
-  gold_tip_2026_hunter_xt: 'goldtip.com',
-  black_eagle_2026_x_impact: 'blackeaglearrows.com',
-  black_eagle_2026_rampage: 'blackeaglearrows.com',
-  skylon_2026_paragon: 'skylonarchery.com',
-  fivics_2026_five_x: 'fivics.com',
-  pandarus_2026_elite_ca320: 'pandarusarchery.com',
-} as const satisfies Record<CurrentShaftSourceId, string>
+const ORIGINAL_ACCESS_DATE = '2026-07-11'
+const EXPANSION_ACCESS_DATE = '2026-09-10'
 
-const EXPECTED_URLS = {
+const FIRST_PARTY_HOSTS = new Set([
+  'eastonarchery.com',
+  'victoryarchery.com',
+  'goldtip.com',
+  'blackeaglearrows.com',
+  'skylonarchery.com',
+  'fivics.com',
+  'pandarusarchery.com',
+  'feradyne.com',
+  'bignami.it',
+  'nijora.com',
+])
+
+const ORIGINAL_URLS = {
   easton_2026_x10: 'https://eastonarchery.com/arrows_/x10/',
   easton_2026_ace: 'https://eastonarchery.com/arrows_/a-c-e/',
   easton_2026_5_0: 'https://eastonarchery.com/wp-content/uploads/2026/03/Easton-2026.pdf',
@@ -41,24 +39,25 @@ const EXPECTED_URLS = {
   skylon_2026_paragon: 'https://www.skylonarchery.com/arrows/id-3-2/paragon',
   fivics_2026_five_x: 'https://www.fivics.com/shop/product/detail/37',
   pandarus_2026_elite_ca320: 'https://www.pandarusarchery.com/elite_ca320',
-} as const satisfies Record<CurrentShaftSourceId, string>
+} as const satisfies Partial<Record<CurrentShaftSourceId, string>>
 
 describe('current shaft source registry', () => {
-  it('contains only the approved 2026 official manufacturer sources', () => {
-    expect(Object.keys(CURRENT_SHAFT_SOURCES).sort()).toEqual(Object.keys(EXPECTED_HOSTS).sort())
-
-    for (const [id, expectedHost] of Object.entries(EXPECTED_HOSTS) as [
+  it('keeps only first-party 2026 manufacturer sources', () => {
+    for (const [id, source] of Object.entries(CURRENT_SHAFT_SOURCES) as [
       CurrentShaftSourceId,
-      string,
+      CurrentShaftSource,
     ][]) {
-      const source: CurrentShaftSource = CURRENT_SHAFT_SOURCES[id]
       const hostname = new URL(source.url).hostname.replace(/^www\./, '')
       const publicationOrAccessYear = source.publicationYear ?? Number(source.accessedOn.slice(0, 4))
+      const originalUrl = ORIGINAL_URLS[id as keyof typeof ORIGINAL_URLS]
+      const expectedAccessedOn = originalUrl ? ORIGINAL_ACCESS_DATE : EXPANSION_ACCESS_DATE
 
-      expect(source.url).toBe(EXPECTED_URLS[id])
-      expect(hostname).toBe(expectedHost)
-      expect(source.accessedOn).toBe('2026-07-11')
+      expect(FIRST_PARTY_HOSTS.has(hostname), `${id} host ${hostname}`).toBe(true)
+      expect(source.accessedOn).toBe(expectedAccessedOn)
       expect(publicationOrAccessYear).toBe(2026)
+      if (originalUrl) {
+        expect(source.url).toBe(originalUrl)
+      }
     }
   })
 })

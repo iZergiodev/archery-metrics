@@ -3,7 +3,7 @@ import { GOLD_TIP_CURRENT_SHAFTS } from './goldTip'
 
 describe('GOLD_TIP_CURRENT_SHAFTS', () => {
   it('contains the exact current Gold Tip model catalog', () => {
-    expect(GOLD_TIP_CURRENT_SHAFTS).toHaveLength(16)
+    expect(GOLD_TIP_CURRENT_SHAFTS).toHaveLength(31)
 
     const sizesFor = (model: string) => new Set(GOLD_TIP_CURRENT_SHAFTS
       .filter((entry) => entry.model === model)
@@ -14,6 +14,13 @@ describe('GOLD_TIP_CURRENT_SHAFTS', () => {
     ]))
     expect(sizesFor('Airstrike')).toEqual(new Set(['400', '340', '300', '250']))
     expect(sizesFor('Hunter XT')).toEqual(new Set(['500', '400', '340', '300', '250']))
+    expect(sizesFor('Pierce LRT')).toEqual(new Set(['500', '400', '340', '300', '250']))
+    expect(sizesFor('Kinetic')).toEqual(new Set(['500', '400', '340', '300', '200']))
+    expect(sizesFor('30X')).toEqual(new Set(['150']))
+    expect(sizesFor('Triple X')).toEqual(new Set(['100']))
+    expect(sizesFor('Nine.3 Max')).toEqual(new Set(['250']))
+    expect(sizesFor('Series 22')).toEqual(new Set(['300']))
+    expect(sizesFor('X-Cutter')).toEqual(new Set(['250']))
   })
 
   it('preserves representative target and hunting specifications', () => {
@@ -40,6 +47,25 @@ describe('GOLD_TIP_CURRENT_SHAFTS', () => {
       od: 0.291,
       pointInsert: 12.1,
       nockWeight: 12.2,
+    })
+
+    expect(GOLD_TIP_CURRENT_SHAFTS.find(({ model, size }) => (
+      model === 'Pierce LRT' && size === '400'
+    ))).toMatchObject({
+      useCategory: 'hunting',
+      od: 0.229,
+      stockLength: 32,
+      gpi: 7.5,
+      pointInsert: 0,
+      nockWeight: 0,
+    })
+
+    expect(GOLD_TIP_CURRENT_SHAFTS.find(({ model, size }) => (
+      model === 'Kinetic' && size === '200'
+    ))).toMatchObject({
+      od: 0.282,
+      stockLength: 32,
+      gpi: 11.6,
     })
   })
 

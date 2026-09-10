@@ -11,11 +11,14 @@ const EXPECTED_MANUFACTURERS = new Set([
   'Skylon',
   'FIVICS',
   'Pandarus',
+  'Carbon Express',
+  'Cross-X',
+  'Nijora',
 ])
 
 describe('CURRENT_SHAFT_DATABASE', () => {
-  it('publishes all 134 current rows for the supported manufacturers', () => {
-    expect(CURRENT_SHAFT_DATABASE).toHaveLength(134)
+  it('publishes all 603 current rows for the supported manufacturers', () => {
+    expect(CURRENT_SHAFT_DATABASE).toHaveLength(603)
     expect(new Set(CURRENT_SHAFT_DATABASE.map(({ manufacturer }) => manufacturer)))
       .toEqual(EXPECTED_MANUFACTURERS)
   })
